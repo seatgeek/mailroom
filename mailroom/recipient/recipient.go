@@ -4,10 +4,6 @@
 
 package recipient
 
-type IdentifierType string
-
-const Email IdentifierType = "email"
-
 // Recipient is somebody that should receive a notification
 //
 // A recipient may be known by different IDs in different systems. The ID we receive in the webhook payload
@@ -19,22 +15,38 @@ const Email IdentifierType = "email"
 // the user's preferences for receiving notifications; it would be wasteful to look up their Slack ID if they've turned
 // those notifications off.
 type Recipient struct {
-	identifiers map[IdentifierType]string // eg. {"gitlab": "12345"; "email": "alice@seatgeek.com", "slack": "U123"}
+	identifiers []Identifier
 }
 
-func New(idType IdentifierType, identifier string) *Recipient {
+func New(identifiers ...Identifier) *Recipient {
 	return &Recipient{
-		identifiers: map[IdentifierType]string{
-			idType: identifier,
-		},
+		identifiers: identifiers,
 	}
 }
 
-func (r *Recipient) Add(idType IdentifierType, identifier string) {
-	r.identifiers[idType] = identifier
+func (r *Recipient) Add(identifier Identifier) {
+	r.identifiers = append(r.identifiers, identifier)
 }
 
-func (r *Recipient) Get(idType IdentifierType) (string, bool) {
-	id, ok := r.identifiers[idType]
-	return id, ok
+// Get returns the first Identifier that matches the given query
+// For example, to find any email address, pass an Identifier with Kind="email".
+// Any query field that is empty will act as a wildcard.
+func (r *Recipient) Get(query Identifier) (Identifier, bool) {
+	for _, id := range r.identifiers {
+		if query.Namespace != "" && query.Namespace != id.Namespace {
+			continue
+		}
+
+		if query.Kind != "" && query.Kind != id.Kind {
+			continue
+		}
+
+		if query.Value != "" && query.Value != id.Value {
+			continue
+		}
+
+		return id, true
+	}
+
+	return Identifier{}, false
 }

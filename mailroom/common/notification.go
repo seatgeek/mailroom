@@ -8,9 +8,16 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/recipient"
 )
 
+// EventType describes the type of event related to the originating occurrence.
+// It may be used for routing, observability, etc. It must comply with CloudEvent `type` spec:
+// https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#type
+// Basically, it should be a non-empty string containing a reverse-DNS name.
+// For example: "com.gitlab.push"
+type EventType string
+
 // Notification is a notification that should be sent
 type Notification struct {
-	Source    EventID
+	Type      EventType
 	Message   Renderer
 	Recipient recipient.Recipient
 }
