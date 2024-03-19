@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "mergeConfidence:all-badges",
+  ],
+
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security"
+    ]
+  },
+
+  "gomod": {
+    "postUpdateOptions": [
+      "gomodUpdateImportPaths",
+      "gomodTidy",
+    ],
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$",
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s(?:ENV|ARG) .+?_VERSION[ =]\"?(?<currentValue>.+?)\"?\\s",
+      ]
+    },
+  ],
+
+  "packageRules": [
+    {
+      "description": "Limit noisy updates to once per week",
+      "matchUpdateTypes": ["digest", "lockFileMaintenance"],
+      "extends": ["schedule:weekly"]
+    },
+  ],
+}

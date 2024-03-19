@@ -1,0 +1,11 @@
+---
+extends: default
+
+rules:
+  comments:
+    min-spaces-from-content: 0
+    require-starting-space: false
+  indentation:
+    indent-sequences: consistent
+    spaces: 2
+  line-length: disable

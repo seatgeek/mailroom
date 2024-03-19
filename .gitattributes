@@ -1,0 +1,14 @@
+/.editorconfig        export-ignore
+/.gitattributes       export-ignore
+/.github              export-ignore
+/.gitignore           export-ignore
+/.gitlab-ci.yml       export-ignore
+/.go-license.yaml     export-ignore
+/.golangci.yml        export-ignore
+/.mockery.yaml        export-ignore
+/.yamllint.yaml       export-ignore
+/CODE_OF_CONDUCT.md   export-ignore
+/CONTRIBUTING.md      export-ignore
+/Makefile             export-ignore
+/mailroom.png         export-ignore
+/renovate.json5       export-ignore
