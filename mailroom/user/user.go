@@ -5,16 +5,19 @@
 package user
 
 import (
+	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
 type User struct {
 	Identifiers identifier.Collection
+	preferences map[common.EventType]map[common.TransportID]bool
 }
 
 func New(options ...Option) *User {
 	u := &User{
 		Identifiers: make(identifier.Collection),
+		preferences: make(map[common.EventType]map[common.TransportID]bool),
 	}
 
 	for _, opt := range options {
@@ -38,4 +41,22 @@ func WithIdentifiers(ids identifier.Collection) Option {
 			u.Identifiers[k] = v
 		}
 	}
+}
+
+func WithPreference(event common.EventType, transport common.TransportID, wants bool) Option {
+	return func(u *User) {
+		if u.preferences[event] == nil {
+			u.preferences[event] = make(map[common.TransportID]bool)
+		}
+
+		u.preferences[event][transport] = wants
+	}
+}
+
+func (r *User) Wants(event common.EventType, transport common.TransportID) bool {
+	if r.preferences[event] == nil {
+		return false
+	}
+
+	return r.preferences[event][transport]
 }
