@@ -19,3 +19,9 @@ type Notifier interface {
 	// Push sends one or more notifications, either immediately or enqueued for later delivery
 	Push(context.Context, ...*common.Notification) error
 }
+
+type Transport interface {
+	Notifier
+	// ID returns a unique identifier for this transport
+	ID() common.TransportID
+}

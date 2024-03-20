@@ -42,14 +42,12 @@ func main() {
 			//	argocd.NewNotificationGenerator(),
 			// ),
 		),
-		// mailroom.WithTransports(
-		//      transport.New(
-		//              "slack",
-		//              slack.NewTransport(
-		//                      slack.WithToken("xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx"),
-		//              ),
-		//      ),
-		// ),
+		mailroom.WithTransports(
+			// slack.NewTransport(
+			//	"slack",
+			//	"xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx",
+			// ),
+		),
 		mailroom.WithUserStore(
 			user.NewInMemoryStore(
 				user.New(

@@ -25,6 +25,7 @@ type Server struct {
 	listenAddr string
 	sources    []*source.Source
 	notifier   notifier.Notifier
+	transports []notifier.Transport
 	userStore  user.Store
 }
 
@@ -39,6 +40,8 @@ func New(opts ...Opt) *Server {
 		opt(s)
 	}
 
+	s.notifier = notifier.New(s.userStore, s.transports...)
+
 	return s
 }
 
@@ -51,6 +54,12 @@ func WithListenAddr(addr string) Opt {
 func WithSources(sources ...*source.Source) Opt {
 	return func(s *Server) {
 		s.sources = append(s.sources, sources...)
+	}
+}
+
+func WithTransports(transports ...notifier.Transport) Opt {
+	return func(s *Server) {
+		s.transports = append(s.transports, transports...)
 	}
 }
 
