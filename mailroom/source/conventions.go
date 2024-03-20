@@ -16,7 +16,7 @@ type PayloadParser interface {
 	// The payload return value contains the parsed payload struct, which will be passed to the NotificationGenerator.
 	// Returning nil, nil is valid and indicates that the payload was parsed and determined to not be allowlisted, and
 	// thus should be ignored.
-	Parse(req *http.Request) (payload *struct{}, err error)
+	Parse(req *http.Request) (payload any, err error)
 }
 
 type NotificationGenerator interface {
@@ -24,7 +24,7 @@ type NotificationGenerator interface {
 	//
 	// Some payloads may result in multiple notifications, for example the creation of a new merge request in GitLab
 	// might result in notifications to multiple reviewers.
-	Generate(payload struct{}) ([]*common.Notification, error)
+	Generate(payload any) ([]*common.Notification, error)
 }
 
 // Source is a combination of a PayloadParser and a NotificationGenerator

@@ -21,7 +21,7 @@ func TestAdapter_Parse(t *testing.T) {
 	tests := []struct {
 		name        string
 		hook        hook[string]
-		wantPayload *struct{}
+		wantPayload any
 		wantErr     error
 	}{
 		{

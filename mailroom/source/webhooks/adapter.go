@@ -53,7 +53,7 @@ func NewAdapter[Event EventType](hook hook[Event], events ...Event) *Adapter[Eve
 	return adapter
 }
 
-func (a Adapter[Event]) Parse(req *http.Request) (*struct{}, error) {
+func (a Adapter[Event]) Parse(req *http.Request) (any, error) {
 	event, err := a.hook.Parse(req, a.events...)
 	if err != nil {
 		if isErrEventNotFound(err) {

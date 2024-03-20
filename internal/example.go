@@ -12,11 +12,12 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/source/webhooks"
+	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
 type TemporaryNotificationGenerator struct{}
 
-func (t *TemporaryNotificationGenerator) Generate(payload struct{}) ([]*common.Notification, error) {
+func (t *TemporaryNotificationGenerator) Generate(payload any) ([]*common.Notification, error) {
 	return nil, nil
 }
 
@@ -48,7 +49,20 @@ func main() {
 		//		),
 		//	),
 		// ),
-		// mailroom.WithUserStore(users.NewDBUserStore( /** from config */ )),
+		mailroom.WithUserStore(
+			user.NewInMemoryStore(
+				user.New(
+					common.NewIdentifier("email", "codell@seatgeek.com"),
+					common.NewIdentifier("gitlab.com/user_id", "123"),
+					common.NewIdentifier("slack.com/user_id", "U4567"),
+				),
+				user.New(
+					common.NewIdentifier("email", "zhammer@seatgeek.com"),
+					common.NewIdentifier("gitlab.com/user_id", "999"),
+					common.NewIdentifier("slack.com/user_id", "U9876"),
+				),
+			),
+		),
 	)
 
 	if err := app.Run(context.Background()); err != nil {

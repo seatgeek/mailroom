@@ -32,7 +32,7 @@ func CreateHandler(ctx context.Context, s *source.Source, n notifier.Notifier) h
 			return nil
 		}
 
-		notifications, err := s.Generator.Generate(*payload)
+		notifications, err := s.Generator.Generate(payload)
 		if err != nil {
 			slog.Error("failed to generate notifications", "source", s.ID, "error", err)
 			return fmt.Errorf("failed to generate notifications: %w", err)

@@ -15,6 +15,7 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
 	"github.com/seatgeek/mailroom/mailroom/source"
+	"github.com/seatgeek/mailroom/mailroom/user"
 	"gopkg.in/tomb.v2"
 )
 
@@ -24,6 +25,7 @@ type Server struct {
 	listenAddr string
 	sources    []*source.Source
 	notifier   notifier.Notifier
+	userStore  user.Store
 }
 
 type Opt func(s *Server)
@@ -49,6 +51,12 @@ func WithListenAddr(addr string) Opt {
 func WithSources(sources ...*source.Source) Opt {
 	return func(s *Server) {
 		s.sources = append(s.sources, sources...)
+	}
+}
+
+func WithUserStore(us user.Store) Opt {
+	return func(s *Server) {
+		s.userStore = us
 	}
 }
 
