@@ -6,11 +6,13 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-playground/webhooks/v6/gitlab"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
+	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/source/webhooks"
 	"github.com/seatgeek/mailroom/mailroom/user"
@@ -43,6 +45,7 @@ func main() {
 			// ),
 		),
 		mailroom.WithTransports(
+			notifier.NewWriterNotifier("console", os.Stderr),
 			// slack.NewTransport(
 			//	"slack",
 			//	"xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx",
