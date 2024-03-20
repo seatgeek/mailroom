@@ -4,6 +4,8 @@
 
 package common
 
+import "github.com/seatgeek/mailroom/mailroom/identifier"
+
 // EventType describes the type of event related to the originating occurrence.
 // It may be used for routing, observability, etc. It must comply with CloudEvent `type` spec:
 // https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#type
@@ -15,8 +17,8 @@ type EventType string
 type Notification struct {
 	Type      EventType
 	Message   Renderer
-	Initiator Identifier
-	Recipient Identifier
+	Initiator identifier.Collection
+	Recipient identifier.Collection
 }
 
 // Renderer is a type that can render a message, potentially customizing it for a given transport

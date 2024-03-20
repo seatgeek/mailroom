@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/webhooks/v6/gitlab"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/source/webhooks"
 	"github.com/seatgeek/mailroom/mailroom/user"
@@ -42,24 +43,26 @@ func main() {
 			// ),
 		),
 		// mailroom.WithTransports(
-		//	transport.New(
-		//		"slack",
-		//		slack.NewTransport(
-		//			slack.WithToken("xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx"),
-		//		),
-		//	),
+		//      transport.New(
+		//              "slack",
+		//              slack.NewTransport(
+		//                      slack.WithToken("xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx"),
+		//              ),
+		//      ),
 		// ),
 		mailroom.WithUserStore(
 			user.NewInMemoryStore(
 				user.New(
-					common.NewIdentifier("email", "codell@seatgeek.com"),
-					common.NewIdentifier("gitlab.com/user_id", "123"),
-					common.NewIdentifier("slack.com/user_id", "U4567"),
+					user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
+					user.WithIdentifier(identifier.New("gitlab.com/id", "123")),
+					user.WithIdentifier(identifier.New("slack.com/id", "U4567")),
 				),
 				user.New(
-					common.NewIdentifier("email", "zhammer@seatgeek.com"),
-					common.NewIdentifier("gitlab.com/user_id", "999"),
-					common.NewIdentifier("slack.com/user_id", "U9876"),
+					user.WithIdentifiers(identifier.Collection{
+						identifier.GenericEmail:         "zhammer@seatgeek.com",
+						identifier.For("gitlab.com/id"): "456",
+						identifier.For("slack.com/id"):  "U7654",
+					}),
 				),
 			),
 		),

@@ -5,38 +5,37 @@
 package user
 
 import (
-	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
 type User struct {
-	identifiers []common.Identifier
+	Identifiers identifier.Collection
 }
 
-func New(identifiers ...common.Identifier) *User {
-	return &User{
-		identifiers: identifiers,
+func New(options ...Option) *User {
+	u := &User{
+		Identifiers: make(identifier.Collection),
+	}
+
+	for _, opt := range options {
+		opt(u)
+	}
+
+	return u
+}
+
+type Option func(*User)
+
+func WithIdentifier(id identifier.Identifier) Option {
+	return func(u *User) {
+		u.Identifiers[id.NamespaceAndKind] = id.Value
 	}
 }
 
-func (r *User) AddIdentifier(identifier common.Identifier) {
-	r.identifiers = append(r.identifiers, identifier)
-}
-
-// GetIdentifier returns the first Identifier that matches the given query
-// For example, to find any email address, pass an NamespaceAndKind with Kind="email".
-// Any query field that is empty will act as a wildcard.
-func (r *User) GetIdentifier(query common.NamespaceAndKind) (common.Identifier, bool) {
-	for _, id := range r.identifiers {
-		if query.Namespace != "" && query.Namespace != id.Namespace {
-			continue
+func WithIdentifiers(ids identifier.Collection) Option {
+	return func(u *User) {
+		for k, v := range ids {
+			u.Identifiers[k] = v
 		}
-
-		if query.Kind != "" && query.Kind != id.Kind {
-			continue
-		}
-
-		return id, true
 	}
-
-	return common.Identifier{}, false
 }
