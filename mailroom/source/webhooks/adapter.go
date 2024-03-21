@@ -54,7 +54,7 @@ func NewAdapter[Event EventType](hook hook[Event], events ...Event) *Adapter[Eve
 }
 
 func (a Adapter[Event]) Parse(req *http.Request) (any, error) {
-	event, err := a.hook.Parse(req, a.events...)
+	payload, err := a.hook.Parse(req, a.events...)
 	if err != nil {
 		if isErrEventNotFound(err) {
 			return nil, nil
@@ -63,12 +63,7 @@ func (a Adapter[Event]) Parse(req *http.Request) (any, error) {
 		return nil, err
 	}
 
-	payload, ok := event.(struct{})
-	if !ok {
-		return nil, ErrInvalidPayload
-	}
-
-	return &payload, nil
+	return payload, nil
 }
 
 var _ source.PayloadParser = &Adapter[string]{}

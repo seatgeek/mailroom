@@ -27,7 +27,7 @@ func TestAdapter_Parse(t *testing.T) {
 		{
 			name:        "ok",
 			hook:        hookThatReturns(t, somePayload, nil),
-			wantPayload: &somePayload,
+			wantPayload: somePayload,
 			wantErr:     nil,
 		},
 		{
