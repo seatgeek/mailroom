@@ -20,6 +20,8 @@ import (
 // to the notifier, and returning a success or error response to the client.
 func CreateHandler(ctx context.Context, s *source.Source, n notifier.Notifier) handlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) error {
+		slog.Debug("handling incoming webhook", "source", s.ID, "path", request.URL.Path)
+
 		payload, err := s.Parser.Parse(request)
 		if err != nil {
 			slog.Error("failed to parse payload", "source", s.ID, "error", err)
@@ -38,6 +40,8 @@ func CreateHandler(ctx context.Context, s *source.Source, n notifier.Notifier) h
 			slog.Error("failed to generate notifications", "source", s.ID, "error", err)
 			return fmt.Errorf("failed to generate notifications: %w", err)
 		}
+
+		slog.Debug("dispatching notifications", "source", s.ID, "notifications", len(notifications))
 
 		var errs []error
 		for _, notification := range notifications {

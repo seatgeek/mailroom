@@ -5,6 +5,8 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
@@ -59,4 +61,8 @@ func (r *User) Wants(event common.EventType, transport common.TransportID) bool 
 	}
 
 	return r.preferences[event][transport]
+}
+
+func (r *User) String() string {
+	return fmt.Sprint(r.Identifiers)
 }

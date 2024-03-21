@@ -97,6 +97,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	// Mount all sources wrapped with our error handler
 	for _, src := range s.sources {
 		endpoint := "/" + src.ID
+		slog.Debug("mounting source", "endpoint", endpoint)
 		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateHandler(ctx, src, s.notifier)))
 	}
 
@@ -109,6 +110,9 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	httpExited := make(chan error)
 	go (func() {
 		defer close(httpExited)
+
+		slog.Info("http server listening on " + s.listenAddr)
+
 		httpExited <- hs.ListenAndServe()
 	})()
 

@@ -6,9 +6,11 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/go-playground/webhooks/v6/gitlab"
+	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
@@ -27,6 +29,13 @@ func (t *TemporaryNotificationGenerator) Generate(payload any) ([]common.Notific
 // This is an example of how to configure and run mailroom.
 // Code should be un-commented as the features are implemented.
 func main() {
+	// Turn on pretty logging
+	slog.SetDefault(slog.New(
+		tint.NewHandler(os.Stderr, &tint.Options{
+			Level: slog.LevelDebug,
+		}),
+	))
+
 	app := mailroom.New(
 		mailroom.WithSources(
 			source.New(

@@ -4,6 +4,7 @@ go 1.22.1
 
 require (
 	github.com/go-playground/webhooks/v6 v6.3.0
+	github.com/lmittmann/tint v1.0.4
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 )
