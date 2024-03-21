@@ -18,14 +18,14 @@ func TestNew(t *testing.T) {
 	user := New(
 		WithIdentifier(identifier.New("username", "rufus")),
 		WithIdentifiers(identifier.Collection{
-			identifier.For("email"): "rufus@seatgeek.com",
+			"email": "rufus@seatgeek.com",
 		}),
 		WithPreference("com.example.notification", "email", true),
 	)
 
 	wantIdentifiers := identifier.Collection{
-		identifier.For("username"): "rufus",
-		identifier.For("email"):    "rufus@seatgeek.com",
+		"username": "rufus",
+		"email":    "rufus@seatgeek.com",
 	}
 
 	wantPreferences := map[common.EventType]map[common.TransportID]bool{

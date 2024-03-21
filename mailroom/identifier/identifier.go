@@ -10,38 +10,33 @@ import (
 )
 
 // NamespaceAndKind is a combination of a namespace and a kind.
-// The Namespace is optional, and if it is not present, it is represented as an empty string.
-// The Kind is required.
-type NamespaceAndKind struct {
-	Namespace string
-	Kind      Kind
-}
+// For example, in "slack.com/email", "slack.com" is the namespace and "email" is the kind.
+// The namespace part is considered optional, and if it is not present, it is represented as an empty string.
+type NamespaceAndKind string
 
 var (
-	GenericEmail    = NamespaceAndKind{Kind: KindEmail}
-	GenericUsername = NamespaceAndKind{Kind: KindUsername}
-	GenericID       = NamespaceAndKind{Kind: ID}
+	GenericEmail    = NamespaceAndKind(KindEmail)
+	GenericUsername = NamespaceAndKind(KindUsername)
+	GenericID       = NamespaceAndKind(KindID)
 )
 
-func (n NamespaceAndKind) String() string {
-	if n.Namespace == "" {
-		return string(n.Kind)
+// Split returns the namespace and kind parts of the NamespaceAndKind.
+func (n NamespaceAndKind) Split() (string, string) {
+	parts := strings.SplitN(string(n), "/", 2)
+	if len(parts) == 1 {
+		return "", parts[0]
 	}
 
-	return fmt.Sprintf("%s/%s", n.Namespace, n.Kind)
+	return parts[0], parts[1]
 }
 
-// For returns a NamespaceAndKind from a string
-func For(s string) NamespaceAndKind {
-	parts := strings.SplitN(s, "/", 2)
-	if len(parts) == 1 {
-		return NamespaceAndKind{Kind: Kind(parts[0])}
+// NewNamespaceAndKind creates a new NamespaceAndKind from a namespace and a kind.
+func NewNamespaceAndKind[T ~string](namespace string, kind T) NamespaceAndKind {
+	if namespace == "" {
+		return NamespaceAndKind(kind)
 	}
 
-	return NamespaceAndKind{
-		Namespace: parts[0],
-		Kind:      Kind(parts[1]),
-	}
+	return NamespaceAndKind(fmt.Sprintf("%s/%s", namespace, kind))
 }
 
 type Kind string
@@ -49,7 +44,7 @@ type Kind string
 const (
 	KindEmail    Kind = "email"
 	KindUsername Kind = "username"
-	ID           Kind = "id"
+	KindID       Kind = "id"
 )
 
 // An Identifier is a unique reference to some user or group.
@@ -58,27 +53,15 @@ type Identifier struct {
 	Value string
 }
 
-// nsKindType is used by the generic New function to allow either a string or a NamespaceAndKind to be passed as the namespaceAndKind argument.
-type nsKindType interface {
-	~string | NamespaceAndKind
-}
-
 // valueType is used by the generic New function to allow any string or integer type to be passed as the value argument.
 type valueType interface {
 	~string | ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
 // New creates a new Identifier for a given namespaceAndKind and a value.
-func New[T1 nsKindType, T2 valueType](namespaceAndKind T1, value T2) Identifier {
-	if nsAndKind, ok := any(namespaceAndKind).(NamespaceAndKind); ok {
-		return Identifier{
-			NamespaceAndKind: nsAndKind,
-			Value:            fmt.Sprint(value),
-		}
-	}
-
+func New[T1 ~string, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 	return Identifier{
-		NamespaceAndKind: For(fmt.Sprint(namespaceAndKind)),
+		NamespaceAndKind: NamespaceAndKind(namespaceAndKind),
 		Value:            fmt.Sprint(value),
 	}
 }
@@ -87,26 +70,29 @@ func New[T1 nsKindType, T2 valueType](namespaceAndKind T1, value T2) Identifier 
 // Each entry is basically an Identifier.
 type Collection map[NamespaceAndKind]string
 
-// Get returns the matching Identifier for a given NamespaceAndKind.
-// Either the Namespace or the Kind can be empty, in which case it will match any value for that field (like a wildcard)
-func (i *Collection) Get(query NamespaceAndKind) (Identifier, bool) {
+// Email returns any email Identifier in the Collection, or false if none exists.
+func (i *Collection) Email() (Identifier, bool) {
 	if *i == nil {
 		return Identifier{}, false
 	}
 
-	for key, val := range *i {
-		if query.Namespace != "" && query.Namespace != key.Namespace {
-			continue
-		}
-
-		if query.Kind != "" && query.Kind != key.Kind {
-			continue
-		}
-
+	// Prefer the generic (non-namespaced) email if it exists
+	if val, ok := (*i)[GenericEmail]; ok {
 		return Identifier{
-			NamespaceAndKind: key,
+			NamespaceAndKind: GenericEmail,
 			Value:            val,
 		}, true
+	}
+
+	// Otherwise any email will do
+	for nsAndKind, val := range *i {
+		_, kind := nsAndKind.Split()
+		if kind == string(KindEmail) {
+			return Identifier{
+				NamespaceAndKind: nsAndKind,
+				Value:            val,
+			}, true
+		}
 	}
 
 	return Identifier{}, false

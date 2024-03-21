@@ -10,74 +10,73 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNamespaceAndKind_String(t *testing.T) {
+func TestNamespaceAndKind_Split(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		nsAndKind NamespaceAndKind
-		want      string
+		input         NamespaceAndKind
+		wantNamespace string
+		wantKind      string
 	}{
 		{
-			name: "no namespace",
-			nsAndKind: NamespaceAndKind{
-				Kind: KindEmail,
-			},
-			want: "email",
+			input:         NamespaceAndKind("email"),
+			wantNamespace: "",
+			wantKind:      "email",
 		},
 		{
-			name: "with namespace",
-			nsAndKind: NamespaceAndKind{
-				Namespace: "gitlab.com",
-				Kind:      KindUsername,
-			},
-			want: "gitlab.com/username",
+			input:         NamespaceAndKind("gitlab.com/username"),
+			wantNamespace: "gitlab.com",
+			wantKind:      "username",
 		},
 	}
 
 	for _, tc := range tests {
 		tc := tc
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(string(tc.input), func(t *testing.T) {
 			t.Parallel()
 
-			got := tc.nsAndKind.String()
+			namespace, kind := tc.input.Split()
 
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantNamespace, namespace)
+			assert.Equal(t, tc.wantKind, kind)
 		})
 	}
 }
 
-func TestFor(t *testing.T) {
+func TestNewNamespaceAndKind(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input string
-		want  NamespaceAndKind
+		namespace string
+		kind      any
+		want      NamespaceAndKind
 	}{
 		{
-			input: "email",
-			want: NamespaceAndKind{
-				Namespace: "",
-				Kind:      KindEmail,
-			},
+			kind: KindEmail,
+			want: "email",
 		},
 		{
-			input: "gitlab.com/username",
-			want: NamespaceAndKind{
-				Namespace: "gitlab.com",
-				Kind:      KindUsername,
-			},
+			namespace: "gitlab.com",
+			kind:      "username",
+			want:      "gitlab.com/username",
 		},
 	}
 
 	for _, tc := range tests {
 		tc := tc
 
-		t.Run(tc.input, func(t *testing.T) {
+		t.Run(string(tc.want), func(t *testing.T) {
 			t.Parallel()
 
-			got := For(tc.input)
+			var got NamespaceAndKind
+
+			switch kind := tc.kind.(type) {
+			case Kind:
+				got = NewNamespaceAndKind(tc.namespace, kind)
+			case string:
+				got = NewNamespaceAndKind(tc.namespace, kind)
+			}
 
 			assert.Equal(t, tc.want, got)
 		})
@@ -92,8 +91,7 @@ func TestNew(t *testing.T) {
 
 		got := New("email", "codell@seatgeek.com")
 
-		assert.Equal(t, "", got.Namespace)
-		assert.Equal(t, KindEmail, got.Kind)
+		assert.Equal(t, NamespaceAndKind("email"), got.NamespaceAndKind)
 		assert.Equal(t, "codell@seatgeek.com", got.Value)
 	})
 
@@ -102,8 +100,7 @@ func TestNew(t *testing.T) {
 
 		got := New("gitlab.com/username", "codell")
 
-		assert.Equal(t, "gitlab.com", got.Namespace)
-		assert.Equal(t, KindUsername, got.Kind)
+		assert.Equal(t, NamespaceAndKind("gitlab.com/username"), got.NamespaceAndKind)
 		assert.Equal(t, "codell", got.Value)
 	})
 
@@ -112,67 +109,54 @@ func TestNew(t *testing.T) {
 
 		got := New("gitlab.com/id", int64(123456))
 
-		assert.Equal(t, "gitlab.com", got.Namespace)
-		assert.Equal(t, ID, got.Kind)
+		assert.Equal(t, NamespaceAndKind("gitlab.com/id"), got.NamespaceAndKind)
 		assert.Equal(t, "123456", got.Value)
 	})
 
-	t.Run("namespace and kind already a struct", func(t *testing.T) {
+	t.Run("namespace and kind already a NamespaceAndKind type", func(t *testing.T) {
 		t.Parallel()
 
+		nsAndKind := NamespaceAndKind("slack.com/id")
+
 		got := New(
-			NamespaceAndKind{
-				Namespace: "slack.com",
-				Kind:      "id",
-			},
+			nsAndKind,
 			"U1234567",
 		)
 
-		assert.Equal(t, "slack.com", got.Namespace)
-		assert.Equal(t, ID, got.Kind)
+		assert.Equal(t, nsAndKind, got.NamespaceAndKind)
 		assert.Equal(t, "U1234567", got.Value)
 	})
 }
 
-func TestCollection_Get(t *testing.T) {
+func TestCollection_Email(t *testing.T) {
 	t.Parallel()
 
-	email := New("email", "codell@seatgeek.com")
-	gitlabUsername := New("gitlab.com/username", "codell")
-	slackID := New("slack.com/id", "U1234567")
-	slackUsername := New("slack.com/username", "colin.odell")
-
-	identifiers := NewCollection(email, gitlabUsername, slackID, slackUsername)
+	genericEmail := New(GenericEmail, "codell@seatgeek.com")
+	githubID := New("github.com/id", "1234567")
+	githubEmail := New("github.com/email", "colinodell@gmail.com")
 
 	tests := []struct {
-		name       string
-		query      NamespaceAndKind
-		wantOneOf  []Identifier
-		wantExists bool
+		name        string
+		identifiers Collection
+		want        Identifier
+		wantExists  bool
 	}{
 		{
-			name:       "any email",
-			query:      NamespaceAndKind{Kind: "email"},
-			wantOneOf:  []Identifier{email},
-			wantExists: true,
+			name:        "generic email is preferred",
+			identifiers: NewCollection(genericEmail, githubID, githubEmail),
+			want:        genericEmail,
+			wantExists:  true,
 		},
 		{
-			name:       "any username",
-			query:      NamespaceAndKind{Kind: "username"},
-			wantOneOf:  []Identifier{gitlabUsername, slackUsername},
-			wantExists: true,
+			name:        "any email will do",
+			identifiers: NewCollection(githubID, githubEmail),
+			want:        githubEmail,
+			wantExists:  true,
 		},
 		{
-			name:       "specific username",
-			query:      NamespaceAndKind{Namespace: "slack.com", Kind: KindUsername},
-			wantOneOf:  []Identifier{slackUsername},
-			wantExists: true,
-		},
-		{
-			name:       "non-existent",
-			query:      NamespaceAndKind{Kind: "foo"},
-			wantOneOf:  nil,
-			wantExists: false,
+			name:        "no email available",
+			identifiers: NewCollection(githubID),
+			wantExists:  false,
 		},
 	}
 
@@ -182,14 +166,9 @@ func TestCollection_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, exists := identifiers.Get(tc.query)
+			got, exists := tc.identifiers.Email()
 
-			if len(tc.wantOneOf) == 0 {
-				assert.Empty(t, got)
-			} else {
-				assert.Contains(t, tc.wantOneOf, got)
-			}
-
+			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantExists, exists)
 		})
 	}
@@ -250,12 +229,12 @@ func TestNewCollection(t *testing.T) {
 		{
 			name: "non-empty",
 			args: []Identifier{
-				New("username", "rufus"),
-				New("email", "rufus@seatgeek.com"),
+				New(KindUsername, "rufus"),
+				New(KindEmail, "rufus@seatgeek.com"),
 			},
 			want: Collection{
-				NamespaceAndKind{Kind: KindUsername}: "rufus",
-				NamespaceAndKind{Kind: KindEmail}:    "rufus@seatgeek.com",
+				"username": "rufus",
+				"email":    "rufus@seatgeek.com",
 			},
 		},
 	}

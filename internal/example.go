@@ -73,9 +73,9 @@ func main() {
 				),
 				user.New(
 					user.WithIdentifiers(identifier.Collection{
-						identifier.GenericEmail:         "zhammer@seatgeek.com",
-						identifier.For("gitlab.com/id"): "456",
-						identifier.For("slack.com/id"):  "U7654",
+						identifier.GenericEmail: "zhammer@seatgeek.com",
+						"gitlab.com/id":         "456",
+						"slack.com/id":          "U7654",
 					}),
 					user.WithPreference("com.example.notification", "console", true),
 				),
