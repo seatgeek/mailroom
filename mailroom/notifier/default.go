@@ -22,19 +22,19 @@ type DefaultNotifier struct {
 func (d *DefaultNotifier) Push(ctx context.Context, notifications ...*common.Notification) error {
 	var errs []error
 
-	for _, n := range notifications {
-		u, err := d.userStore.Find(n.Recipient)
+	for _, notification := range notifications {
+		recipientUser, err := d.userStore.Find(notification.Recipient)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
-		for _, t := range d.transports {
-			if !u.Wants(n.Type, t.ID()) {
+		for _, transport := range d.transports {
+			if !recipientUser.Wants(notification.Type, transport.ID()) {
 				continue
 			}
 
-			if err = t.Push(ctx, n); err != nil {
+			if err = transport.Push(ctx, notification); err != nil {
 				errs = append(errs, err)
 			}
 		}
