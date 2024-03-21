@@ -38,6 +38,7 @@ func (c *WriterNotifier) Push(ctx context.Context, n common.Notification) error 
 	return err
 }
 
+// NewWriterNotifier creates a Notifier that writes notifications to places like files or stdout
 func NewWriterNotifier(id common.TransportID, writer io.Writer) *WriterNotifier {
 	return &WriterNotifier{id: id, writer: writer}
 }

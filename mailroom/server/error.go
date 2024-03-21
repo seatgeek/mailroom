@@ -23,6 +23,7 @@ func (h *Error) Error() string {
 	return fmt.Sprintf("internal %d: something happened, perhaps", h.Code)
 }
 
+// handlerFunc is basically a http.HandlerFunc that can return an error
 type handlerFunc func(http.ResponseWriter, *http.Request) error
 
 // HandleErr wraps an HTTP handler function and returns a new one that

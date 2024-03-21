@@ -12,6 +12,7 @@ import (
 
 var ErrUserNotFound = errors.New("user not found")
 
+// Store is the interface that all user stores must implement
 type Store interface {
 	// Get returns a user by a specific identifier
 	Get(identifier identifier.Identifier) (*User, error)
@@ -21,16 +22,20 @@ type Store interface {
 	Find(possibleIdentifiers identifier.Collection) (*User, error)
 }
 
+// InMemoryStore is a simple in-memory implementation of the Store interface
+// This is especially useful for testing
 type InMemoryStore struct {
 	users []*User
 }
 
 var _ Store = &InMemoryStore{}
 
+// NewInMemoryStore creates a new in-memory store with the given users
 func NewInMemoryStore(users ...*User) *InMemoryStore {
 	return &InMemoryStore{users: users}
 }
 
+// Add adds a user to the in-memory store
 func (s *InMemoryStore) Add(u *User) {
 	s.users = append(s.users, u)
 }

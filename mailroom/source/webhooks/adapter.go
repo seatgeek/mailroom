@@ -44,6 +44,7 @@ type Adapter[Event EventType] struct {
 	events []Event
 }
 
+// NewAdapter returns a new Adapter allowing the webhook library's hooks to be used as a source.PayloadParser
 func NewAdapter[Event EventType](hook hook[Event], events ...Event) *Adapter[Event] {
 	adapter := &Adapter[Event]{
 		hook:   hook,
@@ -79,6 +80,7 @@ func isErrEventNotFound(err error) bool {
 		errors.Is(err, gogs.ErrEventNotFound)
 }
 
+// Must is a helper function that panics if the error is not nil
 func Must[T any](t T, err error) T {
 	if err != nil {
 		panic(err)

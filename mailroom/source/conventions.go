@@ -10,6 +10,7 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/common"
 )
 
+// PayloadParser is an interface for anything that parses incoming webhooks
 type PayloadParser interface {
 	// Parse verifies and parses incoming webhooks and returns a well-defined payload object or an error
 	//
@@ -19,6 +20,7 @@ type PayloadParser interface {
 	Parse(req *http.Request) (payload any, err error)
 }
 
+// NotificationGenerator is an interface for anything that generates notifications from a parsed payload
 type NotificationGenerator interface {
 	// Generate takes a payload and returns a list of Notifications to be sent
 	//
@@ -37,6 +39,7 @@ type Source struct {
 	Generator NotificationGenerator
 }
 
+// New returns a new Source, pairing a PayloadParser and a NotificationGenerator together with some ID
 func New(id string, parser PayloadParser, generator NotificationGenerator) *Source {
 	return &Source{
 		ID:        id,

@@ -31,6 +31,7 @@ func (n NamespaceAndKind) String() string {
 	return fmt.Sprintf("%s/%s", n.Namespace, n.Kind)
 }
 
+// For returns a NamespaceAndKind from a string
 func For(s string) NamespaceAndKind {
 	parts := strings.SplitN(s, "/", 2)
 	if len(parts) == 1 {
@@ -57,14 +58,17 @@ type Identifier struct {
 	Value string
 }
 
+// nsKindType is used by the generic New function to allow either a string or a NamespaceAndKind to be passed as the namespaceAndKind argument.
 type nsKindType interface {
 	~string | NamespaceAndKind
 }
 
+// valueType is used by the generic New function to allow any string or integer type to be passed as the value argument.
 type valueType interface {
 	~string | ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
+// New creates a new Identifier for a given namespaceAndKind and a value.
 func New[T1 nsKindType, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 	if nsAndKind, ok := any(namespaceAndKind).(NamespaceAndKind); ok {
 		return Identifier{
@@ -79,8 +83,12 @@ func New[T1 nsKindType, T2 valueType](namespaceAndKind T1, value T2) Identifier 
 	}
 }
 
+// Collection is a map of NamespaceAndKind to a value.
+// Each entry is basically an Identifier.
 type Collection map[NamespaceAndKind]string
 
+// Get returns the matching Identifier for a given NamespaceAndKind.
+// Either the Namespace or the Kind can be empty, in which case it will match any value for that field (like a wildcard)
 func (i *Collection) Get(query NamespaceAndKind) (Identifier, bool) {
 	if *i == nil {
 		return Identifier{}, false
@@ -104,6 +112,7 @@ func (i *Collection) Get(query NamespaceAndKind) (Identifier, bool) {
 	return Identifier{}, false
 }
 
+// ToList returns the Collection as a slice of Identifier objects.
 func (i *Collection) ToList() []Identifier {
 	if *i == nil {
 		return nil
@@ -120,6 +129,7 @@ func (i *Collection) ToList() []Identifier {
 	return res
 }
 
+// NewCollection creates a new Collection from a slice of Identifier objects
 func NewCollection(ids ...Identifier) Collection {
 	res := Collection{}
 	for _, id := range ids {

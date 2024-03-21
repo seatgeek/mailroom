@@ -20,8 +20,9 @@ type Notifier interface {
 	Push(context.Context, common.Notification) error
 }
 
+// Transport is any notifier with a distinct, named ID
 type Transport interface {
 	Notifier
-	// ID returns a unique identifier for this transport
+	// ID returns a unique identifier for this transport, useful for routing purposes
 	ID() common.TransportID
 }

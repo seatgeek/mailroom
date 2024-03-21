@@ -11,11 +11,13 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
+// User represents somebody who may receive notifications
 type User struct {
 	Identifiers identifier.Collection
 	preferences map[common.EventType]map[common.TransportID]bool
 }
 
+// New creates a new User with the given options
 func New(options ...Option) *User {
 	u := &User{
 		Identifiers: make(identifier.Collection),
@@ -31,12 +33,14 @@ func New(options ...Option) *User {
 
 type Option func(*User)
 
+// WithIdentifier adds an identifier to a User
 func WithIdentifier(id identifier.Identifier) Option {
 	return func(u *User) {
 		u.Identifiers[id.NamespaceAndKind] = id.Value
 	}
 }
 
+// WithIdentifiers adds multiple identifiers to a User
 func WithIdentifiers(ids identifier.Collection) Option {
 	return func(u *User) {
 		for k, v := range ids {
@@ -45,6 +49,7 @@ func WithIdentifiers(ids identifier.Collection) Option {
 	}
 }
 
+// WithPreference adds a notification preference to a User
 func WithPreference(event common.EventType, transport common.TransportID, wants bool) Option {
 	return func(u *User) {
 		if u.preferences[event] == nil {
@@ -55,6 +60,7 @@ func WithPreference(event common.EventType, transport common.TransportID, wants 
 	}
 }
 
+// Wants returns true if the user wants to receive the given event via the given transport
 func (r *User) Wants(event common.EventType, transport common.TransportID) bool {
 	if r.preferences[event] == nil {
 		return false

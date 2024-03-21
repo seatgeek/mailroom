@@ -20,8 +20,11 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
+// TemporaryNotificationGenerator is a temporary implementation of the source.NotificationGenerator interface
+// TODO: Replace this with a real implementation
 type TemporaryNotificationGenerator struct{}
 
+// Generate returns some dummy notifications
 func (t *TemporaryNotificationGenerator) Generate(payload any) ([]common.Notification, error) {
 	return []common.Notification{}, nil
 }

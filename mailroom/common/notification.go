@@ -25,6 +25,7 @@ type Notification struct {
 // For example, a Slack message might include :emoji: or Markdown formatting, while an email message might use HTML.
 // If the given transport is not recognized, the Renderer should return a plain text message suitable for any transport.
 type Renderer interface {
+	// Render returns the message as a string suitable for the given transport
 	Render(transport TransportID) string
 }
 

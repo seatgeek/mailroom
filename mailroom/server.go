@@ -21,6 +21,8 @@ import (
 
 var ErrShutdown = errors.New("shutting down")
 
+// Server is the heart of the mailroom application
+// It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
 	listenAddr string
 	sources    []*source.Source
@@ -31,6 +33,7 @@ type Server struct {
 
 type Opt func(s *Server)
 
+// New returns a new server
 func New(opts ...Opt) *Server {
 	s := &Server{
 		listenAddr: "0.0.0.0:8000",
@@ -45,30 +48,35 @@ func New(opts ...Opt) *Server {
 	return s
 }
 
+// WithListenAddr sets the IP and port the server listens on
 func WithListenAddr(addr string) Opt {
 	return func(s *Server) {
 		s.listenAddr = addr
 	}
 }
 
+// WithSources adds sources to the server
 func WithSources(sources ...*source.Source) Opt {
 	return func(s *Server) {
 		s.sources = append(s.sources, sources...)
 	}
 }
 
+// WithTransports adds named transports to the server
 func WithTransports(transports ...notifier.Transport) Opt {
 	return func(s *Server) {
 		s.transports = append(s.transports, transports...)
 	}
 }
 
+// WithUserStore sets the user store for the server
 func WithUserStore(us user.Store) Opt {
 	return func(s *Server) {
 		s.userStore = us
 	}
 }
 
+// Run starts the server
 func (s *Server) Run(ctx context.Context) error {
 	httpTomb, httpTombCtx := tomb.WithContext(ctx)
 	defer httpTomb.Kill(ErrShutdown)
