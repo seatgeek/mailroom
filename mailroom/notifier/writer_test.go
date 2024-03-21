@@ -22,7 +22,7 @@ func TestWriterNotifier_Push(t *testing.T) {
 	buffer := &bytes.Buffer{}
 	notifier := NewWriterNotifier("buffer", buffer)
 
-	err := notifier.Push(context.Background(), &common.Notification{
+	err := notifier.Push(context.Background(), common.Notification{
 		Type: "com.example.test",
 		Message: common.RendererFunc(func(transport common.TransportID) string {
 			return fmt.Sprintf("Hello, %s!", transport)

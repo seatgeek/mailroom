@@ -24,7 +24,7 @@ type NotificationGenerator interface {
 	//
 	// Some payloads may result in multiple notifications, for example the creation of a new merge request in GitLab
 	// might result in notifications to multiple reviewers.
-	Generate(payload any) ([]*common.Notification, error)
+	Generate(payload any) ([]common.Notification, error)
 }
 
 // Source is a combination of a PayloadParser and a NotificationGenerator

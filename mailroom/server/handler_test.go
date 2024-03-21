@@ -21,7 +21,7 @@ func TestHandler(t *testing.T) {
 	t.Parallel()
 
 	somePayload := &struct{}{}
-	someNotifications := []*common.Notification{
+	someNotifications := []common.Notification{
 		{
 			Type: "com.example.event",
 			Message: common.RendererFunc(func(transport common.TransportID) string {
@@ -104,7 +104,7 @@ func parserThatReturns(t *testing.T, payload *struct{}, err error) source.Payloa
 	return &parser
 }
 
-func generatorThatReturns(t *testing.T, notifications []*common.Notification, err error) source.NotificationGenerator {
+func generatorThatReturns(t *testing.T, notifications []common.Notification, err error) source.NotificationGenerator {
 	t.Helper()
 
 	generator := source.MockNotificationGenerator{}

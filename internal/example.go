@@ -20,8 +20,8 @@ import (
 
 type TemporaryNotificationGenerator struct{}
 
-func (t *TemporaryNotificationGenerator) Generate(payload any) ([]*common.Notification, error) {
-	return nil, nil
+func (t *TemporaryNotificationGenerator) Generate(payload any) ([]common.Notification, error) {
+	return []common.Notification{}, nil
 }
 
 // This is an example of how to configure and run mailroom.

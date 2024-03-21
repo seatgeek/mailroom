@@ -17,7 +17,7 @@ import (
 // (https://refactoring.guru/design-patterns/decorator)
 type Notifier interface {
 	// Push sends a notification, either immediately or enqueued for later delivery
-	Push(context.Context, *common.Notification) error
+	Push(context.Context, common.Notification) error
 }
 
 type Transport interface {

@@ -20,7 +20,7 @@ type DefaultNotifier struct {
 	transports []Transport
 }
 
-func (d *DefaultNotifier) Push(ctx context.Context, notification *common.Notification) error {
+func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notification) error {
 	var errs []error
 
 	recipientUser, err := d.userStore.Find(notification.Recipient)

@@ -37,14 +37,14 @@ func TestDefaultNotifier_Push(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		notification *common.Notification
+		notification common.Notification
 		transports   []Transport
 		wantSent     []wantSent
 		wantErrs     []error
 	}{
 		{
 			name: "user wants all",
-			notification: &common.Notification{
+			notification: common.Notification{
 				Type:      "com.example.one",
 				Recipient: knownUser.Identifiers,
 			},
@@ -59,7 +59,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		},
 		{
 			name: "user wants some",
-			notification: &common.Notification{
+			notification: common.Notification{
 				Type:      "com.example.two",
 				Recipient: knownUser.Identifiers,
 			},
@@ -73,7 +73,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		},
 		{
 			name: "user wants none",
-			notification: &common.Notification{
+			notification: common.Notification{
 				Type:      "com.example.three",
 				Recipient: knownUser.Identifiers,
 			},
@@ -84,7 +84,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		},
 		{
 			name: "unknown user",
-			notification: &common.Notification{
+			notification: common.Notification{
 				Type:      "com.example.one",
 				Recipient: unknownUser,
 			},
@@ -93,7 +93,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		},
 		{
 			name: "transport fails",
-			notification: &common.Notification{
+			notification: common.Notification{
 				Type:      "com.example.one",
 				Recipient: knownUser.Identifiers,
 			},
@@ -161,7 +161,7 @@ func (f *fakeTransport) ID() common.TransportID {
 	return f.id
 }
 
-func (f *fakeTransport) Push(ctx context.Context, notification *common.Notification) error {
+func (f *fakeTransport) Push(ctx context.Context, notification common.Notification) error {
 	if f.returns != nil {
 		return f.returns
 	}

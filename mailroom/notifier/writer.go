@@ -25,7 +25,7 @@ func (c *WriterNotifier) ID() common.TransportID {
 	return c.id
 }
 
-func (c *WriterNotifier) Push(ctx context.Context, n *common.Notification) error {
+func (c *WriterNotifier) Push(ctx context.Context, n common.Notification) error {
 	_, err := fmt.Fprintf(
 		c.writer,
 		"notification: type=%s, from=%s, to=%s, message=%s\n",
