@@ -21,7 +21,14 @@ func TestHandler(t *testing.T) {
 	t.Parallel()
 
 	somePayload := &struct{}{}
-	someNotifications := []*common.Notification{}
+	someNotifications := []*common.Notification{
+		{
+			Type: "com.example.event",
+			Message: common.RendererFunc(func(transport common.TransportID) string {
+				return "some message"
+			}),
+		},
+	}
 	someError := errors.New("some error")
 
 	tests := []struct {
@@ -110,7 +117,7 @@ func notifierThatReturns(t *testing.T, err error) notifier.Notifier {
 	t.Helper()
 
 	notif := notifier.MockNotifier{}
-	notif.On("Push", mock.Anything).Return(err)
+	notif.On("Push", mock.Anything, mock.Anything).Return(err)
 
 	return &notif
 }

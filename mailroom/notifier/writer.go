@@ -25,23 +25,17 @@ func (c *WriterNotifier) ID() common.TransportID {
 	return c.id
 }
 
-func (c *WriterNotifier) Push(ctx context.Context, notifications ...*common.Notification) error {
-	for _, n := range notifications {
-		_, err := fmt.Fprintf(
-			c.writer,
-			"notification: type=%s, from=%s, to=%s, message=%s\n",
-			n.Type,
-			n.Initiator,
-			n.Recipient,
-			n.Message.Render("writer"),
-		)
+func (c *WriterNotifier) Push(ctx context.Context, n *common.Notification) error {
+	_, err := fmt.Fprintf(
+		c.writer,
+		"notification: type=%s, from=%s, to=%s, message=%s\n",
+		n.Type,
+		n.Initiator,
+		n.Recipient,
+		n.Message.Render("writer"),
+	)
 
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }
 
 func NewWriterNotifier(id common.TransportID, writer io.Writer) *WriterNotifier {

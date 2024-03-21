@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -38,6 +39,14 @@ func CreateHandler(ctx context.Context, s *source.Source, n notifier.Notifier) h
 			return fmt.Errorf("failed to generate notifications: %w", err)
 		}
 
-		return n.Push(ctx, notifications...)
+		var errs []error
+		for _, notification := range notifications {
+			err := n.Push(ctx, notification)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		return errors.Join(errs...)
 	}
 }

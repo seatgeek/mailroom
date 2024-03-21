@@ -11,13 +11,13 @@ import (
 )
 
 // Notifier is an interface for sending notifications
-// Implementations of this interface may be specific transports (eg. Slack, Email), or perhaps a queueing system that
-// sends notifications to multiple transports, or anything else.
+// Implementations of this interface may send them to a Transport, enqueue them for later,
+// batch multiple notifications together, etc.
 // Using the decorator design pattern to add functionality to a Notifier is encouraged!
 // (https://refactoring.guru/design-patterns/decorator)
 type Notifier interface {
-	// Push sends one or more notifications, either immediately or enqueued for later delivery
-	Push(context.Context, ...*common.Notification) error
+	// Push sends a notification, either immediately or enqueued for later delivery
+	Push(context.Context, *common.Notification) error
 }
 
 type Transport interface {

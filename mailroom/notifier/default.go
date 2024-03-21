@@ -7,6 +7,7 @@ package notifier
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/user"
@@ -19,24 +20,21 @@ type DefaultNotifier struct {
 	transports []Transport
 }
 
-func (d *DefaultNotifier) Push(ctx context.Context, notifications ...*common.Notification) error {
+func (d *DefaultNotifier) Push(ctx context.Context, notification *common.Notification) error {
 	var errs []error
 
-	for _, notification := range notifications {
-		recipientUser, err := d.userStore.Find(notification.Recipient)
-		if err != nil {
-			errs = append(errs, err)
+	recipientUser, err := d.userStore.Find(notification.Recipient)
+	if err != nil {
+		return fmt.Errorf("failed to find recipient user: %w", err)
+	}
+
+	for _, transport := range d.transports {
+		if !recipientUser.Wants(notification.Type, transport.ID()) {
 			continue
 		}
 
-		for _, transport := range d.transports {
-			if !recipientUser.Wants(notification.Type, transport.ID()) {
-				continue
-			}
-
-			if err = transport.Push(ctx, notification); err != nil {
-				errs = append(errs, err)
-			}
+		if err = transport.Push(ctx, notification); err != nil {
+			errs = append(errs, err)
 		}
 	}
 

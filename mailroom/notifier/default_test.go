@@ -6,7 +6,6 @@ package notifier
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -37,23 +36,17 @@ func TestDefaultNotifier_Push(t *testing.T) {
 	store := user.NewInMemoryStore(knownUser)
 
 	tests := []struct {
-		name          string
-		notifications []*common.Notification
-		transports    []Transport
-		wantSent      []wantSent
-		wantErrs      []error
+		name         string
+		notification *common.Notification
+		transports   []Transport
+		wantSent     []wantSent
+		wantErrs     []error
 	}{
 		{
 			name: "user wants all",
-			notifications: []*common.Notification{
-				{
-					Type:      "com.example.one",
-					Recipient: knownUser.Identifiers,
-				},
-				{
-					Type:      "com.example.two",
-					Recipient: knownUser.Identifiers,
-				},
+			notification: &common.Notification{
+				Type:      "com.example.one",
+				Recipient: knownUser.Identifiers,
 			},
 			transports: []Transport{
 				&fakeTransport{id: "email"},
@@ -62,37 +55,27 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			wantSent: []wantSent{
 				{event: "com.example.one", transport: "email"},
 				{event: "com.example.one", transport: "slack"},
+			},
+		},
+		{
+			name: "user wants some",
+			notification: &common.Notification{
+				Type:      "com.example.two",
+				Recipient: knownUser.Identifiers,
+			},
+			transports: []Transport{
+				&fakeTransport{id: "email"},
+				&fakeTransport{id: "slack"},
+			},
+			wantSent: []wantSent{
 				{event: "com.example.two", transport: "email"},
 			},
 		},
 		{
-			name:          "no notifications",
-			notifications: []*common.Notification{},
-			wantSent:      []wantSent{},
-			wantErrs:      []error{},
-		},
-		{
-			name: "unknown user",
-			notifications: []*common.Notification{
-				{
-					Type:      "com.example.one",
-					Recipient: unknownUser,
-				},
-				{
-					Type:      "com.example.two",
-					Recipient: unknownUser,
-				},
-			},
-			wantSent: []wantSent{},
-			wantErrs: []error{user.ErrUserNotFound, user.ErrUserNotFound},
-		},
-		{
 			name: "user wants none",
-			notifications: []*common.Notification{
-				{
-					Type:      "com.example.two",
-					Recipient: knownUser.Identifiers,
-				},
+			notification: &common.Notification{
+				Type:      "com.example.three",
+				Recipient: knownUser.Identifiers,
 			},
 			transports: []Transport{
 				&fakeTransport{id: "slack"},
@@ -100,18 +83,25 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			wantSent: []wantSent{},
 		},
 		{
-			name: "transport fails",
-			notifications: []*common.Notification{
-				{
-					Type:      "com.example.one",
-					Recipient: knownUser.Identifiers,
-				},
-			},
-			transports: []Transport{
-				&fakeTransport{id: "email", returns: fmt.Errorf("failed to send email")},
+			name: "unknown user",
+			notification: &common.Notification{
+				Type:      "com.example.one",
+				Recipient: unknownUser,
 			},
 			wantSent: []wantSent{},
-			wantErrs: []error{fmt.Errorf("failed to send email")},
+			wantErrs: []error{user.ErrUserNotFound, user.ErrUserNotFound},
+		},
+		{
+			name: "transport fails",
+			notification: &common.Notification{
+				Type:      "com.example.one",
+				Recipient: knownUser.Identifiers,
+			},
+			transports: []Transport{
+				&fakeTransport{id: "email", returns: errSomethingFailed},
+			},
+			wantSent: []wantSent{},
+			wantErrs: []error{errSomethingFailed},
 		},
 	}
 
@@ -123,12 +113,14 @@ func TestDefaultNotifier_Push(t *testing.T) {
 
 			notifier := New(store, tc.transports...)
 
-			errs := notifier.Push(context.Background(), tc.notifications...)
+			errs := notifier.Push(context.Background(), tc.notification)
 
 			if len(tc.wantErrs) == 0 {
 				assert.NoError(t, errs)
 			} else {
-				assert.Equal(t, errors.Join(tc.wantErrs...), errs)
+				for _, wantErr := range tc.wantErrs {
+					assert.ErrorIs(t, errs, wantErr)
+				}
 			}
 
 			assertSent(t, tc.wantSent, tc.transports)
@@ -155,6 +147,8 @@ func assertSent(t *testing.T, want []wantSent, transports []Transport) {
 	}
 }
 
+var errSomethingFailed = fmt.Errorf("some transport error occurred")
+
 type fakeTransport struct {
 	id      common.TransportID
 	sent    []common.EventType
@@ -167,14 +161,12 @@ func (f *fakeTransport) ID() common.TransportID {
 	return f.id
 }
 
-func (f *fakeTransport) Push(ctx context.Context, notifications ...*common.Notification) error {
+func (f *fakeTransport) Push(ctx context.Context, notification *common.Notification) error {
 	if f.returns != nil {
 		return f.returns
 	}
 
-	for _, n := range notifications {
-		f.sent = append(f.sent, n.Type)
-	}
+	f.sent = append(f.sent, notification.Type)
 
 	return nil
 }
