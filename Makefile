@@ -59,7 +59,7 @@ report-coverage: .install-cover-cobertura .ensure-build-dir
 test-with-coverage: test report-coverage
 
 .PHONY: generate
-generate: generate-mocks
+generate: clean generate-mocks
 
 .PHONY: generate-mocks
 generate-mocks: .install-mockery

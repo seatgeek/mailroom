@@ -33,6 +33,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 			continue
 		}
 
+		// TODO: We should decorate these with some retry logic
 		if err = transport.Push(ctx, notification); err != nil {
 			errs = append(errs, err)
 		}
