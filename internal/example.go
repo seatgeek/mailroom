@@ -30,7 +30,7 @@ func main() {
 	app := mailroom.New(
 		mailroom.WithSources(
 			source.New(
-				"/gitlab",
+				"gitlab",
 				webhooks.NewAdapter(
 					webhooks.Must(gitlab.New(gitlab.Options.Secret("SomeSecretToValidatePayloads"))),
 					gitlab.MergeRequestEvents,
