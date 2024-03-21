@@ -45,7 +45,7 @@ func CreateHandler(ctx context.Context, s *source.Source, n notifier.Notifier) h
 
 		var errs []error
 		for _, notification := range notifications {
-			err := n.Push(ctx, notification)
+			err = n.Push(ctx, notification)
 			if err != nil {
 				errs = append(errs, err)
 			}

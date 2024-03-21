@@ -19,8 +19,6 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/source"
 )
 
-var ErrInvalidPayload = errors.New("invalid payload")
-
 type EventType interface{ ~string }
 
 // hook is an interface that all webhooks implement upstream

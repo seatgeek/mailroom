@@ -139,10 +139,10 @@ func TestCollection_Get(t *testing.T) {
 
 	email := New("email", "codell@seatgeek.com")
 	gitlabUsername := New("gitlab.com/username", "codell")
-	slackId := New("slack.com/id", "U1234567")
+	slackID := New("slack.com/id", "U1234567")
 	slackUsername := New("slack.com/username", "colin.odell")
 
-	identifiers := NewCollection(email, gitlabUsername, slackId, slackUsername)
+	identifiers := NewCollection(email, gitlabUsername, slackID, slackUsername)
 
 	tests := []struct {
 		name       string

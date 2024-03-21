@@ -24,7 +24,7 @@ func TestHandler(t *testing.T) {
 	someNotifications := []common.Notification{
 		{
 			Type: "com.example.event",
-			Message: common.RendererFunc(func(transport common.TransportID) string {
+			Message: common.RendererFunc(func(_ common.TransportID) string {
 				return "some message"
 			}),
 		},

@@ -161,7 +161,7 @@ func (f *fakeTransport) ID() common.TransportID {
 	return f.id
 }
 
-func (f *fakeTransport) Push(ctx context.Context, notification common.Notification) error {
+func (f *fakeTransport) Push(_ context.Context, notification common.Notification) error {
 	if f.returns != nil {
 		return f.returns
 	}

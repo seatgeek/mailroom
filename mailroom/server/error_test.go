@@ -50,7 +50,7 @@ func TestErrHandler(t *testing.T) {
 
 			responseRecorder := httptest.NewRecorder()
 
-			handler := func(writer http.ResponseWriter, request *http.Request) error {
+			handler := func(writer http.ResponseWriter, _ *http.Request) error {
 				if tc.err != nil {
 					return tc.err
 				}
