@@ -24,9 +24,12 @@ func (h *Error) Error() string {
 }
 
 // handlerFunc is basically a http.HandlerFunc that can return an error
+// This allows our handlers to return the special Error type above, which HandleErr would then recognize
+// and generate a consistent error response accordingly. Without this, each handler would have to write
+// its own HTTP error response, which could be error-prone and inconsistent.
 type handlerFunc func(http.ResponseWriter, *http.Request) error
 
-// HandleErr wraps an HTTP handler function and returns a new one that
+// HandleErr wraps an HTTP handlerFunc and returns a new one that
 // handles errors by writing an HTTP response with the error message and status
 func HandleErr(h handlerFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
