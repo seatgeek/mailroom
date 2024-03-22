@@ -97,6 +97,16 @@ func (c *Collection) ToList() []Identifier {
 	return res
 }
 
+func (c *Collection) Add(otherIdentifiers Collection) {
+	if *c == nil {
+		*c = make(Collection, len(otherIdentifiers))
+	}
+
+	for key, val := range otherIdentifiers {
+		(*c)[key] = val
+	}
+}
+
 // NewCollection creates a new Collection from a slice of Identifier objects
 func NewCollection(ids ...Identifier) Collection {
 	res := Collection{}

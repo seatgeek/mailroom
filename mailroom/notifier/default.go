@@ -30,6 +30,9 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 		return fmt.Errorf("failed to find recipient user: %w", err)
 	}
 
+	// The store may know of other identifiers for this user, so we merge those in
+	notification.Recipient.Add(recipientUser.Identifiers)
+
 	for _, transport := range d.transports {
 		if !recipientUser.Wants(notification.Type, transport.ID()) {
 			slog.Debug("user does not want this notification this way", "user", recipientUser, "transport", transport.ID())

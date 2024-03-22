@@ -171,6 +171,70 @@ func TestCollection_ToList(t *testing.T) {
 	}
 }
 
+func TestCollection_Add(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		original Collection
+		add      Collection
+		want     Collection
+	}{
+		{
+			name: "adds and overwrites",
+			original: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			add: NewCollection(
+				New("id", "123"),
+				New("email", "rufus@example.com"),
+			),
+			want: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@example.com"),
+				New("id", "123"),
+			),
+		},
+		{
+			name:     "nil original",
+			original: nil,
+			add:      NewCollection(New("username", "rufus")),
+			want:     NewCollection(New("username", "rufus")),
+		},
+		{
+			name:     "empty original",
+			original: Collection{},
+			add:      NewCollection(New("username", "rufus")),
+			want:     NewCollection(New("username", "rufus")),
+		},
+		{
+			name:     "nil add",
+			original: NewCollection(New("username", "rufus")),
+			add:      nil,
+			want:     NewCollection(New("username", "rufus")),
+		},
+		{
+			name:     "empty add",
+			original: NewCollection(New("username", "rufus")),
+			add:      Collection{},
+			want:     NewCollection(New("username", "rufus")),
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			tc.original.Add(tc.add)
+
+			assert.Equal(t, tc.want, tc.original)
+		})
+	}
+}
+
 func TestNewCollection(t *testing.T) {
 	t.Parallel()
 
