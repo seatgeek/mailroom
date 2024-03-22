@@ -30,6 +30,16 @@ func (n NamespaceAndKind) Split() (string, string) {
 	return parts[0], parts[1]
 }
 
+func (n NamespaceAndKind) Namespace() string {
+	namespace, _ := n.Split()
+	return namespace
+}
+
+func (n NamespaceAndKind) Kind() string {
+	_, kind := n.Split()
+	return kind
+}
+
 // NewNamespaceAndKind creates a new NamespaceAndKind from a namespace and a kind.
 func NewNamespaceAndKind[T ~string](namespace string, kind T) NamespaceAndKind {
 	if namespace == "" {
@@ -69,34 +79,6 @@ func New[T1 ~string, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 // Collection is a map of NamespaceAndKind to a value.
 // Each entry is basically an Identifier.
 type Collection map[NamespaceAndKind]string
-
-// Email returns any email Identifier in the Collection, or false if none exists.
-func (c *Collection) Email() (Identifier, bool) {
-	if c == nil {
-		return Identifier{}, false
-	}
-
-	// Prefer the generic (non-namespaced) email if it exists
-	if val, ok := (*c)[GenericEmail]; ok {
-		return Identifier{
-			NamespaceAndKind: GenericEmail,
-			Value:            val,
-		}, true
-	}
-
-	// Otherwise any email will do
-	for nsAndKind, val := range *c {
-		_, kind := nsAndKind.Split()
-		if kind == string(KindEmail) {
-			return Identifier{
-				NamespaceAndKind: nsAndKind,
-				Value:            val,
-			}, true
-		}
-	}
-
-	return Identifier{}, false
-}
 
 // ToList returns the Collection as a slice of Identifier objects.
 func (c *Collection) ToList() []Identifier {

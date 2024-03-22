@@ -16,48 +16,125 @@ func TestInMemoryStore_Get(t *testing.T) {
 	t.Parallel()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
-	id2 := identifier.New("email", "zhammer@seatgeek.com")
+	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
+	id3 := identifier.New("email", "zhammer@seatgeek.com")
 
-	user1 := New(WithIdentifier(id1))
-	user2 := New(WithIdentifier(id2))
+	userA := New(WithIdentifier(id1), WithIdentifier(id2))
+	userB := New(WithIdentifier(id3))
 
-	store := NewInMemoryStore(user1, user2)
+	store := NewInMemoryStore(userA, userB)
 
-	// Test that we can retrieve the users
-	retrievedUser1, err := store.Get(id1)
-	assert.Equal(t, user1, retrievedUser1)
-	assert.NoError(t, err)
+	tests := []struct {
+		name    string
+		input   identifier.Identifier
+		want    *User
+		wantErr error
+	}{
+		{
+			name:  "exact match (test 1)",
+			input: id1,
+			want:  userA,
+		},
+		{
+			name:  "exact match (test 2)",
+			input: id2,
+			want:  userA,
+		},
+		{
+			name:  "exact match (test 3)",
+			input: id3,
+			want:  userB,
+		},
+		{
+			name:    "no match",
+			input:   identifier.New("email", "rufus@seatgeek.com"),
+			wantErr: ErrUserNotFound,
+		},
+		{
+			name:  "fallback to any email",
+			input: identifier.New("slack.com/email", "colin.odell@seatgeek.com"),
+			want:  userA,
+		},
+	}
 
-	retrievedUser2, err := store.Get(id2)
-	assert.Equal(t, user2, retrievedUser2)
-	assert.NoError(t, err)
+	for _, tc := range tests {
+		tc := tc
 
-	// Test that we can't retrieve a user that doesn't exist
-	_, err = store.Get(identifier.New("email", "rufus@seatgeek.com"))
-	assert.Error(t, err)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := store.Get(tc.input)
+
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantErr, err)
+		})
+	}
 }
 
 func TestInMemoryStore_Find(t *testing.T) {
 	t.Parallel()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
-	id2 := identifier.New("email", "zhammer@seatgeek.com")
+	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
+	id3 := identifier.New("email", "zhammer@seatgeek.com")
 
-	user1 := New(WithIdentifier(id1))
-	user2 := New(WithIdentifier(id2))
+	userA := New(WithIdentifier(id1), WithIdentifier(id2))
+	userB := New(WithIdentifier(id3))
 
-	store := NewInMemoryStore(user1, user2)
+	store := NewInMemoryStore(userA, userB)
 
-	// Test that we can find the users
-	retrievedUser1, err := store.Find(user1.Identifiers)
-	assert.Equal(t, user1, retrievedUser1)
-	assert.NoError(t, err)
+	tests := []struct {
+		name    string
+		input   identifier.Collection
+		want    *User
+		wantErr error
+	}{
+		{
+			name:  "exact match (test 1)",
+			input: identifier.NewCollection(id1),
+			want:  userA,
+		},
+		{
+			name:  "exact match (test 2)",
+			input: identifier.NewCollection(id2),
+			want:  userA,
+		},
+		{
+			name:  "exact match (test 3)",
+			input: identifier.NewCollection(id3),
+			want:  userB,
+		},
+		{
+			name: "exact match (multiple inputs)",
+			input: identifier.NewCollection(
+				identifier.New("email", "foo@example.com"),
+				identifier.New("email", "bar@example.com"),
+				id1,
+			),
+			want: userA,
+		},
+		{
+			name:    "no match",
+			input:   identifier.NewCollection(identifier.New("email", "foo@example.com")),
+			wantErr: ErrUserNotFound,
+		},
+		{
+			name:  "fallback to any email",
+			input: identifier.NewCollection(identifier.New("slack.com/email", "colin.odell@seatgeek.com")),
+			want:  userA,
+		},
+	}
 
-	retrievedUser2, err := store.Find(user2.Identifiers)
-	assert.Equal(t, user2, retrievedUser2)
-	assert.NoError(t, err)
+	for _, tc := range tests {
+		tc := tc
 
-	// Test that we can't find a user that doesn't exist
-	_, err = store.Find(identifier.NewCollection(identifier.New("email", "rufus@seatgeek.com")))
-	assert.Error(t, err)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := store.Find(tc.input)
+
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantErr, err)
+		})
+	}
 }

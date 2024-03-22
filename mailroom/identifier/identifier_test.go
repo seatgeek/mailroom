@@ -40,6 +40,10 @@ func TestNamespaceAndKind_Split(t *testing.T) {
 
 			assert.Equal(t, tc.wantNamespace, namespace)
 			assert.Equal(t, tc.wantKind, kind)
+
+			// We'll also test the Namespace() and Kind() methods here since they are simple wrappers around Split()
+			assert.Equal(t, tc.wantNamespace, tc.input.Namespace())
+			assert.Equal(t, tc.wantKind, tc.input.Kind())
 		})
 	}
 }
@@ -126,52 +130,6 @@ func TestNew(t *testing.T) {
 		assert.Equal(t, nsAndKind, got.NamespaceAndKind)
 		assert.Equal(t, "U1234567", got.Value)
 	})
-}
-
-func TestCollection_Email(t *testing.T) {
-	t.Parallel()
-
-	genericEmail := New(GenericEmail, "codell@seatgeek.com")
-	githubID := New("github.com/id", "1234567")
-	githubEmail := New("github.com/email", "colinodell@gmail.com")
-
-	tests := []struct {
-		name        string
-		identifiers Collection
-		want        Identifier
-		wantExists  bool
-	}{
-		{
-			name:        "generic email is preferred",
-			identifiers: NewCollection(genericEmail, githubID, githubEmail),
-			want:        genericEmail,
-			wantExists:  true,
-		},
-		{
-			name:        "any email will do",
-			identifiers: NewCollection(githubID, githubEmail),
-			want:        githubEmail,
-			wantExists:  true,
-		},
-		{
-			name:        "no email available",
-			identifiers: NewCollection(githubID),
-			wantExists:  false,
-		},
-	}
-
-	for _, tc := range tests {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, exists := tc.identifiers.Email()
-
-			assert.Equal(t, tc.want, got)
-			assert.Equal(t, tc.wantExists, exists)
-		})
-	}
 }
 
 func TestCollection_ToList(t *testing.T) {
