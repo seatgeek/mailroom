@@ -82,7 +82,7 @@ type Collection map[NamespaceAndKind]string
 
 // ToList returns the Collection as a slice of Identifier objects.
 func (c *Collection) ToList() []Identifier {
-	if c == nil {
+	if *c == nil {
 		return nil
 	}
 
