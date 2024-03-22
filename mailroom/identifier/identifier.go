@@ -71,13 +71,13 @@ func New[T1 ~string, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 type Collection map[NamespaceAndKind]string
 
 // Email returns any email Identifier in the Collection, or false if none exists.
-func (i *Collection) Email() (Identifier, bool) {
-	if *i == nil {
+func (c *Collection) Email() (Identifier, bool) {
+	if c == nil {
 		return Identifier{}, false
 	}
 
 	// Prefer the generic (non-namespaced) email if it exists
-	if val, ok := (*i)[GenericEmail]; ok {
+	if val, ok := (*c)[GenericEmail]; ok {
 		return Identifier{
 			NamespaceAndKind: GenericEmail,
 			Value:            val,
@@ -85,7 +85,7 @@ func (i *Collection) Email() (Identifier, bool) {
 	}
 
 	// Otherwise any email will do
-	for nsAndKind, val := range *i {
+	for nsAndKind, val := range *c {
 		_, kind := nsAndKind.Split()
 		if kind == string(KindEmail) {
 			return Identifier{
@@ -99,13 +99,13 @@ func (i *Collection) Email() (Identifier, bool) {
 }
 
 // ToList returns the Collection as a slice of Identifier objects.
-func (i *Collection) ToList() []Identifier {
-	if *i == nil {
+func (c *Collection) ToList() []Identifier {
+	if c == nil {
 		return nil
 	}
 
-	res := make([]Identifier, 0, len(*i))
-	for key, val := range *i {
+	res := make([]Identifier, 0, len(*c))
+	for key, val := range *c {
 		res = append(res, Identifier{
 			NamespaceAndKind: key,
 			Value:            val,
