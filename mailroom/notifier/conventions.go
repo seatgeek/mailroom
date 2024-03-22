@@ -6,9 +6,12 @@ package notifier
 
 import (
 	"context"
+	"errors"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 )
+
+var ErrPermanentFailure = errors.New("permanent failure")
 
 // Notifier is an interface for sending notifications
 // Implementations of this interface may send them to a Transport, enqueue them for later,
@@ -17,6 +20,7 @@ import (
 // (https://refactoring.guru/design-patterns/decorator)
 type Notifier interface {
 	// Push sends a notification, either immediately or enqueued for later delivery
+	// It SHOULD return an error containing ErrPermanentFailure if we know that retries will never succeed
 	Push(context.Context, common.Notification) error
 }
 
