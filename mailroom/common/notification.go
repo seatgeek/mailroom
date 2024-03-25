@@ -16,7 +16,7 @@ type EventType string
 // Notification is a notification that should be sent
 type Notification interface {
 	Type() EventType
-	Recipients() identifier.Collection
+	Recipient() identifier.Collection
 	Render(TransportID) string
 	AddRecipients(identifier.Collection)
 }

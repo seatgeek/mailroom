@@ -24,9 +24,9 @@ type DefaultNotifier struct {
 func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notification) error {
 	var errs []error
 
-	recipientUser, err := d.userStore.Find(notification.Recipients())
+	recipientUser, err := d.userStore.Find(notification.Recipient())
 	if err != nil {
-		slog.Debug("failed to find user", "user", notification.Recipients(), "error", err)
+		slog.Debug("failed to find user", "user", notification.Recipient(), "error", err)
 		return fmt.Errorf("failed to find recipient user: %w", err)
 	}
 

@@ -33,13 +33,8 @@ func NewBuilder(eventType common.EventType) *Builder {
 	}
 }
 
-func (b *Builder) WithRecipients(recipients identifier.Collection) *Builder {
-	b.opts.recipients = recipients
-	return b
-}
-
-func (b *Builder) WithRecipient(recipient identifier.Identifier) *Builder {
-	b.opts.recipients = identifier.NewCollection(recipient)
+func (b *Builder) WithRecipient(identifiers ...identifier.Identifier) *Builder {
+	b.opts.recipients = identifier.NewCollection(identifiers...)
 	return b
 }
 
@@ -68,7 +63,7 @@ func (b *builderOpts) Type() common.EventType {
 	return b.eventType
 }
 
-func (b *builderOpts) Recipients() identifier.Collection {
+func (b *builderOpts) Recipient() identifier.Collection {
 	return b.recipients
 }
 

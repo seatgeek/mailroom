@@ -32,7 +32,7 @@ type RichNotification interface {
 // In addition to supporting common.Notification, it also supports RichNotification for more complex messages
 // that might include attachments, blocks, etc.
 func (s *Transport) Push(ctx context.Context, notification common.Notification) error {
-	id, ok := notification.Recipients().Get(ID)
+	id, ok := notification.Recipient().Get(ID)
 	if !ok {
 		return fmt.Errorf("%w: recipient does not have a Slack ID", notifier.ErrPermanentFailure)
 	}

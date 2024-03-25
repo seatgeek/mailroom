@@ -21,34 +21,22 @@ func TestNewBuilder(t *testing.T) {
 
 	empty := builder.Build()
 	assert.Equal(t, common.EventType("com.example.test"), empty.Type())
-	assert.Empty(t, empty.Recipients().ToList())
+	assert.Empty(t, empty.Recipient().ToList())
 	assert.Empty(t, empty.Render("email"))
 
 	builderWithRecipient := builder.WithRecipient(identifier.New(identifier.GenericUsername, "codell"))
 
 	withRecipient := builderWithRecipient.Build()
 	assert.Equal(t, common.EventType("com.example.test"), withRecipient.Type())
-	assert.Len(t, withRecipient.Recipients().ToList(), 1)
-	assert.Equal(t, "codell", withRecipient.Recipients().MustGet(identifier.GenericUsername))
+	assert.Len(t, withRecipient.Recipient().ToList(), 1)
+	assert.Equal(t, "codell", withRecipient.Recipient().MustGet(identifier.GenericUsername))
 	assert.Empty(t, withRecipient.Render("email"))
-
-	builderWithRecipients := builder.WithRecipients(identifier.NewCollection(
-		identifier.New(identifier.GenericUsername, "rufus"),
-		identifier.New(identifier.GenericEmail, "rufus@seatgeek.com"),
-	))
-
-	withRecipients := builderWithRecipients.Build()
-	assert.Equal(t, common.EventType("com.example.test"), withRecipients.Type())
-	assert.Len(t, withRecipient.Recipients().ToList(), 2)
-	assert.Equal(t, "rufus", withRecipients.Recipients().MustGet(identifier.GenericUsername))
-	assert.Equal(t, "rufus@seatgeek.com", withRecipients.Recipients().MustGet(identifier.GenericEmail))
-	assert.Empty(t, withRecipients.Render("email"))
 
 	builderWithDefaultMessage := builder.WithDefaultMessage("Hello, world!")
 
 	withDefaultMessage := builderWithDefaultMessage.Build()
 	assert.Equal(t, common.EventType("com.example.test"), withDefaultMessage.Type())
-	assert.Len(t, withRecipient.Recipients().ToList(), 2)
+	assert.Len(t, withRecipient.Recipient().ToList(), 1)
 	assert.Equal(t, "Hello, world!", withDefaultMessage.Render("email"))
 	assert.Equal(t, "Hello, world!", withDefaultMessage.Render("slack"))
 
@@ -56,7 +44,7 @@ func TestNewBuilder(t *testing.T) {
 
 	withMessageForTransport := builderWithMessageForTransport.Build()
 	assert.Equal(t, common.EventType("com.example.test"), withMessageForTransport.Type())
-	assert.Len(t, withRecipient.Recipients().ToList(), 2)
+	assert.Len(t, withRecipient.Recipient().ToList(), 1)
 	assert.Equal(t, "Hello, email!", withMessageForTransport.Render("email"))
 	assert.Equal(t, "Hello, world!", withMessageForTransport.Render("slack"))
 
@@ -66,7 +54,7 @@ func TestNewBuilder(t *testing.T) {
 
 	withSlackOpts := builderWithSlackOpts.Build()
 	assert.Equal(t, common.EventType("com.example.test"), withSlackOpts.Type())
-	assert.Len(t, withRecipient.Recipients().ToList(), 2)
+	assert.Len(t, withRecipient.Recipient().ToList(), 1)
 	assert.Equal(t, "Hello, email!", withSlackOpts.Render("email"))
 	assert.Equal(t, "Hello, world!", withSlackOpts.Render("slack"))
 	assert.Len(t, withSlackOpts.RenderSlack(), 1)

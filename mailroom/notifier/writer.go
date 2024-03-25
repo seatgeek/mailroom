@@ -30,7 +30,7 @@ func (c *WriterNotifier) Push(_ context.Context, n common.Notification) error {
 		c.writer,
 		"notification: type=%s, to=%s, message=%s\n",
 		n.Type(),
-		n.Recipients(),
+		n.Recipient(),
 		n.Render("writer"),
 	)
 
