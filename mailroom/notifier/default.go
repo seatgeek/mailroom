@@ -24,17 +24,17 @@ type DefaultNotifier struct {
 func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notification) error {
 	var errs []error
 
-	recipientUser, err := d.userStore.Find(notification.Recipient)
+	recipientUser, err := d.userStore.Find(notification.Recipients())
 	if err != nil {
-		slog.Debug("failed to find user", "user", notification.Recipient, "error", err)
+		slog.Debug("failed to find user", "user", notification.Recipients(), "error", err)
 		return fmt.Errorf("failed to find recipient user: %w", err)
 	}
 
 	// The store may know of other identifiers for this user, so we merge those in
-	notification.Recipient.Add(recipientUser.Identifiers)
+	notification.AddRecipients(recipientUser.Identifiers)
 
 	for _, transport := range d.transports {
-		if !recipientUser.Wants(notification.Type, transport.ID()) {
+		if !recipientUser.Wants(notification.Type(), transport.ID()) {
 			slog.Debug("user does not want this notification this way", "user", recipientUser, "transport", transport.ID())
 			continue
 		}

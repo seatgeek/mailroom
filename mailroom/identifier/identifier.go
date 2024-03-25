@@ -7,6 +7,7 @@ package identifier
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // NamespaceAndKind is a combination of a namespace and a kind.
@@ -76,18 +77,61 @@ func New[T1 ~string, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 	}
 }
 
-// Collection is a map of NamespaceAndKind to a value.
+// Collection holds a thread-safe map of NamespaceAndKind to a value.
 // Each entry is basically an Identifier.
-type Collection map[NamespaceAndKind]string
+type Collection interface {
+	Get(NamespaceAndKind) (string, bool)
+	MustGet(NamespaceAndKind) string
+	Add(Identifier)
+	Merge(Collection)
+	ToList() []Identifier
+}
 
-// ToList returns the Collection as a slice of Identifier objects.
-func (c *Collection) ToList() []Identifier {
-	if *c == nil {
-		return nil
+type collection struct {
+	ids   map[NamespaceAndKind]string
+	mutex sync.RWMutex
+}
+
+func (c *collection) Get(namespaceAndKind NamespaceAndKind) (string, bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	val, ok := c.ids[namespaceAndKind]
+	return val, ok
+}
+
+func (c *collection) MustGet(namespaceAndKind NamespaceAndKind) string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	val, ok := c.ids[namespaceAndKind]
+	if !ok {
+		panic(fmt.Sprintf("no value found for %s", namespaceAndKind))
 	}
 
-	res := make([]Identifier, 0, len(*c))
-	for key, val := range *c {
+	return val
+}
+
+func (c *collection) Add(id Identifier) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.ids[id.NamespaceAndKind] = id.Value
+}
+
+func (c *collection) Merge(otherIdentifiers Collection) {
+	for _, id := range otherIdentifiers.ToList() {
+		c.Add(id)
+	}
+}
+
+// ToList returns the Collection as a slice of Identifier objects.
+func (c *collection) ToList() []Identifier {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	res := make([]Identifier, 0, len(c.ids))
+	for key, val := range c.ids {
 		res = append(res, Identifier{
 			NamespaceAndKind: key,
 			Value:            val,
@@ -97,21 +141,21 @@ func (c *Collection) ToList() []Identifier {
 	return res
 }
 
-func (c *Collection) Add(otherIdentifiers Collection) {
-	if *c == nil {
-		*c = make(Collection, len(otherIdentifiers))
-	}
+func (c *collection) String() string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 
-	for key, val := range otherIdentifiers {
-		(*c)[key] = val
-	}
+	return fmt.Sprintf("%v", c.ids)
 }
 
 // NewCollection creates a new Collection from a slice of Identifier objects
 func NewCollection(ids ...Identifier) Collection {
-	res := Collection{}
+	res := &collection{
+		ids: make(map[NamespaceAndKind]string, len(ids)),
+	}
+
 	for _, id := range ids {
-		res[id.NamespaceAndKind] = id.Value
+		res.ids[id.NamespaceAndKind] = id.Value
 	}
 
 	return res

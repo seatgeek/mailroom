@@ -20,7 +20,7 @@ type User struct {
 // New creates a new User with the given options
 func New(options ...Option) *User {
 	u := &User{
-		Identifiers: make(identifier.Collection),
+		Identifiers: identifier.NewCollection(),
 		preferences: make(map[common.EventType]map[common.TransportID]bool),
 	}
 
@@ -36,16 +36,14 @@ type Option func(*User)
 // WithIdentifier adds an identifier to a User
 func WithIdentifier(id identifier.Identifier) Option {
 	return func(u *User) {
-		u.Identifiers[id.NamespaceAndKind] = id.Value
+		u.Identifiers.Add(id)
 	}
 }
 
 // WithIdentifiers adds multiple identifiers to a User
 func WithIdentifiers(ids identifier.Collection) Option {
 	return func(u *User) {
-		for k, v := range ids {
-			u.Identifiers[k] = v
-		}
+		u.Identifiers.Merge(ids)
 	}
 }
 

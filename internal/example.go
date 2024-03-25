@@ -71,14 +71,6 @@ func main() {
 					user.WithIdentifier(identifier.New("slack.com/id", "U4567")),
 					user.WithPreference("com.example.notification", "console", true),
 				),
-				user.New(
-					user.WithIdentifiers(identifier.Collection{
-						identifier.GenericEmail: "zhammer@seatgeek.com",
-						"gitlab.com/id":         "456",
-						"slack.com/id":          "U7654",
-					}),
-					user.WithPreference("com.example.notification", "console", true),
-				),
 			),
 		),
 	)

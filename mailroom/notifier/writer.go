@@ -28,11 +28,10 @@ func (c *WriterNotifier) ID() common.TransportID {
 func (c *WriterNotifier) Push(_ context.Context, n common.Notification) error {
 	_, err := fmt.Fprintf(
 		c.writer,
-		"notification: type=%s, from=%s, to=%s, message=%s\n",
-		n.Type,
-		n.Initiator,
-		n.Recipient,
-		n.Message.Render("writer"),
+		"notification: type=%s, to=%s, message=%s\n",
+		n.Type(),
+		n.Recipients(),
+		n.Render("writer"),
 	)
 
 	return err

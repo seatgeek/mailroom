@@ -2,7 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
-package notifier
+package notifier_test
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
+	"github.com/seatgeek/mailroom/mailroom/notification"
+	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/user"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +25,7 @@ type wantSent struct {
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
-	unknownUser := identifier.Collection{}
+	unknownUser := identifier.NewCollection()
 
 	knownUser := user.New(
 		user.WithIdentifier(identifier.New(identifier.GenericUsername, "rufus")),
@@ -38,17 +40,14 @@ func TestDefaultNotifier_Push(t *testing.T) {
 	tests := []struct {
 		name         string
 		notification common.Notification
-		transports   []Transport
+		transports   []notifier.Transport
 		wantSent     []wantSent
 		wantErrs     []error
 	}{
 		{
-			name: "user wants all",
-			notification: common.Notification{
-				Type:      "com.example.one",
-				Recipient: knownUser.Identifiers,
-			},
-			transports: []Transport{
+			name:         "user wants all",
+			notification: notificationFor("com.example.one", knownUser.Identifiers),
+			transports: []notifier.Transport{
 				&fakeTransport{id: "email"},
 				&fakeTransport{id: "slack"},
 			},
@@ -58,12 +57,9 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			},
 		},
 		{
-			name: "user wants some",
-			notification: common.Notification{
-				Type:      "com.example.two",
-				Recipient: knownUser.Identifiers,
-			},
-			transports: []Transport{
+			name:         "user wants some",
+			notification: notificationFor("com.example.two", knownUser.Identifiers),
+			transports: []notifier.Transport{
 				&fakeTransport{id: "email"},
 				&fakeTransport{id: "slack"},
 			},
@@ -72,32 +68,23 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			},
 		},
 		{
-			name: "user wants none",
-			notification: common.Notification{
-				Type:      "com.example.three",
-				Recipient: knownUser.Identifiers,
-			},
-			transports: []Transport{
+			name:         "user wants none",
+			notification: notificationFor("com.example.three", knownUser.Identifiers),
+			transports: []notifier.Transport{
 				&fakeTransport{id: "slack"},
 			},
 			wantSent: []wantSent{},
 		},
 		{
-			name: "unknown user",
-			notification: common.Notification{
-				Type:      "com.example.one",
-				Recipient: unknownUser,
-			},
-			wantSent: []wantSent{},
-			wantErrs: []error{user.ErrUserNotFound, user.ErrUserNotFound},
+			name:         "unknown user",
+			notification: notificationFor("com.example.one", unknownUser),
+			wantSent:     []wantSent{},
+			wantErrs:     []error{user.ErrUserNotFound, user.ErrUserNotFound},
 		},
 		{
-			name: "transport fails",
-			notification: common.Notification{
-				Type:      "com.example.one",
-				Recipient: knownUser.Identifiers,
-			},
-			transports: []Transport{
+			name:         "transport fails",
+			notification: notificationFor("com.example.one", knownUser.Identifiers),
+			transports: []notifier.Transport{
 				&fakeTransport{id: "email", returns: errSomethingFailed},
 			},
 			wantSent: []wantSent{},
@@ -111,7 +98,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			notifier := New(store, tc.transports...)
+			notifier := notifier.New(store, tc.transports...)
 
 			errs := notifier.Push(context.Background(), tc.notification)
 
@@ -128,7 +115,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 	}
 }
 
-func assertSent(t *testing.T, want []wantSent, transports []Transport) {
+func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) {
 	t.Helper()
 
 	for _, w := range want {
@@ -155,7 +142,7 @@ type fakeTransport struct {
 	returns error
 }
 
-var _ Transport = (*fakeTransport)(nil)
+var _ notifier.Transport = (*fakeTransport)(nil)
 
 func (f *fakeTransport) ID() common.TransportID {
 	return f.id
@@ -166,7 +153,14 @@ func (f *fakeTransport) Push(_ context.Context, notification common.Notification
 		return f.returns
 	}
 
-	f.sent = append(f.sent, notification.Type)
+	f.sent = append(f.sent, notification.Type())
 
 	return nil
+}
+
+func notificationFor(eventType common.EventType, recipients identifier.Collection) common.Notification {
+	return notification.NewBuilder(eventType).
+		WithRecipients(recipients).
+		WithDefaultMessage("hello world").
+		Build()
 }

@@ -48,14 +48,14 @@ func (s *InMemoryStore) Get(identifier identifier.Identifier) (*User, error) {
 	isEmail := identifier.Kind() == "email"
 
 	for _, u := range s.users {
-		for k, v := range u.Identifiers {
+		for _, existing := range u.Identifiers.ToList() {
 			// Look for an exact match
-			if k == identifier.NamespaceAndKind && v == identifier.Value {
+			if existing.NamespaceAndKind == identifier.NamespaceAndKind && existing.Value == identifier.Value {
 				return u, nil
 			}
 
 			// Or if the identifier is an email, look for any matching email
-			if isEmail && k.Kind() == "email" && v == identifier.Value {
+			if isEmail && existing.Kind() == "email" && existing.Value == identifier.Value {
 				return u, nil
 			}
 		}

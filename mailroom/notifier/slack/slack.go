@@ -16,22 +16,45 @@ import (
 
 var ID = identifier.NewNamespaceAndKind("slack.com", identifier.KindID)
 
+// Transport supports sending messages to Slack
 type Transport struct {
 	id     common.TransportID
 	client *slack.Client
 }
 
+// RichNotification is an optional interface that can be implemented by any notification supporting Slack formatting
+type RichNotification interface {
+	common.Notification
+	RenderSlack() []slack.MsgOption
+}
+
+// Push sends a notification to a Slack user
+// In addition to supporting common.Notification, it also supports RichNotification for more complex messages
+// that might include attachments, blocks, etc.
 func (s *Transport) Push(ctx context.Context, notification common.Notification) error {
-	id, ok := notification.Recipient[ID]
+	id, ok := notification.Recipients().Get(ID)
 	if !ok {
 		return fmt.Errorf("%w: recipient does not have a Slack ID", notifier.ErrPermanentFailure)
 	}
 
-	body := notification.Message.Render(s.id)
+	options := s.getMessageOptions(notification)
 
-	_, _, err := s.client.PostMessageContext(ctx, id, slack.MsgOptionText(body, false))
+	_, _, err := s.client.PostMessageContext(ctx, id, options...)
 
 	return err
+}
+
+func (s *Transport) getMessageOptions(notification common.Notification) []slack.MsgOption {
+	if n, ok := notification.(RichNotification); ok {
+		opts := n.RenderSlack()
+		if len(opts) > 0 {
+			return opts
+		}
+	}
+
+	return []slack.MsgOption{
+		slack.MsgOptionText(notification.Render(s.id), false),
+	}
 }
 
 func (s *Transport) ID() common.TransportID {

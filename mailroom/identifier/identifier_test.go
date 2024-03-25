@@ -142,7 +142,7 @@ func TestCollection_ToList(t *testing.T) {
 	}{
 		{
 			name:       "empty",
-			collection: Collection{},
+			collection: NewCollection(),
 			want:       nil,
 		},
 		{
@@ -177,47 +177,36 @@ func TestCollection_Add(t *testing.T) {
 	tests := []struct {
 		name     string
 		original Collection
-		add      Collection
+		add      Identifier
 		want     Collection
 	}{
 		{
-			name: "adds and overwrites",
+			name: "adds",
 			original: NewCollection(
+				New("username", "rufus"),
+			),
+			add: New("email", "rufus@seatgeek.com"),
+			want: NewCollection(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
-			add: NewCollection(
-				New("id", "123"),
-				New("email", "rufus@example.com"),
-			),
-			want: NewCollection(
-				New("username", "rufus"),
-				New("email", "rufus@example.com"),
-				New("id", "123"),
-			),
 		},
 		{
-			name:     "nil original",
-			original: nil,
-			add:      NewCollection(New("username", "rufus")),
-			want:     NewCollection(New("username", "rufus")),
+			name: "overwrites",
+			original: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@example.com"),
+			),
+			add: New("email", "rufus@seatgeek.com"),
+			want: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
 		},
 		{
 			name:     "empty original",
-			original: Collection{},
-			add:      NewCollection(New("username", "rufus")),
-			want:     NewCollection(New("username", "rufus")),
-		},
-		{
-			name:     "nil add",
-			original: NewCollection(New("username", "rufus")),
-			add:      nil,
-			want:     NewCollection(New("username", "rufus")),
-		},
-		{
-			name:     "empty add",
-			original: NewCollection(New("username", "rufus")),
-			add:      Collection{},
+			original: NewCollection(),
+			add:      New("username", "rufus"),
 			want:     NewCollection(New("username", "rufus")),
 		},
 	}
@@ -235,29 +224,42 @@ func TestCollection_Add(t *testing.T) {
 	}
 }
 
-func TestNewCollection(t *testing.T) {
+func TestCollection_Merge(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		args []Identifier
-		want Collection
+		name     string
+		original Collection
+		merge    Collection
+		want     Collection
 	}{
 		{
-			name: "empty",
-			args: []Identifier{},
-			want: Collection{},
+			name: "adds and overwrites",
+			original: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			merge: NewCollection(
+				New("id", "123"),
+				New("email", "rufus@example.com"),
+			),
+			want: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@example.com"),
+				New("id", "123"),
+			),
 		},
 		{
-			name: "non-empty",
-			args: []Identifier{
-				New(KindUsername, "rufus"),
-				New(KindEmail, "rufus@seatgeek.com"),
-			},
-			want: Collection{
-				"username": "rufus",
-				"email":    "rufus@seatgeek.com",
-			},
+			name:     "empty original",
+			original: NewCollection(),
+			merge:    NewCollection(New("username", "rufus")),
+			want:     NewCollection(New("username", "rufus")),
+		},
+		{
+			name:     "empty merge",
+			original: NewCollection(New("username", "rufus")),
+			merge:    NewCollection(),
+			want:     NewCollection(New("username", "rufus")),
 		},
 	}
 
@@ -267,9 +269,102 @@ func TestNewCollection(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := NewCollection(tc.args...)
+			tc.original.Merge(tc.merge)
+
+			assert.Equal(t, tc.want, tc.original)
+		})
+	}
+}
+
+func TestCollection_Get(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		collection Collection
+		key        NamespaceAndKind
+		want       string
+		wantOK     bool
+	}{
+		{
+			name: "found",
+			collection: NewCollection(
+				New("username", "rufus"),
+			),
+			key:    "username",
+			want:   "rufus",
+			wantOK: true,
+		},
+		{
+			name: "not found",
+			collection: NewCollection(
+				New("username", "rufus"),
+			),
+			key:    "email",
+			want:   "",
+			wantOK: false,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, ok := tc.collection.Get(tc.key)
 
 			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantOK, ok)
+		})
+	}
+}
+
+func TestCollection_MustGet(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		collection Collection
+		key        NamespaceAndKind
+		want       string
+		wantPanic  bool
+	}{
+		{
+			name: "found",
+			collection: NewCollection(
+				New("username", "rufus"),
+			),
+			key:       "username",
+			want:      "rufus",
+			wantPanic: false,
+		},
+		{
+			name: "not found",
+			collection: NewCollection(
+				New("username", "rufus"),
+			),
+			key:       "email",
+			wantPanic: true,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if tc.wantPanic {
+				assert.Panics(t, func() {
+					tc.collection.MustGet(tc.key)
+				})
+			} else {
+				assert.NotPanics(t, func() {
+					got := tc.collection.MustGet(tc.key)
+					assert.Equal(t, tc.want, got)
+				})
+			}
 		})
 	}
 }

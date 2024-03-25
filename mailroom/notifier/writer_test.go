@@ -2,17 +2,16 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
-package notifier
+package notifier_test
 
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/identifier"
-
-	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/notification"
+	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,21 +19,14 @@ func TestWriterNotifier_Push(t *testing.T) {
 	t.Parallel()
 
 	buffer := &bytes.Buffer{}
-	notifier := NewWriterNotifier("buffer", buffer)
+	notifier := notifier.NewWriterNotifier("buffer", buffer)
 
-	err := notifier.Push(context.Background(), common.Notification{
-		Type: "com.example.test",
-		Message: common.RendererFunc(func(transport common.TransportID) string {
-			return fmt.Sprintf("Hello, %s!", transport)
-		}),
-		Initiator: identifier.Collection{
-			identifier.GenericUsername: "rufus",
-		},
-		Recipient: identifier.Collection{
-			identifier.GenericUsername: "codell",
-		},
-	})
+	err := notifier.Push(context.Background(), notification.NewBuilder("com.example.test").
+		WithRecipient(identifier.New(identifier.GenericUsername, "codell")).
+		WithDefaultMessage("Hello, world!").
+		Build(),
+	)
 
 	require.NoError(t, err)
-	require.Equal(t, "notification: type=com.example.test, from=map[username:rufus], to=map[username:codell], message=Hello, writer!\n", buffer.String())
+	require.Equal(t, "notification: type=com.example.test, to=map[username:codell], message=Hello, world!\n", buffer.String())
 }

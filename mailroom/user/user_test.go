@@ -17,15 +17,15 @@ func TestNew(t *testing.T) {
 
 	user := New(
 		WithIdentifier(identifier.New("username", "rufus")),
-		WithIdentifiers(identifier.Collection{
-			"email": "rufus@seatgeek.com",
-		}),
+		WithIdentifiers(identifier.NewCollection(
+			identifier.New("email", "rufus@seatgeek.com"),
+		)),
 		WithPreference("com.example.notification", "email", true),
 	)
 
-	wantIdentifiers := identifier.Collection{
-		"username": "rufus",
-		"email":    "rufus@seatgeek.com",
+	wantIdentifiers := []identifier.Identifier{
+		identifier.New("username", "rufus"),
+		identifier.New("email", "rufus@seatgeek.com"),
 	}
 
 	wantPreferences := map[common.EventType]map[common.TransportID]bool{
@@ -34,7 +34,7 @@ func TestNew(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, wantIdentifiers, user.Identifiers)
+	assert.ElementsMatch(t, wantIdentifiers, user.Identifiers.ToList())
 	assert.Equal(t, wantPreferences, user.preferences)
 }
 

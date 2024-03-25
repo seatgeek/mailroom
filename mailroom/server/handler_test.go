@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/stretchr/testify/assert"
@@ -22,12 +23,7 @@ func TestHandler(t *testing.T) {
 
 	somePayload := &struct{}{}
 	someNotifications := []common.Notification{
-		{
-			Type: "com.example.event",
-			Message: common.RendererFunc(func(_ common.TransportID) string {
-				return "some message"
-			}),
-		},
+		notification.NewBuilder("com.example.event").Build(),
 	}
 	someError := errors.New("some error")
 
