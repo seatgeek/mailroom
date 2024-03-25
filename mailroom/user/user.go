@@ -61,12 +61,21 @@ func WithPreference(event common.EventType, transport common.TransportID, wants 
 }
 
 // Wants returns true if the user wants to receive the given event via the given transport
+// We assume that all preferences are opt-out by default; in other words, if a user has no preference
+// for a given event, we assume they DO want it. We only return false if they have explicitly
+// said they do not want it (and have false set in the map).
 func (r *User) Wants(event common.EventType, transport common.TransportID) bool {
-	if r.preferences[event] == nil {
-		return false
+	if _, exists := r.preferences[event]; !exists {
+		// No preference set for this event, so assume they want it.
+		return true
 	}
 
-	return r.preferences[event][transport]
+	if want, exists := r.preferences[event][transport]; exists {
+		return want
+	}
+
+	// No preference set for this transport, so assume they want it.
+	return true
 }
 
 func (r *User) String() string {

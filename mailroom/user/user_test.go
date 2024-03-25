@@ -43,9 +43,46 @@ func TestUser_Wants(t *testing.T) {
 
 	user := New(
 		WithPreference("com.example.notification", "email", true),
+		WithPreference("com.example.notification", "slack", false),
 	)
 
-	assert.True(t, user.Wants("com.example.notification", "email"))
-	assert.False(t, user.Wants("com.example.notification", "slack"))
-	assert.False(t, user.Wants("com.example.other", "email"))
+	tests := []struct {
+		name      string
+		event     common.EventType
+		transport common.TransportID
+		expected  bool
+	}{
+		{
+			name:      "preference explicitly set to true",
+			event:     "com.example.notification",
+			transport: "email",
+			expected:  true,
+		},
+		{
+			name:      "preference explicitly set to false",
+			event:     "com.example.notification",
+			transport: "slack",
+			expected:  false,
+		},
+		{
+			name:      "preference not defined for transport",
+			event:     "com.example.notification",
+			transport: "smoke_signal",
+			expected:  true,
+		},
+		{
+			name:      "preference not defined for event",
+			event:     "com.example.other",
+			transport: "email",
+			expected:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.expected, user.Wants(tt.event, tt.transport))
+		})
+	}
 }
