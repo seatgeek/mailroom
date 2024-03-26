@@ -58,9 +58,16 @@ func main() {
 		),
 		mailroom.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),
-			// slack.NewTransport(
-			//	"slack",
-			//	"xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx",
+			// notifier.WithRetry(
+			//	notifier.WithTimeout(
+			//		slack.NewTransport(
+			//			"slack",
+			//			"xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx",
+			//		),
+			//		5*time.Second,
+			//	),
+			//	3,
+			//	backoff.WithMaxElapsedTime(30*time.Second),
 			// ),
 		),
 		mailroom.WithUserStore(

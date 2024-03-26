@@ -3,6 +3,7 @@ module github.com/seatgeek/mailroom
 go 1.22.1
 
 require (
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/go-playground/webhooks/v6 v6.3.0
 	github.com/lmittmann/tint v1.0.4
 	github.com/slack-go/slack v0.12.5

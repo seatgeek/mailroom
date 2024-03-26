@@ -6,7 +6,7 @@ package slack
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
@@ -34,7 +34,7 @@ type RichNotification interface {
 func (s *Transport) Push(ctx context.Context, notification common.Notification) error {
 	id, ok := notification.Recipient().Get(ID)
 	if !ok {
-		return fmt.Errorf("%w: recipient does not have a Slack ID", notifier.ErrPermanentFailure)
+		return notifier.Permanent(errors.New("recipient does not have a Slack ID"))
 	}
 
 	options := s.getMessageOptions(notification)
