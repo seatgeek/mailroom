@@ -39,8 +39,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 			continue
 		}
 
-		slog.Info("pushing notification", "user", recipientUser.String(), "transport", transport.ID())
-		// TODO: We should decorate these with some retry logic
+		slog.Info("pushing notification", "type", notification.Type(), "user", recipientUser.String(), "transport", transport.ID())
 		if err = transport.Push(ctx, notification); err != nil {
 			slog.Error("failed to push notification", "user", recipientUser, "transport", transport.ID(), "error", err)
 			errs = append(errs, err)
