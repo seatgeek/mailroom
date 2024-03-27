@@ -82,6 +82,7 @@ func (w *withRetry) Validate(ctx context.Context) error {
 	return nil
 }
 
+// WithLogging decorates the given Transport and logs every successful push (including the message body)
 func WithLogging(transport Transport, logger *slog.Logger, logLevel slog.Level) Transport {
 	return &withLogging{
 		Transport: transport,
@@ -97,8 +98,12 @@ type withLogging struct {
 }
 
 func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
-	w.logger.Log(ctx, w.level, "sending notification", "type", n.Type(), "to", n.Recipient().String(), "message", n.Render("logger"))
-	return w.Transport.Push(ctx, n)
+	err := w.Transport.Push(ctx, n)
+	if err == nil {
+		w.logger.Log(ctx, w.level, "sent notification", "type", n.Type(), "to", n.Recipient().String(), "message", n.Render("logger"))
+	}
+
+	return err
 }
 
 func (w *withLogging) Validate(ctx context.Context) error {

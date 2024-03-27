@@ -180,7 +180,7 @@ func TestWithLogging(t *testing.T) {
 			}
 
 			assert.Equal(t, tc.level.String(), logEntry["level"])
-			assert.Equal(t, "sending notification", logEntry["msg"])
+			assert.Equal(t, "sent notification", logEntry["msg"])
 			assert.Equal(t, "test", logEntry["type"])
 			assert.Equal(t, "[email:rufus@seatgeek.com username:rufus]", logEntry["to"])
 			assert.Equal(t, "hello world", logEntry["message"])
