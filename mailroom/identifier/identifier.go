@@ -85,6 +85,7 @@ type Collection interface {
 	Add(Identifier)
 	Merge(Collection)
 	ToList() []Identifier
+	String() string
 }
 
 type collection struct {
@@ -145,7 +146,7 @@ func (c *collection) String() string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	return fmt.Sprintf("%v", c.ids)
+	return strings.TrimPrefix(fmt.Sprintf("%v", c.ids), "map")
 }
 
 // NewCollection creates a new Collection from a slice of Identifier objects

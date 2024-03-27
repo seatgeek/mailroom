@@ -81,3 +81,30 @@ func (w *withRetry) Validate(ctx context.Context) error {
 
 	return nil
 }
+
+func WithLogging(transport Transport, logger *slog.Logger, logLevel slog.Level) Transport {
+	return &withLogging{
+		Transport: transport,
+		logger:    logger,
+		level:     logLevel,
+	}
+}
+
+type withLogging struct {
+	Transport
+	logger *slog.Logger
+	level  slog.Level
+}
+
+func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
+	w.logger.Log(ctx, w.level, "sending notification", "type", n.Type(), "to", n.Recipient().String(), "message", n.Render("logger"))
+	return w.Transport.Push(ctx, n)
+}
+
+func (w *withLogging) Validate(ctx context.Context) error {
+	if v, ok := w.Transport.(common.Validator); ok {
+		return v.Validate(ctx)
+	}
+
+	return nil
+}

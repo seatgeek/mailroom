@@ -368,3 +368,46 @@ func TestCollection_MustGet(t *testing.T) {
 		})
 	}
 }
+
+func TestCollection_String(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		collection Collection
+		want       string
+	}{
+		{
+			name:       "empty",
+			collection: NewCollection(),
+			want:       "[]",
+		},
+		{
+			name: "one item",
+			collection: NewCollection(
+				New("username", "rufus"),
+			),
+			want: "[username:rufus]",
+		},
+		{
+			name: "multiple items",
+			collection: NewCollection(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			want: "[email:rufus@seatgeek.com username:rufus]",
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := tc.collection.String()
+
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

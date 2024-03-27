@@ -5,13 +5,17 @@
 package notifier_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/stretchr/testify/assert"
@@ -117,6 +121,69 @@ func TestWithRetry(t *testing.T) {
 			err := wrapped.Push(context.Background(), notification.NewBuilder("test").Build())
 
 			assert.Equal(t, tc.wantErr, err, "Error should match")
+		})
+	}
+}
+
+func TestWithLogging(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		level slog.Level
+	}{
+		{
+			name:  "logs at info level",
+			level: slog.LevelInfo,
+		},
+		{
+			name:  "logs at debug level",
+			level: slog.LevelDebug,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			notification := notification.NewBuilder("test").
+				WithRecipient(
+					identifier.New("username", "rufus"),
+					identifier.New("email", "rufus@seatgeek.com"),
+				).
+				WithDefaultMessage("hello world").
+				Build()
+
+			transport := notifier.NewMockTransport(t)
+			transport.EXPECT().ID().Return("test")
+			transport.EXPECT().Push(mock.Anything, mock.Anything).Return(nil)
+
+			buffer := new(bytes.Buffer)
+
+			logger := slog.New(
+				slog.NewJSONHandler(buffer, &slog.HandlerOptions{
+					Level: tc.level,
+				}),
+			)
+
+			wrapped := notifier.WithLogging(transport, logger, tc.level)
+
+			assert.Equal(t, transport.ID(), wrapped.ID(), "ID should be the same")
+
+			_ = wrapped.Push(context.Background(), notification)
+
+			var logEntry map[string]interface{}
+			if err := json.Unmarshal(buffer.Bytes(), &logEntry); err != nil {
+				t.Fatalf("failed to unmarshal log entry: %s", err)
+			}
+
+			assert.Equal(t, tc.level.String(), logEntry["level"])
+			assert.Equal(t, "sending notification", logEntry["msg"])
+			assert.Equal(t, "test", logEntry["type"])
+			assert.Equal(t, "[email:rufus@seatgeek.com username:rufus]", logEntry["to"])
+			assert.Equal(t, "hello world", logEntry["message"])
 		})
 	}
 }
