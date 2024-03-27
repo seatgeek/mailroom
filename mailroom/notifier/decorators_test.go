@@ -174,16 +174,23 @@ func TestWithLogging(t *testing.T) {
 
 			_ = wrapped.Push(context.Background(), notification)
 
-			var logEntry map[string]interface{}
+			var logEntry struct {
+				Level   string            `json:"level"`
+				Msg     string            `json:"msg"`
+				Type    string            `json:"type"`
+				To      map[string]string `json:"to"`
+				Message string            `json:"message"`
+			}
 			if err := json.Unmarshal(buffer.Bytes(), &logEntry); err != nil {
 				t.Fatalf("failed to unmarshal log entry: %s", err)
 			}
 
-			assert.Equal(t, tc.level.String(), logEntry["level"])
-			assert.Equal(t, "sent notification", logEntry["msg"])
-			assert.Equal(t, "test", logEntry["type"])
-			assert.Equal(t, "[email:rufus@seatgeek.com username:rufus]", logEntry["to"])
-			assert.Equal(t, "hello world", logEntry["message"])
+			assert.Equal(t, tc.level.String(), logEntry.Level)
+			assert.Equal(t, "sent notification", logEntry.Msg)
+			assert.Equal(t, "test", logEntry.Type)
+			assert.Equal(t, "rufus@seatgeek.com", logEntry.To["email"])
+			assert.Equal(t, "rufus", logEntry.To["username"])
+			assert.Equal(t, "hello world", logEntry.Message)
 		})
 	}
 }

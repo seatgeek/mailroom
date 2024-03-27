@@ -100,7 +100,7 @@ type withLogging struct {
 func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
 	err := w.Transport.Push(ctx, n)
 	if err == nil {
-		w.logger.Log(ctx, w.level, "sent notification", "type", n.Type(), "to", n.Recipient().String(), "message", n.Render("logger"))
+		w.logger.Log(ctx, w.level, "sent notification", "type", n.Type(), "to", n.Recipient(), "message", n.Render("logger"))
 	}
 
 	return err

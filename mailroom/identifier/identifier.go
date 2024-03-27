@@ -5,6 +5,7 @@
 package identifier
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -147,6 +148,13 @@ func (c *collection) String() string {
 	defer c.mutex.RUnlock()
 
 	return strings.TrimPrefix(fmt.Sprintf("%v", c.ids), "map")
+}
+
+func (c *collection) MarshalJSON() ([]byte, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	return json.Marshal(c.ids)
 }
 
 // NewCollection creates a new Collection from a slice of Identifier objects
