@@ -48,8 +48,13 @@ func TestNewBuilder(t *testing.T) {
 	assert.Equal(t, "Hello, email!", withMessageForTransport.Render("email"))
 	assert.Equal(t, "Hello, world!", withMessageForTransport.Render("slack"))
 
-	builderWithSlackOpts := builder.WithSlackMessage(
-		slack.MsgOptionText("I'm a Slack option!", false),
+	builderWithSlackOpts := builder.WithSlackOptions(
+		slack.MsgOptionAttachments(
+			slack.Attachment{
+				Title: "Hello",
+				Text:  "world!",
+			},
+		),
 	)
 
 	withSlackOpts := builderWithSlackOpts.Build()
@@ -57,5 +62,5 @@ func TestNewBuilder(t *testing.T) {
 	assert.Len(t, withRecipient.Recipient().ToList(), 1)
 	assert.Equal(t, "Hello, email!", withSlackOpts.Render("email"))
 	assert.Equal(t, "Hello, world!", withSlackOpts.Render("slack"))
-	assert.Len(t, withSlackOpts.RenderSlack(), 1)
+	assert.Len(t, withSlackOpts.GetSlackOptions(), 1)
 }

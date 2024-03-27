@@ -27,7 +27,7 @@ type Transport struct {
 // RichNotification is an optional interface that can be implemented by any notification supporting Slack formatting
 type RichNotification interface {
 	common.Notification
-	RenderSlack() []slack.MsgOption
+	GetSlackOptions() []slack.MsgOption
 }
 
 // Push sends a notification to a Slack user
@@ -52,7 +52,7 @@ func (s *Transport) getMessageOptions(notification common.Notification) []slack.
 	}
 
 	if n, ok := notification.(RichNotification); ok {
-		opts = append(opts, n.RenderSlack()...)
+		opts = append(opts, n.GetSlackOptions()...)
 	}
 
 	return opts

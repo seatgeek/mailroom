@@ -48,7 +48,7 @@ func (b *Builder) WithMessageForTransport(transportKey common.TransportKey, mess
 	return b
 }
 
-func (b *Builder) WithSlackMessage(opts ...slack.MsgOption) *Builder {
+func (b *Builder) WithSlackOptions(opts ...slack.MsgOption) *Builder {
 	b.opts.slackOpts = opts
 	return b
 }
@@ -79,6 +79,6 @@ func (b *builderOpts) AddRecipients(collection identifier.Collection) {
 	b.recipients.Merge(collection)
 }
 
-func (b *builderOpts) RenderSlack() []slack.MsgOption {
+func (b *builderOpts) GetSlackOptions() []slack.MsgOption {
 	return b.slackOpts
 }
