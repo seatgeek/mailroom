@@ -33,6 +33,14 @@ func (w *withTimeout) Push(ctx context.Context, notification common.Notification
 	return w.Transport.Push(ctx, notification)
 }
 
+func (w *withTimeout) Validate(ctx context.Context) error {
+	if v, ok := w.Transport.(common.Validator); ok {
+		return v.Validate(ctx)
+	}
+
+	return nil
+}
+
 // WithRetry decorates the given Transport with retry logic using exponential backoff
 func WithRetry(transport Transport, maxRetries uint64, opts ...backoff.ExponentialBackOffOpts) Transport {
 	return &withRetry{
@@ -64,4 +72,12 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 			slog.Error("failed to push notification", "error", err, "next_retry", duration.String())
 		},
 	)
+}
+
+func (w *withRetry) Validate(ctx context.Context) error {
+	if v, ok := w.Transport.(common.Validator); ok {
+		return v.Validate(ctx)
+	}
+
+	return nil
 }
