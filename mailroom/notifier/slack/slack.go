@@ -7,6 +7,8 @@ package slack
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
@@ -61,7 +63,18 @@ func (s *Transport) ID() common.TransportID {
 	return s.id
 }
 
+func (s *Transport) Validate() error {
+	resp, err := s.client.AuthTest()
+	if err != nil {
+		return notifier.Permanent(fmt.Errorf("authentication failed: %w", err))
+	}
+
+	slog.Info("Slack transport connected", "transport", s.id, "slack_team", resp.Team, "slack_user", resp.User)
+	return nil
+}
+
 var _ notifier.Transport = &Transport{}
+var _ common.Validator = &Transport{}
 
 // NewTransport creates a new Slack Transport
 // It requires a TransportID, a Slack API token, and optionally some slack.Options

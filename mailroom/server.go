@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
 	"github.com/seatgeek/mailroom/mailroom/source"
@@ -76,8 +77,44 @@ func WithUserStore(us user.Store) Opt {
 	}
 }
 
+func (s *Server) validate() error {
+	for _, src := range s.sources {
+		if v, ok := src.Parser.(common.Validator); ok {
+			if err := v.Validate(); err != nil {
+				return fmt.Errorf("parser %s failed to validate: %w", src.ID, err)
+			}
+		}
+
+		if v, ok := src.Generator.(common.Validator); ok {
+			if err := v.Validate(); err != nil {
+				return fmt.Errorf("generator %s failed to validate: %w", src.ID, err)
+			}
+		}
+	}
+
+	for _, t := range s.transports {
+		if v, ok := t.(common.Validator); ok {
+			if err := v.Validate(); err != nil {
+				return fmt.Errorf("transport %s failed to validate: %w", t.ID(), err)
+			}
+		}
+	}
+
+	if v, ok := s.userStore.(common.Validator); ok {
+		if err := v.Validate(); err != nil {
+			return fmt.Errorf("user store failed to validate: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // Run starts the server
 func (s *Server) Run(ctx context.Context) error {
+	if err := s.validate(); err != nil {
+		return fmt.Errorf("server validation failed: %w", err)
+	}
+
 	httpTomb, httpTombCtx := tomb.WithContext(ctx)
 	defer httpTomb.Kill(ErrShutdown)
 	httpTomb.Go(func() error { return s.serveHttp(httpTombCtx) })

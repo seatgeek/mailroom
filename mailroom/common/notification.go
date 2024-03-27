@@ -23,3 +23,9 @@ type Notification interface {
 
 // TransportID is a type that identifies a specific type of transport for sending notifications
 type TransportID string // eg. "slack"; "email"
+
+// Validator can be implemented by any parser, generator, transport, etc. to validate its configuration at runtime
+// Errors returned by Validate are considered fatal
+type Validator interface {
+	Validate() error
+}
