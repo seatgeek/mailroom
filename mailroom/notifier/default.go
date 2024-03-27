@@ -26,7 +26,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 
 	recipientUser, err := d.userStore.Find(notification.Recipient())
 	if err != nil {
-		slog.Debug("failed to find user", "user", notification.Recipient(), "error", err)
+		slog.Debug("failed to find user", "user", notification.Recipient().String(), "error", err)
 		return fmt.Errorf("failed to find recipient user: %w", err)
 	}
 
@@ -35,11 +35,11 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 
 	for _, transport := range d.transports {
 		if !recipientUser.Wants(notification.Type(), transport.ID()) {
-			slog.Debug("user does not want this notification this way", "user", recipientUser, "transport", transport.ID())
+			slog.Debug("user does not want this notification this way", "user", recipientUser.String(), "transport", transport.ID())
 			continue
 		}
 
-		slog.Info("pushing notification", "user", recipientUser, "transport", transport.ID())
+		slog.Info("pushing notification", "user", recipientUser.String(), "transport", transport.ID())
 		// TODO: We should decorate these with some retry logic
 		if err = transport.Push(ctx, notification); err != nil {
 			slog.Error("failed to push notification", "user", recipientUser, "transport", transport.ID(), "error", err)
