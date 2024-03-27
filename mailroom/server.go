@@ -77,16 +77,16 @@ func WithUserStore(us user.Store) Opt {
 	}
 }
 
-func (s *Server) validate() error {
+func (s *Server) validate(ctx context.Context) error {
 	for _, src := range s.sources {
 		if v, ok := src.Parser.(common.Validator); ok {
-			if err := v.Validate(); err != nil {
+			if err := v.Validate(ctx); err != nil {
 				return fmt.Errorf("parser %s failed to validate: %w", src.ID, err)
 			}
 		}
 
 		if v, ok := src.Generator.(common.Validator); ok {
-			if err := v.Validate(); err != nil {
+			if err := v.Validate(ctx); err != nil {
 				return fmt.Errorf("generator %s failed to validate: %w", src.ID, err)
 			}
 		}
@@ -94,14 +94,14 @@ func (s *Server) validate() error {
 
 	for _, t := range s.transports {
 		if v, ok := t.(common.Validator); ok {
-			if err := v.Validate(); err != nil {
+			if err := v.Validate(ctx); err != nil {
 				return fmt.Errorf("transport %s failed to validate: %w", t.ID(), err)
 			}
 		}
 	}
 
 	if v, ok := s.userStore.(common.Validator); ok {
-		if err := v.Validate(); err != nil {
+		if err := v.Validate(ctx); err != nil {
 			return fmt.Errorf("user store failed to validate: %w", err)
 		}
 	}
@@ -111,7 +111,7 @@ func (s *Server) validate() error {
 
 // Run starts the server
 func (s *Server) Run(ctx context.Context) error {
-	if err := s.validate(); err != nil {
+	if err := s.validate(ctx); err != nil {
 		return fmt.Errorf("server validation failed: %w", err)
 	}
 

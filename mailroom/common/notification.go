@@ -4,7 +4,11 @@
 
 package common
 
-import "github.com/seatgeek/mailroom/mailroom/identifier"
+import (
+	"context"
+
+	"github.com/seatgeek/mailroom/mailroom/identifier"
+)
 
 // EventType describes the type of event related to the originating occurrence.
 // It may be used for routing, observability, etc. It must comply with CloudEvent `type` spec:
@@ -27,5 +31,5 @@ type TransportID string // eg. "slack"; "email"
 // Validator can be implemented by any parser, generator, transport, etc. to validate its configuration at runtime
 // Errors returned by Validate are considered fatal
 type Validator interface {
-	Validate() error
+	Validate(ctx context.Context) error
 }

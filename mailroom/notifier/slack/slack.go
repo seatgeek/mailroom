@@ -63,8 +63,8 @@ func (s *Transport) ID() common.TransportID {
 	return s.id
 }
 
-func (s *Transport) Validate() error {
-	resp, err := s.client.AuthTest()
+func (s *Transport) Validate(ctx context.Context) error {
+	resp, err := s.client.AuthTestContext(ctx)
 	if err != nil {
 		return notifier.Permanent(fmt.Errorf("authentication failed: %w", err))
 	}
