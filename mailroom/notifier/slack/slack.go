@@ -47,16 +47,15 @@ func (s *Transport) Push(ctx context.Context, notification common.Notification) 
 }
 
 func (s *Transport) getMessageOptions(notification common.Notification) []slack.MsgOption {
-	if n, ok := notification.(RichNotification); ok {
-		opts := n.RenderSlack()
-		if len(opts) > 0 {
-			return opts
-		}
-	}
-
-	return []slack.MsgOption{
+	opts := []slack.MsgOption{
 		slack.MsgOptionText(notification.Render(s.key), false),
 	}
+
+	if n, ok := notification.(RichNotification); ok {
+		opts = append(opts, n.RenderSlack()...)
+	}
+
+	return opts
 }
 
 func (s *Transport) Key() common.TransportKey {
