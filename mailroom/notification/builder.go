@@ -15,7 +15,7 @@ type builderOpts struct {
 	eventType           common.EventType
 	recipients          identifier.Collection
 	fallbackMessage     string
-	messagePerTransport map[common.TransportID]string
+	messagePerTransport map[common.TransportKey]string
 	slackOpts           []slack.MsgOption
 }
 
@@ -28,7 +28,7 @@ func NewBuilder(eventType common.EventType) *Builder {
 		opts: builderOpts{
 			eventType:           eventType,
 			recipients:          identifier.NewCollection(),
-			messagePerTransport: make(map[common.TransportID]string),
+			messagePerTransport: make(map[common.TransportKey]string),
 		},
 	}
 }
@@ -43,8 +43,8 @@ func (b *Builder) WithDefaultMessage(message string) *Builder {
 	return b
 }
 
-func (b *Builder) WithMessageForTransport(transportID common.TransportID, message string) *Builder {
-	b.opts.messagePerTransport[transportID] = message
+func (b *Builder) WithMessageForTransport(transportKey common.TransportKey, message string) *Builder {
+	b.opts.messagePerTransport[transportKey] = message
 	return b
 }
 
@@ -67,8 +67,8 @@ func (b *builderOpts) Recipient() identifier.Collection {
 	return b.recipients
 }
 
-func (b *builderOpts) Render(id common.TransportID) string {
-	if message, ok := b.messagePerTransport[id]; ok {
+func (b *builderOpts) Render(key common.TransportKey) string {
+	if message, ok := b.messagePerTransport[key]; ok {
 		return message
 	}
 

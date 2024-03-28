@@ -6,27 +6,64 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
+	"strings"
 
-	"github.com/go-playground/webhooks/v6/gitlab"
 	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
+	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/source"
-	"github.com/seatgeek/mailroom/mailroom/source/webhooks"
 	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
-// TemporaryNotificationGenerator is a temporary implementation of the source.NotificationGenerator interface
-// TODO: Replace this with a real implementation
-type TemporaryNotificationGenerator struct{}
+type PlaygroundPayload struct {
+	// identifier, e.g. "gitlab.com/id:123"
+	Recipient string `json:"recipient"`
+	Message   string `json:"message"`
+}
+
+type PlaygroundParser struct{}
+
+func (t *PlaygroundParser) Parse(req *http.Request) (any, error) {
+	payload := PlaygroundPayload{}
+	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+// PlaygroundGenerator is...
+type PlaygroundGenerator struct{}
 
 // Generate returns some dummy notifications
-func (t *TemporaryNotificationGenerator) Generate(payload any) ([]common.Notification, error) {
-	return []common.Notification{}, nil
+func (p *PlaygroundGenerator) Generate(payload any) ([]common.Notification, error) {
+	body := payload.(PlaygroundPayload)
+	ident := strings.Split(body.Recipient, ":")
+	if len(ident) != 2 {
+		return nil, fmt.Errorf("invalid recipient identifier: %s", body.Recipient)
+	}
+
+	return []common.Notification{
+		notification.NewBuilder("local.playground.message").WithDefaultMessage(body.Message).WithRecipient(identifier.New(ident[0], ident[1])).Build(),
+	}, nil
+}
+
+func (p *PlaygroundGenerator) EventTypes() []common.EventTypeDescriptor {
+	return []common.EventTypeDescriptor{
+		{
+			Key:         "local.playground.message",
+			Title:       "Message",
+			Description: "A message sent from to local playground",
+		},
+	}
 }
 
 // This is an example of how to configure and run mailroom.
@@ -42,12 +79,9 @@ func main() {
 	app := mailroom.New(
 		mailroom.WithSources(
 			source.New(
-				"gitlab",
-				webhooks.NewAdapter(
-					webhooks.Must(gitlab.New(gitlab.Options.Secret("SomeSecretToValidatePayloads"))),
-					gitlab.MergeRequestEvents,
-				),
-				&TemporaryNotificationGenerator{},
+				"playground",
+				&PlaygroundParser{},
+				&PlaygroundGenerator{},
 			),
 			// source.New(
 			//	argocd.NewPayloadParser(
@@ -73,6 +107,7 @@ func main() {
 		mailroom.WithUserStore(
 			user.NewInMemoryStore(
 				user.New(
+					"codell",
 					user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
 					user.WithIdentifier(identifier.New("gitlab.com/id", "123")),
 					user.WithIdentifier(identifier.New("slack.com/id", "U4567")),

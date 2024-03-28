@@ -67,10 +67,10 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := CreateHandler(
+			handler := CreateEventHandler(
 				context.Background(),
 				&source.Source{
-					ID:        "some-source",
+					Key:       "some-source",
 					Parser:    tc.parser,
 					Generator: tc.generator,
 				},

@@ -14,6 +14,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gogits/go-gogs-client v0.0.0-20200905025246-8bb8a50cb355 // indirect
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

@@ -9,17 +9,42 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
+// Wants returns true if the user wants to receive the given event via the given transport
+// We assume that all preferences are opt-out by default; in other words, if a user has no preference
+// for a given event, we assume they DO want it. We only return false if they have explicitly
+// said they do not want it (and have false set in the map).
+type Preferences map[common.EventType]map[common.TransportKey]bool
+
+func (p Preferences) Wants(event common.EventType, transport common.TransportKey) bool {
+	if _, exists := p[event]; !exists {
+		// No preference set for this event, so assume they want it.
+		return true
+	}
+
+	if want, exists := p[event][transport]; exists {
+		return want
+	}
+
+	// No preference set for this transport, so assume they want it.
+	return true
+}
+
 // User represents somebody who may receive notifications
 type User struct {
+	// Key is only used for indexing the user in the user store, e.g. for REST operations.
+	Key string
+	// Identifiers are unique attributes attached to a user that represent that user in the
+	// scope of external systems, e.g. a gitlab.com/id or a slack.com/id.
 	Identifiers identifier.Collection
-	preferences map[common.EventType]map[common.TransportID]bool
+	Preferences
 }
 
 // New creates a new User with the given options
-func New(options ...Option) *User {
+func New(key string, options ...Option) *User {
 	u := &User{
+		Key:         key,
 		Identifiers: identifier.NewCollection(),
-		preferences: make(map[common.EventType]map[common.TransportID]bool),
+		Preferences: make(Preferences),
 	}
 
 	for _, opt := range options {
@@ -46,32 +71,20 @@ func WithIdentifiers(ids identifier.Collection) Option {
 }
 
 // WithPreference adds a notification preference to a User
-func WithPreference(event common.EventType, transport common.TransportID, wants bool) Option {
+func WithPreference(event common.EventType, transport common.TransportKey, wants bool) Option {
 	return func(u *User) {
-		if u.preferences[event] == nil {
-			u.preferences[event] = make(map[common.TransportID]bool)
+		if u.Preferences[event] == nil {
+			u.Preferences[event] = make(map[common.TransportKey]bool)
 		}
 
-		u.preferences[event][transport] = wants
+		u.Preferences[event][transport] = wants
 	}
 }
 
-// Wants returns true if the user wants to receive the given event via the given transport
-// We assume that all preferences are opt-out by default; in other words, if a user has no preference
-// for a given event, we assume they DO want it. We only return false if they have explicitly
-// said they do not want it (and have false set in the map).
-func (r *User) Wants(event common.EventType, transport common.TransportID) bool {
-	if _, exists := r.preferences[event]; !exists {
-		// No preference set for this event, so assume they want it.
-		return true
+func WithPreferences(p Preferences) Option {
+	return func(u *User) {
+		u.Preferences = p
 	}
-
-	if want, exists := r.preferences[event][transport]; exists {
-		return want
-	}
-
-	// No preference set for this transport, so assume they want it.
-	return true
 }
 
 func (r *User) String() string {

@@ -6,12 +6,14 @@ package mailroom
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
@@ -81,13 +83,13 @@ func (s *Server) validate(ctx context.Context) error {
 	for _, src := range s.sources {
 		if v, ok := src.Parser.(common.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("parser %s failed to validate: %w", src.ID, err)
+				return fmt.Errorf("parser %s failed to validate: %w", src.Key, err)
 			}
 		}
 
 		if v, ok := src.Generator.(common.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("generator %s failed to validate: %w", src.ID, err)
+				return fmt.Errorf("generator %s failed to validate: %w", src.Key, err)
 			}
 		}
 	}
@@ -95,7 +97,7 @@ func (s *Server) validate(ctx context.Context) error {
 	for _, t := range s.transports {
 		if v, ok := t.(common.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("transport %s failed to validate: %w", t.ID(), err)
+				return fmt.Errorf("transport %s failed to validate: %w", t.Key(), err)
 			}
 		}
 	}
@@ -131,8 +133,130 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
+// Builds a current mapping of user preferences based on what is stored in the
+// user store and the sources and transports that are registered with the server.
+//
+// Only event types and transports that are currently active in the server will
+// be included in the preference map. User is opted in to any preference that is
+// not stored.
+func (s *Server) buildCurrentUserPreferences(p user.Preferences) user.Preferences {
+	hydratedPreferences := make(user.Preferences)
+
+	for _, source := range s.sources {
+		for _, eventType := range source.Generator.EventTypes() {
+			for _, transport := range s.transports {
+				if hydratedPreferences[eventType.Key] == nil {
+					hydratedPreferences[eventType.Key] = make(map[common.TransportKey]bool)
+				}
+				hydratedPreferences[eventType.Key][transport.Key()] = p.Wants(eventType.Key, transport.Key())
+			}
+		}
+	}
+
+	return hydratedPreferences
+}
+
+type PreferencesBody struct {
+	Preferences user.Preferences `json:"preferences"`
+}
+
+func (s *Server) handleGetPreferences(writer http.ResponseWriter, request *http.Request) error {
+	vars := mux.Vars(request)
+	key := vars["key"]
+
+	u, err := s.userStore.Get(key)
+	if err != nil {
+		if errors.Is(err, user.ErrUserNotFound) {
+			slog.Info("user not found", "key", key)
+			return &server.Error{Code: http.StatusNotFound, Reason: err}
+		}
+
+		return err
+	}
+
+	hydratedUserPreferences := s.buildCurrentUserPreferences(u.Preferences)
+	resp := PreferencesBody{Preferences: hydratedUserPreferences}
+
+	if err := json.NewEncoder(writer).Encode(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) handlePutPreferences(writer http.ResponseWriter, request *http.Request) error {
+	vars := mux.Vars(request)
+	key := vars["key"]
+
+	var req PreferencesBody
+	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
+		return err
+	}
+
+	err := s.userStore.SetPreferences(key, req.Preferences)
+	if err != nil {
+		if errors.Is(err, user.ErrUserNotFound) {
+			slog.Info("user not found", "key", key)
+			return &server.Error{Code: http.StatusNotFound, Reason: err}
+		}
+
+		return err
+	}
+
+	resp := PreferencesBody{Preferences: s.buildCurrentUserPreferences(req.Preferences)}
+	if err := json.NewEncoder(writer).Encode(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type APITransport struct {
+	Key common.TransportKey `json:"key"`
+}
+
+type APISource struct {
+	Key        string                       `json:"key"`
+	EventTypes []common.EventTypeDescriptor `json:"event_types"`
+}
+
+type APIConfiguration struct {
+	Sources    []APISource    `json:"sources"`
+	Transports []APITransport `json:"transports"`
+}
+
+func (s *Server) handleGetConfiguration(writer http.ResponseWriter, _ *http.Request) error {
+	sources := make([]APISource, len(s.sources))
+	for i, src := range s.sources {
+		src := APISource{
+			Key:        src.Key,
+			EventTypes: src.Generator.EventTypes(),
+		}
+		sources[i] = src
+	}
+
+	transports := make([]APITransport, len(s.transports))
+	for i, transport := range s.transports {
+		tp := APITransport{
+			Key: transport.Key(),
+		}
+		transports[i] = tp
+	}
+
+	resp := APIConfiguration{
+		Sources:    sources,
+		Transports: transports,
+	}
+
+	if err := json.NewEncoder(writer).Encode(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Server) serveHttp(ctx context.Context) error {
-	hsm := http.NewServeMux()
+	hsm := mux.NewRouter()
 
 	hsm.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.WriteHeader(200)
@@ -141,10 +265,14 @@ func (s *Server) serveHttp(ctx context.Context) error {
 
 	// Mount all sources wrapped with our error handler
 	for _, src := range s.sources {
-		endpoint := "/event/" + src.ID
+		endpoint := "/event/" + src.Key
 		slog.Debug("mounting source", "endpoint", endpoint)
-		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateHandler(ctx, src, s.notifier)))
+		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateEventHandler(ctx, src, s.notifier)))
 	}
+
+	hsm.HandleFunc("/users/{key}/preferences", server.HandleErr(s.handleGetPreferences)).Methods("GET")
+	hsm.HandleFunc("/users/{key}/preferences", server.HandleErr(s.handlePutPreferences)).Methods("PUT")
+	hsm.HandleFunc("/configuration", server.HandleErr(s.handleGetConfiguration)).Methods("GET")
 
 	hs := &http.Server{
 		Addr:              s.listenAddr,

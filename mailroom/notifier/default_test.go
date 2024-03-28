@@ -19,7 +19,7 @@ import (
 
 type wantSent struct {
 	event     common.EventType
-	transport common.TransportID
+	transport common.TransportKey
 }
 
 func TestDefaultNotifier_Push(t *testing.T) {
@@ -28,6 +28,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 	unknownUser := identifier.NewCollection()
 
 	knownUser := user.New(
+		"rufus",
 		user.WithIdentifier(identifier.New(identifier.GenericUsername, "rufus")),
 		user.WithPreference("com.example.one", "email", true),
 		user.WithPreference("com.example.one", "slack", true),
@@ -48,8 +49,8 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			name:         "user wants all",
 			notification: notificationFor("com.example.one", knownUser.Identifiers),
 			transports: []notifier.Transport{
-				&fakeTransport{id: "email"},
-				&fakeTransport{id: "slack"},
+				&fakeTransport{key: "email"},
+				&fakeTransport{key: "slack"},
 			},
 			wantSent: []wantSent{
 				{event: "com.example.one", transport: "email"},
@@ -60,8 +61,8 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			name:         "user wants some",
 			notification: notificationFor("com.example.two", knownUser.Identifiers),
 			transports: []notifier.Transport{
-				&fakeTransport{id: "email"},
-				&fakeTransport{id: "slack"},
+				&fakeTransport{key: "email"},
+				&fakeTransport{key: "slack"},
 			},
 			wantSent: []wantSent{
 				{event: "com.example.two", transport: "email"},
@@ -71,7 +72,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			name:         "user wants none",
 			notification: notificationFor("com.example.three", knownUser.Identifiers),
 			transports: []notifier.Transport{
-				&fakeTransport{id: "slack"},
+				&fakeTransport{key: "slack"},
 			},
 			wantSent: []wantSent{},
 		},
@@ -85,7 +86,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			name:         "transport fails",
 			notification: notificationFor("com.example.one", knownUser.Identifiers),
 			transports: []notifier.Transport{
-				&fakeTransport{id: "email", returns: errSomethingFailed},
+				&fakeTransport{key: "email", returns: errSomethingFailed},
 			},
 			wantSent: []wantSent{},
 			wantErrs: []error{errSomethingFailed},
@@ -121,7 +122,7 @@ func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) 
 	for _, w := range want {
 		matched := false
 		for _, transport := range transports {
-			if transport.ID() == w.transport {
+			if transport.Key() == w.transport {
 				matched = true
 				assert.Contains(t, transport.(*fakeTransport).sent, w.event)
 				continue
@@ -137,15 +138,15 @@ func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) 
 var errSomethingFailed = fmt.Errorf("some transport error occurred")
 
 type fakeTransport struct {
-	id      common.TransportID
+	key     common.TransportKey
 	sent    []common.EventType
 	returns error
 }
 
 var _ notifier.Transport = (*fakeTransport)(nil)
 
-func (f *fakeTransport) ID() common.TransportID {
-	return f.id
+func (f *fakeTransport) Key() common.TransportKey {
+	return f.key
 }
 
 func (f *fakeTransport) Push(_ context.Context, notification common.Notification) error {

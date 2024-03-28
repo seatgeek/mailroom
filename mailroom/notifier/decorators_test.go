@@ -31,7 +31,7 @@ func TestWithTimeout(t *testing.T) {
 	expectedDeadline := time.Now().Add(timeout)
 
 	transport := notifier.NewMockTransport(t)
-	transport.EXPECT().ID().Return("test")
+	transport.EXPECT().Key().Return("test")
 	transport.EXPECT().Push(mock.AnythingOfType("*context.timerCtx"), mock.Anything).Run(
 		func(ctx context.Context, notification common.Notification) {
 			deadline, ok := ctx.Deadline()
@@ -42,7 +42,7 @@ func TestWithTimeout(t *testing.T) {
 
 	wrapped := notifier.WithTimeout(transport, timeout)
 
-	assert.Equal(t, transport.ID(), wrapped.ID(), "ID should be the same")
+	assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
 	_ = wrapped.Push(context.Background(), fakeNotification)
 }
@@ -105,7 +105,7 @@ func TestWithRetry(t *testing.T) {
 			t.Parallel()
 
 			transport := notifier.NewMockTransport(t)
-			transport.EXPECT().ID().Return("test")
+			transport.EXPECT().Key().Return("test")
 			for _, givenErr := range tc.givenErrs {
 				transport.EXPECT().Push(mock.Anything, mock.Anything).Return(givenErr).Once()
 			}
@@ -116,7 +116,7 @@ func TestWithRetry(t *testing.T) {
 				b.MaxElapsedTime = 20 * time.Millisecond
 			})
 
-			assert.Equal(t, transport.ID(), wrapped.ID(), "ID should be the same")
+			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
 			err := wrapped.Push(context.Background(), notification.NewBuilder("test").Build())
 
@@ -157,7 +157,7 @@ func TestWithLogging(t *testing.T) {
 				Build()
 
 			transport := notifier.NewMockTransport(t)
-			transport.EXPECT().ID().Return("test")
+			transport.EXPECT().Key().Return("test")
 			transport.EXPECT().Push(mock.Anything, mock.Anything).Return(nil)
 
 			buffer := new(bytes.Buffer)
@@ -170,7 +170,7 @@ func TestWithLogging(t *testing.T) {
 
 			wrapped := notifier.WithLogging(transport, logger, tc.level)
 
-			assert.Equal(t, transport.ID(), wrapped.ID(), "ID should be the same")
+			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
 			_ = wrapped.Push(context.Background(), notification)
 

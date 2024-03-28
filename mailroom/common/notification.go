@@ -17,16 +17,25 @@ import (
 // For example: "com.gitlab.push"
 type EventType string
 
+// EventTypeDescriptor describes an event type in user-friendly terms
+type EventTypeDescriptor struct {
+	Key EventType `json:"key"`
+	// Title should be a human readable title that describes the event, independent of the source.
+	// So the title for "com.gitlab.merge_request.approved" could be "Merge Request Approved".
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+}
+
 // Notification is a notification that should be sent
 type Notification interface {
 	Type() EventType
 	Recipient() identifier.Collection
-	Render(TransportID) string
+	Render(TransportKey) string
 	AddRecipients(identifier.Collection)
 }
 
-// TransportID is a type that identifies a specific type of transport for sending notifications
-type TransportID string // eg. "slack"; "email"
+// TransportKey is a type that identifies a specific type of transport for sending notifications
+type TransportKey string // eg. "slack"; "email"
 
 // Validator can be implemented by any parser, generator, transport, etc. to validate its configuration at runtime
 // Errors returned by Validate are considered fatal

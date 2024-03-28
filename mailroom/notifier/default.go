@@ -34,14 +34,14 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 	notification.AddRecipients(recipientUser.Identifiers)
 
 	for _, transport := range d.transports {
-		if !recipientUser.Wants(notification.Type(), transport.ID()) {
-			slog.Debug("user does not want this notification this way", "user", recipientUser.String(), "transport", transport.ID())
+		if !recipientUser.Wants(notification.Type(), transport.Key()) {
+			slog.Debug("user does not want this notification this way", "user", recipientUser.String(), "transport", transport.Key())
 			continue
 		}
 
-		slog.Info("pushing notification", "type", notification.Type(), "user", recipientUser.String(), "transport", transport.ID())
+		slog.Info("pushing notification", "type", notification.Type(), "user", recipientUser.String(), "transport", transport.Key())
 		if err = transport.Push(ctx, notification); err != nil {
-			slog.Error("failed to push notification", "user", recipientUser, "transport", transport.ID(), "error", err)
+			slog.Error("failed to push notification", "user", recipientUser, "transport", transport.Key(), "error", err)
 			errs = append(errs, err)
 		}
 	}

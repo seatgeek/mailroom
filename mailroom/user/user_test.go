@@ -16,6 +16,7 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 
 	user := New(
+		"rufus",
 		WithIdentifier(identifier.New("username", "rufus")),
 		WithIdentifiers(identifier.NewCollection(
 			identifier.New("email", "rufus@seatgeek.com"),
@@ -28,20 +29,21 @@ func TestNew(t *testing.T) {
 		identifier.New("email", "rufus@seatgeek.com"),
 	}
 
-	wantPreferences := map[common.EventType]map[common.TransportID]bool{
+	wantPreferences := Preferences{
 		"com.example.notification": {
 			"email": true,
 		},
 	}
 
 	assert.ElementsMatch(t, wantIdentifiers, user.Identifiers.ToList())
-	assert.Equal(t, wantPreferences, user.preferences)
+	assert.Equal(t, wantPreferences, user.Preferences)
 }
 
 func TestUser_Wants(t *testing.T) {
 	t.Parallel()
 
 	user := New(
+		"rufus",
 		WithPreference("com.example.notification", "email", true),
 		WithPreference("com.example.notification", "slack", false),
 	)
@@ -49,7 +51,7 @@ func TestUser_Wants(t *testing.T) {
 	tests := []struct {
 		name      string
 		event     common.EventType
-		transport common.TransportID
+		transport common.TransportKey
 		expected  bool
 	}{
 		{

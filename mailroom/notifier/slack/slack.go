@@ -20,7 +20,7 @@ var ID = identifier.NewNamespaceAndKind("slack.com", identifier.KindID)
 
 // Transport supports sending messages to Slack
 type Transport struct {
-	id     common.TransportID
+	key    common.TransportKey
 	client *slack.Client
 }
 
@@ -55,12 +55,12 @@ func (s *Transport) getMessageOptions(notification common.Notification) []slack.
 	}
 
 	return []slack.MsgOption{
-		slack.MsgOptionText(notification.Render(s.id), false),
+		slack.MsgOptionText(notification.Render(s.key), false),
 	}
 }
 
-func (s *Transport) ID() common.TransportID {
-	return s.id
+func (s *Transport) Key() common.TransportKey {
+	return s.key
 }
 
 func (s *Transport) Validate(ctx context.Context) error {
@@ -69,7 +69,7 @@ func (s *Transport) Validate(ctx context.Context) error {
 		return notifier.Permanent(fmt.Errorf("authentication failed: %w", err))
 	}
 
-	slog.Info("Slack transport connected", "transport", s.id, "slack_team", resp.Team, "slack_user", resp.User)
+	slog.Info("Slack transport connected", "transport", s.key, "slack_team", resp.Team, "slack_user", resp.User)
 	return nil
 }
 
@@ -78,9 +78,9 @@ var _ common.Validator = &Transport{}
 
 // NewTransport creates a new Slack Transport
 // It requires a TransportID, a Slack API token, and optionally some slack.Options
-func NewTransport(id common.TransportID, token string, opts ...slack.Option) *Transport {
+func NewTransport(key common.TransportKey, token string, opts ...slack.Option) *Transport {
 	return &Transport{
-		id:     id,
+		key:    key,
 		client: slack.New(token, opts...),
 	}
 }

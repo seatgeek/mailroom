@@ -27,22 +27,24 @@ type NotificationGenerator interface {
 	// Some payloads may result in multiple notifications, for example the creation of a new merge request in GitLab
 	// might result in notifications to multiple reviewers.
 	Generate(payload any) ([]common.Notification, error)
+	// EventTypes returns descriptors for all EventTypes that the generator may emit
+	EventTypes() []common.EventTypeDescriptor
 }
 
 // Source is a combination of a PayloadParser and a NotificationGenerator
 // Both are required to be able to generate notifications from incoming webhooks, but they are kept separate to allow
 // users to easily override the default generator with a custom one if needed.
 type Source struct {
-	// ID is both a unique identifier for the source, and the endpoint that it listens on
-	ID        string
+	// Key is both a unique identifier for the source, and the endpoint that it listens on
+	Key       string
 	Parser    PayloadParser
 	Generator NotificationGenerator
 }
 
-// New returns a new Source, pairing a PayloadParser and a NotificationGenerator together with some ID
-func New(id string, parser PayloadParser, generator NotificationGenerator) *Source {
+// New returns a new Source, pairing a PayloadParser and a NotificationGenerator together with some key
+func New(key string, parser PayloadParser, generator NotificationGenerator) *Source {
 	return &Source{
-		ID:        id,
+		Key:       key,
 		Parser:    parser,
 		Generator: generator,
 	}

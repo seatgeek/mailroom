@@ -18,12 +18,16 @@ var ErrUserNotFound = errors.New("user not found")
 // a user where any email identifier matches the given email, regardless of namespace. This will allow for onboarding
 // new integrations that utilize email identifiers without having to update all existing user information in the store.
 type Store interface {
+	// Get returns a user by its key
+	Get(key string) (*User, error)
 	// Get returns a user by a given identifier
-	Get(identifier identifier.Identifier) (*User, error)
+	GetByIdentifier(identifier identifier.Identifier) (*User, error)
 
 	// Find searches for a user matching any of the given identifiers
 	// (The user is not required to match all of them, just one is enough)
 	Find(possibleIdentifiers identifier.Collection) (*User, error)
+
+	SetPreferences(key string, prefs Preferences) error
 }
 
 // InMemoryStore is a simple in-memory implementation of the Store interface
@@ -44,7 +48,17 @@ func (s *InMemoryStore) Add(u *User) {
 	s.users = append(s.users, u)
 }
 
-func (s *InMemoryStore) Get(identifier identifier.Identifier) (*User, error) {
+func (s *InMemoryStore) Get(key string) (*User, error) {
+	for _, u := range s.users {
+		if u.Key == key {
+			return u, nil
+		}
+	}
+
+	return nil, ErrUserNotFound
+}
+
+func (s *InMemoryStore) GetByIdentifier(identifier identifier.Identifier) (*User, error) {
 	isEmail := identifier.Kind() == "email"
 
 	for _, u := range s.users {
@@ -66,11 +80,20 @@ func (s *InMemoryStore) Get(identifier identifier.Identifier) (*User, error) {
 
 func (s *InMemoryStore) Find(possibleIdentifiers identifier.Collection) (*User, error) {
 	for _, i := range possibleIdentifiers.ToList() {
-		u, err := s.Get(i)
+		u, err := s.GetByIdentifier(i)
 		if err == nil {
 			return u, nil
 		}
 	}
 
 	return nil, ErrUserNotFound
+}
+
+func (s *InMemoryStore) SetPreferences(key string, prefs Preferences) error {
+	u, err := s.Get(key)
+	if err != nil {
+		return err
+	}
+	u.Preferences = prefs
+	return nil
 }

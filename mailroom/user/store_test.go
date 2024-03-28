@@ -19,8 +19,8 @@ func TestInMemoryStore_Get(t *testing.T) {
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
 	id3 := identifier.New("email", "zhammer@seatgeek.com")
 
-	userA := New(WithIdentifier(id1), WithIdentifier(id2))
-	userB := New(WithIdentifier(id3))
+	userA := New("codell", WithIdentifier(id1), WithIdentifier(id2))
+	userB := New("zhammer", WithIdentifier(id3))
 
 	store := NewInMemoryStore(userA, userB)
 
@@ -63,7 +63,7 @@ func TestInMemoryStore_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := store.Get(tc.input)
+			got, err := store.GetByIdentifier(tc.input)
 
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, err)
@@ -78,8 +78,8 @@ func TestInMemoryStore_Find(t *testing.T) {
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
 	id3 := identifier.New("email", "zhammer@seatgeek.com")
 
-	userA := New(WithIdentifier(id1), WithIdentifier(id2))
-	userB := New(WithIdentifier(id3))
+	userA := New("codell", WithIdentifier(id1), WithIdentifier(id2))
+	userB := New("zhammer", WithIdentifier(id3))
 
 	store := NewInMemoryStore(userA, userB)
 
