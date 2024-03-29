@@ -32,6 +32,7 @@ type Server struct {
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
+	router     *mux.Router
 }
 
 type Opt func(s *Server)
@@ -40,6 +41,7 @@ type Opt func(s *Server)
 func New(opts ...Opt) *Server {
 	s := &Server{
 		listenAddr: "0.0.0.0:8000",
+		router:     mux.NewRouter(),
 	}
 
 	for _, opt := range opts {
@@ -76,6 +78,13 @@ func WithTransports(transports ...notifier.Transport) Opt {
 func WithUserStore(us user.Store) Opt {
 	return func(s *Server) {
 		s.userStore = us
+	}
+}
+
+// WithRouter sets the function used to create a router for the server
+func WithRouter(router *mux.Router) Opt {
+	return func(s *Server) {
+		s.router = router
 	}
 }
 
@@ -256,7 +265,7 @@ func (s *Server) handleGetConfiguration(writer http.ResponseWriter, _ *http.Requ
 }
 
 func (s *Server) serveHttp(ctx context.Context) error {
-	hsm := mux.NewRouter()
+	hsm := s.router
 
 	hsm.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.WriteHeader(200)
