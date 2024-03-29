@@ -33,7 +33,16 @@ func NewBuilder(eventType common.EventType) *Builder {
 	}
 }
 
-func (b *Builder) WithRecipient(identifiers ...identifier.Identifier) *Builder {
+// WithRecipient sets the recipient of the notification
+// It's like WithRecipientIdentifiers but it accepts a single identifier collection
+func (b *Builder) WithRecipient(identifiers identifier.Collection) *Builder {
+	b.opts.recipients = identifiers
+	return b
+}
+
+// WithRecipientIdentifiers sets the recipient of the notification
+// It's like WithRecipient but it accepts multiple identifiers as variadic arguments
+func (b *Builder) WithRecipientIdentifiers(identifiers ...identifier.Identifier) *Builder {
 	b.opts.recipients = identifier.NewCollection(identifiers...)
 	return b
 }

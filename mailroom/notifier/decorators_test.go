@@ -149,7 +149,7 @@ func TestWithLogging(t *testing.T) {
 			t.Parallel()
 
 			notification := notification.NewBuilder("test").
-				WithRecipient(
+				WithRecipientIdentifiers(
 					identifier.New("username", "rufus"),
 					identifier.New("email", "rufus@seatgeek.com"),
 				).

@@ -24,7 +24,7 @@ func TestNewBuilder(t *testing.T) {
 	assert.Empty(t, empty.Recipient().ToList())
 	assert.Empty(t, empty.Render("email"))
 
-	builderWithRecipient := builder.WithRecipient(identifier.New(identifier.GenericUsername, "codell"))
+	builderWithRecipient := builder.WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "codell"))
 
 	withRecipient := builderWithRecipient.Build()
 	assert.Equal(t, common.EventType("com.example.test"), withRecipient.Type())

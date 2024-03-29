@@ -22,7 +22,7 @@ func TestWriterNotifier_Push(t *testing.T) {
 	notifier := notifier.NewWriterNotifier("buffer", buffer)
 
 	err := notifier.Push(context.Background(), notification.NewBuilder("com.example.test").
-		WithRecipient(identifier.New(identifier.GenericUsername, "codell")).
+		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "codell")).
 		WithDefaultMessage("Hello, world!").
 		Build(),
 	)
