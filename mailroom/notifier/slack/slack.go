@@ -47,8 +47,11 @@ func (s *Transport) Push(ctx context.Context, notification common.Notification) 
 }
 
 func (s *Transport) getMessageOptions(notification common.Notification) []slack.MsgOption {
-	opts := []slack.MsgOption{
-		slack.MsgOptionText(notification.Render(s.key), false),
+	var opts []slack.MsgOption
+
+	message := notification.Render(s.key)
+	if message != "" {
+		opts = append(opts, slack.MsgOptionText(message, false))
 	}
 
 	if n, ok := notification.(RichNotification); ok {
