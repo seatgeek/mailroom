@@ -1,0 +1,27 @@
+---
+services:
+  postgres:
+    image: postgres:16.2
+    volumes:
+      - /var/lib/postgresql/data
+      - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: mailroom
+      PGUSER: mailroom
+      POSTGRES_DB: mailroom
+      PGDATABASE: mailroom
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+  test:
+    image: golang:1.22
+    command: make test-with-coverage
+    environment:
+      POSTGRES_DSN: postgres://mailroom:mailroom@postgres:5432/mailroom?sslmode=disable
+    working_dir: /go/src/app
+    volumes:
+      - ..:/go/src/app
+    depends_on:
+      postgres:
+        condition: service_started

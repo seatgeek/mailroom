@@ -8,13 +8,12 @@ stages:
 - lint
 - test
 
-image: golang:1.22
-
 .mrs-only:
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 lint:go:
+  image: golang:1.22
   stage: lint
   needs: []
   script:
@@ -42,11 +41,18 @@ lint:yaml:
 
 test:
   stage: test
+  variables:
+    COMPOSE_FILE: test/docker-compose.yml
   needs:
   - job: lint:go
     optional: true
+  before_script:
+  - docker compose down -v --remove-orphans
+  - docker compose build
+  after_script:
+  - docker compose down -v
   script:
-  - make test-with-coverage
+  - docker compose run --rm test
   coverage: '/total:.*\(statements\).*\d+\.\d+%/'
   artifacts:
     when: always

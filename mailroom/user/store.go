@@ -44,8 +44,9 @@ func NewInMemoryStore(users ...*User) *InMemoryStore {
 }
 
 // Add adds a user to the in-memory store
-func (s *InMemoryStore) Add(u *User) {
+func (s *InMemoryStore) Add(u *User) error {
 	s.users = append(s.users, u)
+	return nil
 }
 
 func (s *InMemoryStore) Get(key string) (*User, error) {

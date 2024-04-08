@@ -87,6 +87,7 @@ type Collection interface {
 	Merge(Collection)
 	ToList() []Identifier
 	String() string
+	ToMap() map[NamespaceAndKind]string
 }
 
 type collection struct {
@@ -165,6 +166,32 @@ func NewCollection(ids ...Identifier) Collection {
 
 	for _, id := range ids {
 		res.ids[id.NamespaceAndKind] = id.Value
+	}
+
+	return res
+}
+
+// NewCollectionFromMap creates a new Collection from a map of NamespaceAndKind to value.
+func NewCollectionFromMap(ids map[NamespaceAndKind]string) Collection {
+	res := &collection{
+		ids: make(map[NamespaceAndKind]string, len(ids)),
+	}
+
+	for key, value := range ids {
+		res.ids[key] = value
+	}
+
+	return res
+}
+
+// ToMap returns the Collection as a map of NamespaceAndKind to value from a Collection.
+func (c *collection) ToMap() map[NamespaceAndKind]string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	res := make(map[NamespaceAndKind]string, len(c.ids))
+	for key, value := range c.ids {
+		res[key] = value
 	}
 
 	return res
