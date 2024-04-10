@@ -1,6 +1,6 @@
 module github.com/seatgeek/mailroom
 
-go 1.22.1
+go 1.22.2
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -9,6 +9,7 @@ require (
 	github.com/slack-go/slack v0.12.5
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
+	gorm.io/driver/postgres v1.5.7
 )
 
 require (
@@ -17,9 +18,10 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	gorm.io/driver/postgres v1.5.7 // indirect
 )
 
 require (
