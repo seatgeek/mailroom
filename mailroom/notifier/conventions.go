@@ -16,6 +16,9 @@ func Permanent(err error) error {
 	return backoff.Permanent(err)
 }
 
+// Func is a function that sends a notification
+type Func func(context.Context, common.Notification) error
+
 // Notifier is an interface for sending notifications
 // Implementations of this interface may send them to a Transport, enqueue them for later,
 // batch multiple notifications together, etc.
