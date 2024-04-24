@@ -34,7 +34,7 @@ lint:markdown:
 lint:yaml:
   stage: lint
   needs: []
-  image: pipelinecomponents/yamllint:0.31.0
+  image: pipelinecomponents/yamllint:0.31.1
   script:
   - yamllint .
   extends: [.mrs-only]
