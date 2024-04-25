@@ -28,7 +28,8 @@ func (c *WriterNotifier) Key() common.TransportKey {
 func (c *WriterNotifier) Push(_ context.Context, n common.Notification) error {
 	_, err := fmt.Fprintf(
 		c.writer,
-		"notification: type=%s, to=%s, message=%s\n",
+		"notification: id=%s type=%s, to=%s, message=%s\n",
+		n.ID(),
 		n.Type(),
 		n.Recipient(),
 		n.Render("writer"),

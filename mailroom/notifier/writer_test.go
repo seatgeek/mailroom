@@ -28,5 +28,5 @@ func TestWriterNotifier_Push(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, "notification: type=com.example.test, to=[username:codell], message=Hello, world!\n", buffer.String())
+	require.Equal(t, "notification: id=a1c11a53-c4be-488f-89b6-f83bf2d48dab type=com.example.test, to=[username:codell], message=Hello, world!\n", buffer.String())
 }

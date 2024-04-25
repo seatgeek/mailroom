@@ -42,6 +42,13 @@ func TestHandler(t *testing.T) {
 			wantErr:   nil,
 		},
 		{
+			name:      "parsed fine but no notifications generated",
+			parser:    parserThatReturns(t, somePayload, nil),
+			generator: generatorThatReturns(t, nil, nil),
+			notifier:  notifierThatReturns(t, nil),
+			wantErr:   nil,
+		},
+		{
 			name:    "parser error",
 			parser:  parserThatReturns(t, nil, someError),
 			wantErr: someError,
