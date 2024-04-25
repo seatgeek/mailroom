@@ -23,7 +23,7 @@ func TestHandler(t *testing.T) {
 
 	somePayload := &struct{}{}
 	someNotifications := []common.Notification{
-		notification.NewBuilder("com.example.event").Build(),
+		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "com.example.event").Build(),
 	}
 	someError := errors.New("some error")
 

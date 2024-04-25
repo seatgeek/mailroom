@@ -158,7 +158,7 @@ func (f *fakeTransport) Push(_ context.Context, notification common.Notification
 }
 
 func notificationFor(eventType common.EventType, identifiers identifier.Collection) common.Notification {
-	return notification.NewBuilder(eventType).
+	return notification.NewBuilder(common.EventID(eventType), eventType).
 		WithRecipient(identifiers).
 		WithDefaultMessage("hello world").
 		Build()

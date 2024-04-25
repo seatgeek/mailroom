@@ -10,6 +10,11 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
+// EventID is a unique identifier for an event occurrence
+// It should be a non-empty string that is unique within the context of the event source
+// See https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#id
+type EventID string
+
 // EventType describes the type of event related to the originating occurrence.
 // It may be used for routing, observability, etc. It must comply with CloudEvent `type` spec:
 // https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#type
@@ -28,6 +33,7 @@ type EventTypeDescriptor struct {
 
 // Notification is a notification that should be sent
 type Notification interface {
+	ID() EventID
 	Type() EventType
 	Recipient() identifier.Collection
 	Render(TransportKey) string

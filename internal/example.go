@@ -52,7 +52,7 @@ func (p *PlaygroundGenerator) Generate(payload any) ([]common.Notification, erro
 	}
 
 	return []common.Notification{
-		notification.NewBuilder("local.playground.message").WithDefaultMessage(body.Message).WithRecipientIdentifiers(identifier.New(ident[0], ident[1])).Build(),
+		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "local.playground.message").WithDefaultMessage(body.Message).WithRecipientIdentifiers(identifier.New(ident[0], ident[1])).Build(),
 	}, nil
 }
 

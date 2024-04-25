@@ -12,6 +12,7 @@ import (
 )
 
 type builderOpts struct {
+	eventID             common.EventID
 	eventType           common.EventType
 	recipients          identifier.Collection
 	fallbackMessage     string
@@ -23,9 +24,10 @@ type Builder struct {
 	opts builderOpts
 }
 
-func NewBuilder(eventType common.EventType) *Builder {
+func NewBuilder(eventID common.EventID, eventType common.EventType) *Builder {
 	return &Builder{
 		opts: builderOpts{
+			eventID:             eventID,
 			eventType:           eventType,
 			recipients:          identifier.NewCollection(),
 			messagePerTransport: make(map[common.TransportKey]string),
@@ -67,6 +69,10 @@ func (b *Builder) Build() slack2.RichNotification {
 }
 
 var _ slack2.RichNotification = &builderOpts{}
+
+func (b *builderOpts) ID() common.EventID {
+	return b.eventID
+}
 
 func (b *builderOpts) Type() common.EventType {
 	return b.eventType

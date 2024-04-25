@@ -25,7 +25,7 @@ import (
 func TestWithTimeout(t *testing.T) {
 	t.Parallel()
 
-	fakeNotification := notification.NewBuilder("test").Build()
+	fakeNotification := notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "test").Build()
 
 	timeout := 30 * time.Second
 	expectedDeadline := time.Now().Add(timeout)
@@ -116,7 +116,7 @@ func TestWithRetry(t *testing.T) {
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
-			err := wrapped.Push(context.Background(), notification.NewBuilder("test").Build())
+			err := wrapped.Push(context.Background(), notification.NewBuilder("test", "test").Build())
 
 			assert.Equal(t, tc.wantErr, err, "Error should match")
 		})
@@ -144,7 +144,7 @@ func TestWithLogging(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			notification := notification.NewBuilder("test").
+			notification := notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "test").
 				WithRecipientIdentifiers(
 					identifier.New("username", "rufus"),
 					identifier.New("email", "rufus@seatgeek.com"),
@@ -173,6 +173,7 @@ func TestWithLogging(t *testing.T) {
 			var logEntry struct {
 				Level   string            `json:"level"`
 				Msg     string            `json:"msg"`
+				ID      string            `json:"id"`
 				Type    string            `json:"type"`
 				To      map[string]string `json:"to"`
 				Message string            `json:"message"`
@@ -183,6 +184,7 @@ func TestWithLogging(t *testing.T) {
 
 			assert.Equal(t, tc.level.String(), logEntry.Level)
 			assert.Equal(t, "sent notification", logEntry.Msg)
+			assert.Equal(t, "a1c11a53-c4be-488f-89b6-f83bf2d48dab", logEntry.ID)
 			assert.Equal(t, "test", logEntry.Type)
 			assert.Equal(t, "rufus@seatgeek.com", logEntry.To["email"])
 			assert.Equal(t, "rufus", logEntry.To["username"])
