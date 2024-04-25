@@ -23,6 +23,11 @@ var (
 
 func TestPostgresStore_Get(t *testing.T) {
 	t.Parallel()
+
+	if dsn == "" {
+		t.Skip("POSTGRES_DSN is not set")
+	}
+
 	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 	store := postgres.NewPostgresStore(db)
@@ -65,6 +70,11 @@ func TestPostgresStore_Get(t *testing.T) {
 
 func TestPostgresStore_Find(t *testing.T) {
 	t.Parallel()
+
+	if dsn == "" {
+		t.Skip("POSTGRES_DSN is not set")
+	}
+
 	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 	store := postgres.NewPostgresStore(db)
@@ -118,6 +128,11 @@ func TestPostgresStore_Find(t *testing.T) {
 
 func TestPostgresStore_Find_duplicate(t *testing.T) {
 	t.Parallel()
+
+	if dsn == "" {
+		t.Skip("POSTGRES_DSN is not set")
+	}
+
 	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 	store := postgres.NewPostgresStore(db)
@@ -145,6 +160,11 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 
 func TestPostgresStore_SetPreferences(t *testing.T) {
 	t.Parallel()
+
+	if dsn == "" {
+		t.Skip("POSTGRES_DSN is not set")
+	}
+
 	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 	store := postgres.NewPostgresStore(db)
