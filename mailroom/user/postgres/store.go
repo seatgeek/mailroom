@@ -18,6 +18,7 @@ type UserModel struct {
 	Key         string                                 `gorm:"unique"`
 	Preferences user.Preferences                       `gorm:"serializer:json"`
 	Identifiers map[identifier.NamespaceAndKind]string `gorm:"serializer:json"`
+	Emails      []string                               `gorm:"serializer:json"`
 }
 
 func (u *UserModel) TableName() string {
@@ -43,10 +44,18 @@ func NewPostgresStore(db *gorm.DB) *Store {
 
 // Add adds a user to the postgres store
 func (s *Store) Add(u *user.User) error {
+	var emails []string
+	for _, id := range u.Identifiers.ToList() {
+		if id.Kind() == "email" {
+			emails = append(emails, id.Value)
+		}
+	}
+
 	result := s.db.Create(&UserModel{
 		Key:         u.Key,
 		Preferences: u.Preferences,
 		Identifiers: u.Identifiers.ToMap(),
+		Emails:      emails,
 	})
 	return result.Error
 }
@@ -63,15 +72,40 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 		return nil, err
 	}
 
-	if len(users) == 0 {
-		return nil, user.ErrUserNotFound
-	}
-
 	if len(users) > 1 {
 		return nil, fmt.Errorf("found multiple users with identifiers: %v", possibleIdentifiers)
 	}
 
-	return users[0].ToUser(), nil
+	if len(users) == 1 {
+		return users[0].ToUser(), nil
+	}
+
+	// No users found; fall back to email identifiers if possible
+	possibleEmails := make(map[string]struct{})
+	for _, id := range possibleIdentifiers.ToList() {
+		if id.Kind() == "email" {
+			possibleEmails[id.Value] = struct{}{}
+		}
+	}
+
+	query = s.db.Model(&UserModel{})
+	for email := range possibleEmails {
+		query = query.Or("emails @> ?", fmt.Sprintf(`"%s"`, email))
+	}
+
+	if err := query.Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	if len(users) > 1 {
+		return nil, fmt.Errorf("found multiple users with email identifiers: %v", possibleIdentifiers)
+	}
+
+	if len(users) == 1 {
+		return users[0].ToUser(), nil
+	}
+
+	return nil, user.ErrUserNotFound
 }
 
 // Get implements user.Store.
@@ -87,11 +121,18 @@ func (s *Store) Get(key string) (*user.User, error) {
 // GetByIdentifier implements user.Store.
 func (s *Store) GetByIdentifier(identifier identifier.Identifier) (*user.User, error) {
 	var u UserModel
-	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, identifier.NamespaceAndKind, identifier.Value)).First(&u).Error; err != nil {
-		return nil, user.ErrUserNotFound
+	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, identifier.NamespaceAndKind, identifier.Value)).First(&u).Error; err == nil {
+		return u.ToUser(), nil
 	}
 
-	return u.ToUser(), nil
+	// Fall back to any email identifier
+	if identifier.Kind() == "email" {
+		if err := s.db.Where("emails @> ?", fmt.Sprintf(`"%s"`, identifier.Value)).First(&u).Error; err == nil {
+			return u.ToUser(), nil
+		}
+	}
+
+	return nil, user.ErrUserNotFound
 }
 
 // SetPreferences implements user.Store.

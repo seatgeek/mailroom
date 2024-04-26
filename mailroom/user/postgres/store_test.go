@@ -81,6 +81,14 @@ func TestPostgresStore_Find(t *testing.T) {
 			),
 		},
 		{
+			name: "find user by email (using fallback)",
+			arg:  identifier.NewCollection(identifier.New("slack.com/email", "codell@seatgeek.com")),
+			expected: user.New(
+				"codell",
+				user.WithIdentifier(identifier.New("gitlab.com/email", "codell@seatgeek.com")),
+			),
+		},
+		{
 			name:     "user not found",
 			arg:      identifier.NewCollection(identifier.New("email", "bbecker")),
 			expected: nil,
@@ -155,6 +163,14 @@ func TestPostgresStore_GetByIdentifier(t *testing.T) {
 				"bckr",
 				user.WithIdentifier(identifier.New("email", "bbecker@seatgeek.com")),
 				user.WithIdentifier(identifier.New("gitlab.com/email", "bbecker@seatgeek.com")),
+			),
+		},
+		{
+			name: "find user by email (using fallback)",
+			arg:  identifier.New("slack.com/email", "codell@seatgeek.com"),
+			expected: user.New(
+				"codell",
+				user.WithIdentifier(identifier.New("gitlab.com/email", "codell@seatgeek.com")),
 			),
 		},
 		{
