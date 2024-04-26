@@ -88,7 +88,7 @@ func (s *Store) Get(key string) (*user.User, error) {
 func (s *Store) GetByIdentifier(identifier identifier.Identifier) (*user.User, error) {
 	var u UserModel
 	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, identifier.NamespaceAndKind, identifier.Value)).First(&u).Error; err != nil {
-		return nil, err
+		return nil, user.ErrUserNotFound
 	}
 
 	return u.ToUser(), nil
