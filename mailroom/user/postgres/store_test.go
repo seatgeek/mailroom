@@ -137,6 +137,56 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 	assert.Nil(t, got)
 }
 
+func TestPostgresStore_GetByIdentifier(t *testing.T) {
+	t.Parallel()
+
+	store := createDatastore(t)
+
+	tests := []struct {
+		name     string
+		arg      identifier.Identifier
+		expected *user.User
+		wantErr  error
+	}{
+		{
+			name: "find user by email",
+			arg:  identifier.New("email", "bbecker@seatgeek.com"),
+			expected: user.New(
+				"bckr",
+				user.WithIdentifier(identifier.New("email", "bbecker@seatgeek.com")),
+				user.WithIdentifier(identifier.New("gitlab.com/email", "bbecker@seatgeek.com")),
+			),
+		},
+		{
+			name:     "user not found",
+			arg:      identifier.New("email", "bbecker"),
+			expected: nil,
+			wantErr:  user.ErrUserNotFound,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if tc.expected != nil {
+				err := store.Add(tc.expected)
+				assert.NoError(t, err)
+			}
+
+			got, err := store.GetByIdentifier(tc.arg)
+
+			if tc.wantErr != nil {
+				assert.ErrorIs(t, err, tc.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
 func TestPostgresStore_SetPreferences(t *testing.T) {
 	t.Parallel()
 
