@@ -11,7 +11,7 @@ GO_LICENSE_VERSION=v1.35.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
 MARKDOWNLINT_VERSION=v0.39.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
-YAMLLINT_VERSION=0.31.0
+YAMLLINT_VERSION=0.31.1
 
 .PHONY: all
 check: clean generate lint test
