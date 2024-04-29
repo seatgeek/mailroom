@@ -46,7 +46,7 @@ func NewPostgresStore(db *gorm.DB) *Store {
 func (s *Store) Add(u *user.User) error {
 	var emails []string
 	for _, id := range u.Identifiers.ToList() {
-		if id.Kind() == "email" {
+		if id.Kind() == identifier.KindEmail {
 			emails = append(emails, id.Value)
 		}
 	}
@@ -83,7 +83,7 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 	// No users found; fall back to email identifiers if possible
 	possibleEmails := make(map[string]struct{})
 	for _, id := range possibleIdentifiers.ToList() {
-		if id.Kind() == "email" {
+		if id.Kind() == identifier.KindEmail {
 			possibleEmails[id.Value] = struct{}{}
 		}
 	}
@@ -119,15 +119,15 @@ func (s *Store) Get(key string) (*user.User, error) {
 }
 
 // GetByIdentifier implements user.Store.
-func (s *Store) GetByIdentifier(identifier identifier.Identifier) (*user.User, error) {
+func (s *Store) GetByIdentifier(id identifier.Identifier) (*user.User, error) {
 	var u UserModel
-	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, identifier.NamespaceAndKind, identifier.Value)).First(&u).Error; err == nil {
+	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, id.NamespaceAndKind, id.Value)).First(&u).Error; err == nil {
 		return u.ToUser(), nil
 	}
 
 	// Fall back to any email identifier
-	if identifier.Kind() == "email" {
-		if err := s.db.Where("emails @> ?", fmt.Sprintf(`"%s"`, identifier.Value)).First(&u).Error; err == nil {
+	if id.Kind() == identifier.KindEmail {
+		if err := s.db.Where("emails @> ?", fmt.Sprintf(`"%s"`, id.Value)).First(&u).Error; err == nil {
 			return u.ToUser(), nil
 		}
 	}

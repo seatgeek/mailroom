@@ -37,9 +37,9 @@ func (n NamespaceAndKind) Namespace() string {
 	return namespace
 }
 
-func (n NamespaceAndKind) Kind() string {
+func (n NamespaceAndKind) Kind() Kind {
 	_, kind := n.Split()
-	return kind
+	return Kind(kind)
 }
 
 // NewNamespaceAndKind creates a new NamespaceAndKind from a namespace and a kind.

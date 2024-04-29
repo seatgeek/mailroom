@@ -41,7 +41,7 @@ func TestNamespaceAndKind_Split(t *testing.T) {
 
 			// We'll also test the Namespace() and Kind() methods here since they are simple wrappers around Split()
 			assert.Equal(t, tc.wantNamespace, tc.input.Namespace())
-			assert.Equal(t, tc.wantKind, tc.input.Kind())
+			assert.Equal(t, Kind(tc.wantKind), tc.input.Kind())
 		})
 	}
 }
