@@ -15,10 +15,12 @@ import (
 type UserModel struct {
 	gorm.Model
 
-	Key         string                                 `gorm:"unique"`
-	Preferences user.Preferences                       `gorm:"serializer:json"`
+	Key         string           `gorm:"unique"`
+	Preferences user.Preferences `gorm:"serializer:json"`
+	// Identifiers is a map of all identifiers for the user
 	Identifiers map[identifier.NamespaceAndKind]string `gorm:"serializer:json"`
-	Emails      []string                               `gorm:"serializer:json"`
+	// Emails contains the subset of Identifiers that have Kind=="email" (for easier fallback lookup)
+	Emails []string `gorm:"serializer:json"`
 }
 
 func (u *UserModel) TableName() string {
