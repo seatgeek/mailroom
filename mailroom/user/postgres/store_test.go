@@ -47,8 +47,6 @@ func TestPostgresStore_Get(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -91,8 +89,6 @@ func TestPostgresStore_Find(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -136,6 +132,7 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 	got, err := store.Find(identifier.NewCollection(duplicateIdentifier))
 
 	wantErr := errors.New("found multiple users with identifiers: [email:dup@dup.com]")
+	//nolint:testifylint
 	assert.ErrorAs(t, err, &wantErr)
 	assert.Nil(t, got)
 }

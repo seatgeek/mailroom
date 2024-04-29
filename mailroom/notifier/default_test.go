@@ -6,7 +6,7 @@ package notifier_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
@@ -94,8 +94,6 @@ func TestDefaultNotifier_Push(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -135,7 +133,7 @@ func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) 
 	}
 }
 
-var errSomethingFailed = fmt.Errorf("some transport error occurred")
+var errSomethingFailed = errors.New("some transport error occurred")
 
 type fakeTransport struct {
 	key     common.TransportKey

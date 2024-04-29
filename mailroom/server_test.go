@@ -118,8 +118,6 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -439,7 +437,7 @@ func TestPreferences(t *testing.T) {
 			}`, writer.Body.String())
 
 			user, err := s.userStore.Get("rufus")
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.False(t, user.Wants("com.gitlab.push", "slack"))
 			assert.False(t, user.Wants("com.gitlab.push", "email"))

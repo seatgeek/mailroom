@@ -31,8 +31,6 @@ func TestNamespaceAndKind_Split(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(string(tc.input), func(t *testing.T) {
 			t.Parallel()
 
@@ -68,8 +66,6 @@ func TestNewNamespaceAndKind(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(string(tc.want), func(t *testing.T) {
 			t.Parallel()
 
@@ -159,8 +155,6 @@ func TestCollection_ToList(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -212,8 +206,6 @@ func TestCollection_Add(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -264,8 +256,6 @@ func TestCollection_Merge(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -307,8 +297,6 @@ func TestCollection_Get(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -350,8 +338,6 @@ func TestCollection_MustGet(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -400,8 +386,6 @@ func TestCollection_String(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

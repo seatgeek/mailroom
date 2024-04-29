@@ -6,7 +6,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -38,7 +37,7 @@ func TestErrHandler(t *testing.T) {
 		},
 		{
 			testName:    "other error",
-			err:         fmt.Errorf("something went wrong"),
+			err:         errors.New("something went wrong"),
 			wantStatus:  500,
 			wantMessage: "something went wrong",
 		},

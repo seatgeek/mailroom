@@ -5,7 +5,7 @@ output:
   format: code-climate:code-quality-report.json,colored-line-number
 
 run:
-  deadline: 1m
+  timeout: 1m
   modules-download-mode: readonly
   skip-dirs-use-default: true
 
@@ -23,6 +23,7 @@ linters:
     - bodyclose # checks whether HTTP response body is closed successfully
     - containedctx # detects struct contained context.Context field    - durationcheck # checks for two durations multiplied together
     - contextcheck # checks the function whether use a non-inherited context
+    - copyloopvar # check for unnecessary loop var copies (Go 1.22+)
     - decorder # checks declaration order and count of types, constants, variables and functions
     - errchkjson # checks types passed to the json encoding functions. Reports unsupported types and optionally reports occasions, where the check for the returned error can be omitted
     - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
@@ -36,17 +37,27 @@ linters:
     - gomodguard # allow and block lists linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations
     - goprintffuncname # checks that printf-like functions are named with f at the end
     - gosec # inspects source code for security problems
+    - interfacebloat # checks the number of methods inside an interface
+    - intrange # check for loops that could use int ranges instead (Go 1.22+)
     - loggercheck # checks key value pairs for common logger libraries (kitlog,klog,logr,zap)
+    - mirror # suggests alternative functions to avoid unnecessary []byte/string conversions
     - misspell # finds commonly misspelled English words in comments
+    - musttag # checks that struct tags are present
     - nestif # reports deeply nested if statements
     - nilerr # finds the code that returns nil even if it checks that the error is not nil
     - noctx # finds sending http request without context.Context
     - nolintlint # reports ill-formed or insufficient nolint directives
     - nosprintfhostport # checks for misuse of Sprintf to construct a host with port in a URL
+    - perfsprint # reports usage of fmt.Sprintf() that could use strconv instead
     - prealloc # [premature optimization, but can be used in some cases] finds slice declarations that could potentially be preallocated
     - predeclared # finds code that shadows one of Go's predeclared identifiers
+    - protogetter # protobuf golang linter - use getters instead of fields.
     - reassign # checks that package variables are not reassigned
+    - sloglint # ensure consistent code style when using log/slog
+    - spancheck # checks usage of OpenTelemetry/Census spans
+    - tagalign # align and sort struct tags consistently
     - tenv # detects using os.Setenv instead of t.Setenv since Go1.17
+    - testifylint # check usage of testify
     - testableexamples # checks if examples are testable (have an expected output)
     - thelper # detects golang test helpers without t.Helper() call and checks the consistency of test helpers
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
@@ -67,6 +78,7 @@ linters:
     #- funlen # tool for detection of long functions
     #- gci # controls golang package import order and makes it always deterministic
     #- ginkgolinter # [if you use ginkgo/gomega] enforces standards of using ginkgo and gomega
+    #- gocheckcompilerdirectives # checks for common issues with compiler directives
     #- gochecknoglobals # checks that no global variables exist
     #- gochecknoinits # checks that no init functions are present in Go code
     #- gocognit # computes and checks the cognitive complexity of functions
@@ -80,7 +92,7 @@ linters:
     #- gomnd # detects magic numbers
     #- grouper # analyzes expression groups
     #- importas # enforces consistent import aliases
-    #- interfacebloat # checks the number of methods inside an interface
+    #- inamedparam # reports interfaces with unnamed method parameters
     #- ireturn # accept interfaces, return concrete types
     #- lll # fast, configurable, extensible, flexible, and beautiful linter for Go, drop-in replacement of golint
     #- makezero # finds slice declarations with non-zero initial length
@@ -95,7 +107,6 @@ linters:
     #- rowserrcheck # checks whether Err of rows is checked successfully
     #- sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     #- stylecheck # is a replacement for golint
-    #- tagalign # align and sort struct tags consistently
     #- tagliatelle # checks the struct tags
     #- testpackage # makes you use a separate _test package
     #- usestdlibvars # detects the possibility to use variables/constants from the Go standard library
@@ -118,3 +129,11 @@ linters:
 linters-settings:
   nestif:
     min-complexity: 6
+
+  tagalign:
+    align: true
+    sort: true
+
+  testifylint:
+    disable:
+      - require-error
