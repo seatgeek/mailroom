@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/user"
@@ -13,14 +14,17 @@ import (
 )
 
 type UserModel struct {
-	gorm.Model
-
-	Key         string           `gorm:"unique"`
+	Key         string           `gorm:"primarykey"`
 	Preferences user.Preferences `gorm:"serializer:json"`
+
 	// Identifiers is a map of all identifiers for the user
 	Identifiers map[identifier.NamespaceAndKind]string `gorm:"serializer:json"`
 	// Emails contains the subset of Identifiers that have Kind=="email" (for easier fallback lookup)
 	Emails []string `gorm:"serializer:json"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 func (u *UserModel) TableName() string {
@@ -44,7 +48,7 @@ func NewPostgresStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
-// Add adds a user to the postgres store
+// Add upserts a user to the postgres store
 func (s *Store) Add(u *user.User) error {
 	var emails []string
 	for _, id := range u.Identifiers.ToList() {
@@ -53,7 +57,7 @@ func (s *Store) Add(u *user.User) error {
 		}
 	}
 
-	result := s.db.Create(&UserModel{
+	result := s.db.Save(&UserModel{
 		Key:         u.Key,
 		Preferences: u.Preferences,
 		Identifiers: u.Identifiers.ToMap(),

@@ -1,6 +1,5 @@
 create table public.users (
-  id bigserial primary key,
-  key varchar(255) unique,
+  key varchar(255) primary key,
   preferences jsonb,
   identifiers jsonb,
   emails jsonb,

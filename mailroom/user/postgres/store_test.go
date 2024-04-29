@@ -21,6 +21,71 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestPostgresStore_Add(t *testing.T) {
+	t.Parallel()
+
+	store := createDatastore(t)
+
+	// Prove that our user doesn't exist in the database yet
+	_, err := store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	assert.ErrorIs(t, err, user.ErrUserNotFound)
+
+	// Insert a new user
+	u := user.New(
+		"codell",
+		user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
+	)
+
+	err = store.Add(u)
+	assert.NoError(t, err)
+
+	// Check if inserted (by key)
+	got, err := store.Get(u.Key)
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Check if inserted (by identifier)
+	got, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Update that same user object
+	u.Identifiers.Add(identifier.New("gitlab.com/email", "codell@seatgeek.com"))
+
+	err = store.Add(u)
+	assert.NoError(t, err)
+
+	// Check if updated (by key)
+	got, err = store.Get(u.Key)
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Check if updated (by identifier)
+	got, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Update that user using a completely different object with the same key and different identifier
+	u = user.New("codell", user.WithIdentifier(identifier.New("email", "codell@example.com")))
+
+	err = store.Add(u)
+	assert.NoError(t, err)
+
+	// Check if updated (by key)
+	got, err = store.Get(u.Key)
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Check if updated (by identifier)
+	got, err = store.GetByIdentifier(identifier.New("email", "codell@example.com"))
+	assert.NoError(t, err)
+	assert.Equal(t, u, got)
+
+	// Check if old identifier is gone
+	_, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	assert.ErrorIs(t, err, user.ErrUserNotFound)
+}
+
 func TestPostgresStore_Get(t *testing.T) {
 	t.Parallel()
 
