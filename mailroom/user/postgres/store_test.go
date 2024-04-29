@@ -5,32 +5,26 @@
 package postgres_test
 
 import (
+	"context"
 	"errors"
-	"os"
 	"testing"
+	"time"
 
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/user"
 	"github.com/seatgeek/mailroom/mailroom/user/postgres"
 	"github.com/stretchr/testify/assert"
+	"github.com/testcontainers/testcontainers-go"
+	pgtc "github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
-)
-
-var (
-	dsn = os.Getenv("POSTGRES_DSN")
 )
 
 func TestPostgresStore_Get(t *testing.T) {
 	t.Parallel()
 
-	if dsn == "" {
-		t.Skip("POSTGRES_DSN is not set")
-	}
-
-	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
-	store := postgres.NewPostgresStore(db)
+	store := createDatastore(t)
 
 	tests := []struct {
 		name     string
@@ -58,7 +52,7 @@ func TestPostgresStore_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			err = store.Add(tc.expected)
+			err := store.Add(tc.expected)
 			assert.NoError(t, err)
 
 			got, err := store.Get(tc.key)
@@ -71,13 +65,7 @@ func TestPostgresStore_Get(t *testing.T) {
 func TestPostgresStore_Find(t *testing.T) {
 	t.Parallel()
 
-	if dsn == "" {
-		t.Skip("POSTGRES_DSN is not set")
-	}
-
-	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
-	store := postgres.NewPostgresStore(db)
+	store := createDatastore(t)
 
 	tests := []struct {
 		name     string
@@ -129,17 +117,11 @@ func TestPostgresStore_Find(t *testing.T) {
 func TestPostgresStore_Find_duplicate(t *testing.T) {
 	t.Parallel()
 
-	if dsn == "" {
-		t.Skip("POSTGRES_DSN is not set")
-	}
-
-	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
-	store := postgres.NewPostgresStore(db)
+	store := createDatastore(t)
 
 	duplicateIdentifier := identifier.New("email", "dup@dup.com")
 
-	err = store.Add(user.New(
+	err := store.Add(user.New(
 		"duplicateA",
 		user.WithIdentifier(duplicateIdentifier),
 	))
@@ -161,20 +143,14 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 func TestPostgresStore_SetPreferences(t *testing.T) {
 	t.Parallel()
 
-	if dsn == "" {
-		t.Skip("POSTGRES_DSN is not set")
-	}
-
-	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
-	store := postgres.NewPostgresStore(db)
+	store := createDatastore(t)
 
 	// Add a user with  no preferences so we can test setting them later
 	userWithNoPreferences := user.New(
 		"zach",
 		user.WithIdentifier(identifier.New("email", "zhammer@seatgeek.com")),
 	)
-	err = store.Add(userWithNoPreferences)
+	err := store.Add(userWithNoPreferences)
 	assert.NoError(t, err)
 
 	// Set preferences
@@ -196,4 +172,33 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 	got, err := store.Get(userWithNoPreferences.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUser, got)
+}
+
+func createDatastore(t *testing.T) *postgres.Store {
+	t.Helper()
+
+	ctx := context.Background()
+
+	container, err := pgtc.RunContainer(ctx,
+		testcontainers.WithImage("postgres:16.2"),
+		pgtc.WithInitScripts("../../../test/initdb/init.sql"),
+		pgtc.WithDatabase("mailroom"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
+	)
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		assert.NoError(t, container.Terminate(ctx))
+	})
+
+	dsn, err := container.ConnectionString(ctx, "sslmode=disable", "application_name=test")
+	assert.NoError(t, err)
+
+	db, err := gorm.Open(pg.Open(dsn), &gorm.Config{})
+	assert.NoError(t, err)
+
+	return postgres.NewPostgresStore(db)
 }

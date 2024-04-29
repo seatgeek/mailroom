@@ -40,19 +40,13 @@ lint:yaml:
   extends: [.mrs-only]
 
 test:
+  image: golang:1.22
   stage: test
-  variables:
-    COMPOSE_FILE: test/docker-compose.yml
   needs:
   - job: lint:go
     optional: true
-  before_script:
-  - docker compose down -v --remove-orphans
-  - docker compose build
-  after_script:
-  - docker compose down -v
   script:
-  - docker compose run --rm test
+  - make test-with-coverage
   coverage: '/total:.*\(statements\).*\d+\.\d+%/'
   artifacts:
     when: always
