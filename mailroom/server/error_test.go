@@ -6,6 +6,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -65,6 +66,62 @@ func TestErrHandler(t *testing.T) {
 
 			assert.Equal(t, tc.wantStatus, responseRecorder.Code)
 			assert.Equal(t, tc.wantMessage, strings.TrimSpace(responseRecorder.Body.String()))
+		})
+	}
+}
+
+func TestErrorIs(t *testing.T) {
+	t.Parallel()
+
+	target := &Error{Code: 403, Reason: errors.New("forbidden")}
+
+	tests := []struct {
+		name  string
+		other error
+		want  bool
+	}{
+		{
+			name:  "exact same object",
+			other: target,
+			want:  true,
+		},
+		{
+			name:  "different object, same values",
+			other: &Error{Code: 403, Reason: errors.New("forbidden")},
+			want:  true,
+		},
+		{
+			name:  "different code",
+			other: &Error{Code: 400, Reason: errors.New("forbidden")},
+			want:  false,
+		},
+		{
+			name:  "different reason",
+			other: &Error{Code: 403, Reason: errors.New("not allowed")},
+			want:  false,
+		},
+		{
+			name:  "different type",
+			other: errors.New("forbidden"),
+			want:  false,
+		},
+		{
+			name:  "wrapped",
+			other: fmt.Errorf("wrapped: %w", target),
+			want:  true,
+		},
+		{
+			name:  "inner reason",
+			other: target.Reason,
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, errors.Is(target, tt.other))
 		})
 	}
 }

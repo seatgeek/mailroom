@@ -23,6 +23,15 @@ func (h *Error) Error() string {
 	return fmt.Sprintf("internal %d: something happened, perhaps", h.Code)
 }
 
+func (h *Error) Is(target error) bool {
+	var err *Error
+	if ok := errors.As(target, &err); !ok {
+		return false
+	}
+
+	return err.Code == h.Code && (errors.Is(err.Reason, h.Reason) || err.Reason.Error() == h.Reason.Error())
+}
+
 // handlerFunc is basically a http.HandlerFunc that can return an error
 // This allows our handlers to return the special Error type above, which HandleErr would then recognize
 // and generate a consistent error response accordingly. Without this, each handler would have to write
