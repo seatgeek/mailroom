@@ -41,5 +41,10 @@
       "matchUpdateTypes": ["digest", "lockFileMaintenance"],
       "extends": ["schedule:weekly"]
     },
+    {
+      "description": "Group markdownlint-cli updates together",
+      "matchPackagePatterns": [".*igorshubovych/markdownlint-cli"],
+      "groupName": "markdownlint-cli",
+    },
   ],
 }
