@@ -43,7 +43,7 @@
     },
     {
       "description": "Group markdownlint-cli updates together",
-      "matchPackagePatterns": [".*igorshubovych/markdownlint-cli"],
+      "matchPackageNames": ["igorshubovych/markdownlint-cli", "ghcr.io/igorshubovych/markdownlint-cli"],
       "groupName": "markdownlint-cli",
     },
   ],
