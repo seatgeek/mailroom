@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
 	"github.com/seatgeek/mailroom/mailroom/source"
@@ -225,8 +226,8 @@ type APITransport struct {
 }
 
 type APISource struct {
-	Key        string                       `json:"key"`
-	EventTypes []common.EventTypeDescriptor `json:"event_types"`
+	Key        string                 `json:"key"`
+	EventTypes []event.TypeDescriptor `json:"event_types"`
 }
 
 type APIConfiguration struct {

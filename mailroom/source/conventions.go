@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 )
 
 // PayloadParser is an interface for anything that parses incoming webhooks
@@ -28,7 +29,7 @@ type NotificationGenerator interface {
 	// might result in notifications to multiple reviewers.
 	Generate(payload any) ([]common.Notification, error)
 	// EventTypes returns descriptors for all EventTypes that the generator may emit
-	EventTypes() []common.EventTypeDescriptor
+	EventTypes() []event.TypeDescriptor
 }
 
 // Source is a combination of a PayloadParser and a NotificationGenerator

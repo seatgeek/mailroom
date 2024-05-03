@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
@@ -18,7 +19,7 @@ import (
 )
 
 type wantSent struct {
-	event     common.EventType
+	event     event.Type
 	transport common.TransportKey
 }
 
@@ -137,7 +138,7 @@ var errSomethingFailed = errors.New("some transport error occurred")
 
 type fakeTransport struct {
 	key     common.TransportKey
-	sent    []common.EventType
+	sent    []event.Type
 	returns error
 }
 
@@ -157,8 +158,8 @@ func (f *fakeTransport) Push(_ context.Context, notification common.Notification
 	return nil
 }
 
-func notificationFor(eventType common.EventType, identifiers identifier.Collection) common.Notification {
-	return notification.NewBuilder(common.EventID(eventType), eventType).
+func notificationFor(eventType event.Type, identifiers identifier.Collection) common.Notification {
+	return notification.NewBuilder(event.ID(eventType), eventType).
 		WithRecipient(identifiers).
 		WithDefaultMessage("hello world").
 		Build()

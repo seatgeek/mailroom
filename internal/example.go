@@ -16,6 +16,7 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
@@ -56,8 +57,8 @@ func (p *PlaygroundGenerator) Generate(payload any) ([]common.Notification, erro
 	}, nil
 }
 
-func (p *PlaygroundGenerator) EventTypes() []common.EventTypeDescriptor {
-	return []common.EventTypeDescriptor{
+func (p *PlaygroundGenerator) EventTypes() []event.TypeDescriptor {
+	return []event.TypeDescriptor{
 		{
 			Key:         "local.playground.message",
 			Title:       "Message",

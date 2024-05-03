@@ -6,6 +6,7 @@ package user
 
 import (
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
@@ -13,9 +14,9 @@ import (
 // We assume that all preferences are opt-out by default; in other words, if a user has no preference
 // for a given event, we assume they DO want it. We only return false if they have explicitly
 // said they do not want it (and have false set in the map).
-type Preferences map[common.EventType]map[common.TransportKey]bool
+type Preferences map[event.Type]map[common.TransportKey]bool
 
-func (p Preferences) Wants(event common.EventType, transport common.TransportKey) bool {
+func (p Preferences) Wants(event event.Type, transport common.TransportKey) bool {
 	if _, exists := p[event]; !exists {
 		// No preference set for this event, so assume they want it.
 		return true
@@ -71,7 +72,7 @@ func WithIdentifiers(ids identifier.Collection) Option {
 }
 
 // WithPreference adds a notification preference to a User
-func WithPreference(event common.EventType, transport common.TransportKey, wants bool) Option {
+func WithPreference(event event.Type, transport common.TransportKey, wants bool) Option {
 	return func(u *User) {
 		if u.Preferences[event] == nil {
 			u.Preferences[event] = make(map[common.TransportKey]bool)

@@ -6,14 +6,15 @@ package notification
 
 import (
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	slack2 "github.com/seatgeek/mailroom/mailroom/notifier/slack"
 	"github.com/slack-go/slack"
 )
 
 type builderOpts struct {
-	eventID             common.EventID
-	eventType           common.EventType
+	eventID             event.ID
+	eventType           event.Type
 	recipients          identifier.Collection
 	fallbackMessage     string
 	messagePerTransport map[common.TransportKey]string
@@ -24,7 +25,7 @@ type Builder struct {
 	opts builderOpts
 }
 
-func NewBuilder(eventID common.EventID, eventType common.EventType) *Builder {
+func NewBuilder(eventID event.ID, eventType event.Type) *Builder {
 	return &Builder{
 		opts: builderOpts{
 			eventID:             eventID,
@@ -70,11 +71,11 @@ func (b *Builder) Build() slack2.RichNotification {
 
 var _ slack2.RichNotification = &builderOpts{}
 
-func (b *builderOpts) ID() common.EventID {
+func (b *builderOpts) ID() event.ID {
 	return b.eventID
 }
 
-func (b *builderOpts) Type() common.EventType {
+func (b *builderOpts) Type() event.Type {
 	return b.eventType
 }
 

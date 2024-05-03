@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +51,7 @@ func TestUser_Wants(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		event     common.EventType
+		event     event.Type
 		transport common.TransportKey
 		expected  bool
 	}{

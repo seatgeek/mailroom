@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
@@ -24,14 +25,14 @@ import (
 )
 
 type dummyGenerator struct {
-	eventTypes []common.EventTypeDescriptor
+	eventTypes []event.TypeDescriptor
 }
 
 func (d *dummyGenerator) Generate(payload any) ([]common.Notification, error) {
 	return nil, nil
 }
 
-func (d *dummyGenerator) EventTypes() []common.EventTypeDescriptor {
+func (d *dummyGenerator) EventTypes() []event.TypeDescriptor {
 	return d.eventTypes
 }
 
@@ -163,7 +164,7 @@ func (g generatorThatFailsToValidate) Validate(_ context.Context) error {
 	return g.err
 }
 
-func (g generatorThatFailsToValidate) EventTypes() []common.EventTypeDescriptor {
+func (g generatorThatFailsToValidate) EventTypes() []event.TypeDescriptor {
 	panic("not called in our tests")
 }
 
@@ -213,7 +214,7 @@ func mkServer(t *testing.T) *Server {
 	srcGitlab := &source.Source{
 		Key: "gitlab",
 		Generator: &dummyGenerator{
-			eventTypes: []common.EventTypeDescriptor{
+			eventTypes: []event.TypeDescriptor{
 				{
 					Key:         "com.gitlab.push",
 					Title:       "Push",
@@ -225,7 +226,7 @@ func mkServer(t *testing.T) *Server {
 	srcArgo := &source.Source{
 		Key: "argo",
 		Generator: &dummyGenerator{
-			eventTypes: []common.EventTypeDescriptor{
+			eventTypes: []event.TypeDescriptor{
 				{
 					Key:         "com.argocd.sync-succeeded",
 					Title:       "Sync Succeeded",
