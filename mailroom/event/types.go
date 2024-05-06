@@ -4,6 +4,11 @@
 
 package event
 
+import (
+	"net/url"
+	"time"
+)
+
 // Event is some action that occurred in an external system that we may want to send notifications for
 type Event[T Payload] struct {
 	Context
@@ -16,13 +21,48 @@ type Payload = any
 // The fields are based on the CloudEvent spec: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
 type Context struct {
 	ID      ID        // required
+	Source  Source    // required
 	Type    Type      // required
+	Subject string    // optional
+	Time    time.Time // optional
 }
 
 // ID is a unique identifier for an event occurrence
 // It should be a non-empty string that is unique within the context of the EventSource
 // See https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#id
 type ID string
+
+// Source identifies the context in which an event happened
+// It should be a non-empty URI reference (preferably an absolute URI)
+// See https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#source-1
+type Source struct {
+	uri url.URL
+}
+
+// NewSource creates a new EventSource from a URI string
+// If the URI is invalid, it will return nil
+func NewSource(uri string) *Source {
+	if uri == "" {
+		return nil
+	}
+
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return nil
+	}
+
+	return &Source{
+		uri: *parsed,
+	}
+}
+
+func (s *Source) String() string {
+	if s == nil {
+		return ""
+	}
+
+	return s.uri.String()
+}
 
 // Type describes the type of event related to the originating occurrence.
 // It may be used for routing, observability, etc. It must comply with CloudEvent `type` spec:

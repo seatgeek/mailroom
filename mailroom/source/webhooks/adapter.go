@@ -69,11 +69,13 @@ func (a Adapter[Event]) Parse(req *http.Request) (*event.Event[any], error) {
 		return nil, nil
 	}
 
+	hookType := reflect.TypeOf(a.hook).Name()
 	payloadType := reflect.TypeOf(payload).Name()
 
 	return &event.Event[any]{
 		Context: event.Context{
 			ID:     event.ID(uuid.New().String()),
+			Source: must(event.NewSource("/webhooks/" + hookType)),
 			Type:   event.Type(payloadType),
 		},
 		Data: payload,
@@ -93,10 +95,9 @@ func isErrEventNotFound(err error) bool {
 		errors.Is(err, gogs.ErrEventNotFound)
 }
 
-// Must is a helper function that panics if the error is not nil
-func Must[T any](t T, err error) T {
-	if err != nil {
-		panic(err)
+func must[T any](t *T) T {
+	if t == nil {
+		panic("expected non-nil pointer")
 	}
-	return t
+	return *t
 }
