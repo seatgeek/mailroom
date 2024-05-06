@@ -1,0 +1,6 @@
+---
+# Default state for all rules
+default: true
+
+# Any line length is fine
+MD013: false
