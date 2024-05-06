@@ -29,8 +29,8 @@ func (c *WriterNotifier) Push(_ context.Context, n common.Notification) error {
 	_, err := fmt.Fprintf(
 		c.writer,
 		"notification: id=%s type=%s, to=%s, message=%s\n",
-		n.ID(),
-		n.Type(),
+		n.Context().ID,
+		n.Context().Type,
 		n.Recipient(),
 		n.Render("writer"),
 	)

@@ -69,7 +69,7 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 			w.maxRetries,
 		),
 		func(err error, duration time.Duration) {
-			slog.Error("failed to push notification", "id", notification.ID(), "error", err, "next_retry", duration.String())
+			slog.Error("failed to push notification", "id", notification.Context().ID, "error", err, "next_retry", duration.String())
 		},
 	)
 }
@@ -100,7 +100,7 @@ type withLogging struct {
 func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
 	err := w.Transport.Push(ctx, n)
 	if err == nil {
-		w.logger.Log(ctx, w.level, "sent notification", "id", n.ID(), "type", n.Type(), "to", n.Recipient(), "message", n.Render("logger"))
+		w.logger.Log(ctx, w.level, "sent notification", "id", n.Context().ID, "type", n.Context().Type, "to", n.Recipient(), "message", n.Render("logger"))
 	}
 
 	return err

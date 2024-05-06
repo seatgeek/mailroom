@@ -15,6 +15,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
@@ -25,7 +26,7 @@ import (
 func TestWithTimeout(t *testing.T) {
 	t.Parallel()
 
-	fakeNotification := notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "test").Build()
+	fakeNotification := common.NewMockNotification(t)
 
 	timeout := 30 * time.Second
 	expectedDeadline := time.Now().Add(timeout)
@@ -49,6 +50,11 @@ func TestWithTimeout(t *testing.T) {
 
 func TestWithRetry(t *testing.T) {
 	t.Parallel()
+
+	fakeNotification := notification.NewBuilder(event.Context{
+		ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+		Type: "test",
+	}).Build()
 
 	tests := []struct {
 		name         string
@@ -116,7 +122,7 @@ func TestWithRetry(t *testing.T) {
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
-			err := wrapped.Push(context.Background(), notification.NewBuilder("test", "test").Build())
+			err := wrapped.Push(context.Background(), fakeNotification)
 
 			assert.Equal(t, tc.wantErr, err, "Error should match")
 		})
@@ -144,7 +150,10 @@ func TestWithLogging(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			notification := notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "test").
+			notification := notification.NewBuilder(event.Context{
+				ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+				Type: "test",
+			}).
 				WithRecipientIdentifiers(
 					identifier.New("username", "rufus"),
 					identifier.New("email", "rufus@seatgeek.com"),

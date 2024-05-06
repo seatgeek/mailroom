@@ -35,7 +35,7 @@ func CreateEventHandler(ctx context.Context, s source.Source, n notifier.Notifie
 			return nil
 		}
 
-		id := notifications[0].ID()
+		id := notifications[0].Context().ID
 		slog.Debug("dispatching notifications", "id", id, "source", s.Key, "notifications", len(notifications))
 
 		var errs []error

@@ -13,8 +13,7 @@ import (
 
 // Notification is a notification that should be sent
 type Notification interface {
-	ID() event.ID
-	Type() event.Type
+	Context() event.Context
 	Recipient() identifier.Collection
 	Render(TransportKey) string
 	AddRecipients(identifier.Collection)

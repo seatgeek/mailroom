@@ -9,6 +9,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
@@ -21,7 +22,11 @@ func TestWriterNotifier_Push(t *testing.T) {
 	buffer := &bytes.Buffer{}
 	notifier := notifier.NewWriterNotifier("buffer", buffer)
 
-	err := notifier.Push(context.Background(), notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "com.example.test").
+	err := notifier.Push(context.Background(), notification.NewBuilder(
+		event.Context{
+			ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+			Type: "com.example.test",
+		}).
 		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "codell")).
 		WithDefaultMessage("Hello, world!").
 		Build(),

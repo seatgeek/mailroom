@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/seatgeek/mailroom/mailroom/common"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/source"
@@ -22,7 +23,7 @@ func TestHandler(t *testing.T) {
 	t.Parallel()
 
 	someNotifications := []common.Notification{
-		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "com.example.event").Build(),
+		notification.NewBuilder(event.Context{ID: "a1c11a53-c4be-488f-89b6-f83bf2d48dab", Type: "com.example.event"}).Build(),
 	}
 	someError := errors.New("some error")
 

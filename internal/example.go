@@ -46,7 +46,11 @@ func (s *ExampleSource) Parse(req *http.Request) ([]common.Notification, error) 
 	}
 
 	return []common.Notification{
-		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "local.playground.message").
+		notification.NewBuilder(
+			event.Context{
+				ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+				Type: "local.playground.message",
+			}).
 			WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
 			WithRecipientIdentifiers(identifier.New("email", payload.RecipientEmail)).
 			Build(),
