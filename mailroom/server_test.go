@@ -24,18 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type dummyGenerator struct {
-	eventTypes []event.TypeDescriptor
-}
-
-func (d *dummyGenerator) Generate(payload any) ([]common.Notification, error) {
-	return nil, nil
-}
-
-func (d *dummyGenerator) EventTypes() []event.TypeDescriptor {
-	return d.eventTypes
-}
-
 func TestNew(t *testing.T) {
 	s := New()
 
@@ -44,8 +32,11 @@ func TestNew(t *testing.T) {
 }
 
 func TestWithSources(t *testing.T) {
-	src1 := &source.Source{Key: "foo"}
-	src2 := &source.Source{Key: "bar"}
+	src1 := source.NewMockSource(t)
+	src1.EXPECT().Key().Return("foo").Maybe()
+	src2 := source.NewMockSource(t)
+	src2.EXPECT().Key().Return("bar").Maybe()
+
 	s := New(WithSources(src1, src2))
 
 	assert.NotNil(t, s)
@@ -71,28 +62,10 @@ func TestRun(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "returns error if a parser fails to validate",
+			name: "returns error if a source fails to validate",
 			opts: []Opt{
 				WithListenAddr(":0"),
-				WithSources(&source.Source{
-					Key: "foo",
-					Parser: &parserThatFailsToValidate{
-						err: errValidationFailed,
-					},
-				}),
-			},
-			wantErr: errValidationFailed,
-		},
-		{
-			name: "returns error if a generator fails to validate",
-			opts: []Opt{
-				WithListenAddr(":0"),
-				WithSources(&source.Source{
-					Key: "foo",
-					Generator: &generatorThatFailsToValidate{
-						err: errValidationFailed,
-					},
-				}),
+				WithSources(&sourceThatFailsToValidate{err: errValidationFailed}),
 			},
 			wantErr: errValidationFailed,
 		},
@@ -140,32 +113,27 @@ func TestRun(t *testing.T) {
 	}
 }
 
-type parserThatFailsToValidate struct {
+type sourceThatFailsToValidate struct {
 	err error
 }
 
-func (p parserThatFailsToValidate) Parse(_ *http.Request) (payload any, err error) {
-	panic("not called in our tests")
+var _ source.Source = sourceThatFailsToValidate{}
+var _ common.Validator = sourceThatFailsToValidate{}
+
+func (s sourceThatFailsToValidate) Validate(_ context.Context) error {
+	return s.err
 }
 
-func (p parserThatFailsToValidate) Validate(_ context.Context) error {
-	return p.err
+func (s sourceThatFailsToValidate) Key() string {
+	return "some-source"
 }
 
-type generatorThatFailsToValidate struct {
-	err error
+func (s sourceThatFailsToValidate) Parse(_ *http.Request) ([]common.Notification, error) {
+	panic("not implemented")
 }
 
-func (g generatorThatFailsToValidate) Generate(_ any) ([]common.Notification, error) {
-	panic("not called in our tests")
-}
-
-func (g generatorThatFailsToValidate) Validate(_ context.Context) error {
-	return g.err
-}
-
-func (g generatorThatFailsToValidate) EventTypes() []event.TypeDescriptor {
-	panic("not called in our tests")
+func (s sourceThatFailsToValidate) EventTypes() []event.TypeDescriptor {
+	panic("not implemented")
 }
 
 type transportThatFailsToValidate struct {
@@ -211,30 +179,25 @@ func (s userStoreThatFailsToValidate) Validate(_ context.Context) error {
 func mkServer(t *testing.T) *Server {
 	t.Helper()
 
-	srcGitlab := &source.Source{
-		Key: "gitlab",
-		Generator: &dummyGenerator{
-			eventTypes: []event.TypeDescriptor{
-				{
-					Key:         "com.gitlab.push",
-					Title:       "Push",
-					Description: "Emitted when a user pushes code to a GitLab repository",
-				},
-			},
+	srcGitlab := source.NewMockSource(t)
+	srcGitlab.EXPECT().Key().Return("gitlab").Maybe()
+	srcGitlab.EXPECT().EventTypes().Return([]event.TypeDescriptor{
+		{
+			Key:         "com.gitlab.push",
+			Title:       "Push",
+			Description: "Emitted when a user pushes code to a GitLab repository",
 		},
-	}
-	srcArgo := &source.Source{
-		Key: "argo",
-		Generator: &dummyGenerator{
-			eventTypes: []event.TypeDescriptor{
-				{
-					Key:         "com.argocd.sync-succeeded",
-					Title:       "Sync Succeeded",
-					Description: "Emitted when an Argo CD sync operation completes successfully",
-				},
-			},
+	})
+
+	srcArgo := source.NewMockSource(t)
+	srcArgo.EXPECT().Key().Return("argo").Maybe()
+	srcArgo.EXPECT().EventTypes().Return([]event.TypeDescriptor{
+		{
+			Key:         "com.argocd.sync-succeeded",
+			Title:       "Sync Succeeded",
+			Description: "Emitted when an Argo CD sync operation completes successfully",
 		},
-	}
+	})
 
 	tpSlack := notifier.NewMockTransport(t)
 	tpSlack.On("Key").Return(common.TransportKey("slack"))

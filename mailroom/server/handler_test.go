@@ -21,50 +21,39 @@ import (
 func TestHandler(t *testing.T) {
 	t.Parallel()
 
-	somePayload := &struct{}{}
 	someNotifications := []common.Notification{
 		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "com.example.event").Build(),
 	}
 	someError := errors.New("some error")
 
 	tests := []struct {
-		name      string
-		parser    source.PayloadParser
-		generator source.NotificationGenerator
-		notifier  notifier.Notifier
-		wantErr   error
+		name     string
+		source   source.Source
+		notifier notifier.Notifier
+		wantErr  error
 	}{
 		{
-			name:      "happy path",
-			parser:    parserThatReturns(t, somePayload, nil),
-			generator: generatorThatReturns(t, someNotifications, nil),
-			notifier:  notifierThatReturns(t, nil),
-			wantErr:   nil,
+			name:     "happy path",
+			source:   sourceThatReturns(t, someNotifications, nil),
+			notifier: notifierThatReturns(t, nil),
+			wantErr:  nil,
 		},
 		{
-			name:      "parsed fine but no notifications generated",
-			parser:    parserThatReturns(t, somePayload, nil),
-			generator: generatorThatReturns(t, nil, nil),
-			notifier:  notifierThatReturns(t, nil),
-			wantErr:   nil,
+			name:     "no notifications generated",
+			source:   sourceThatReturns(t, nil, nil),
+			notifier: notifierThatReturns(t, nil),
+			wantErr:  nil,
 		},
 		{
-			name:    "parser error",
-			parser:  parserThatReturns(t, nil, someError),
+			name:    "parse error",
+			source:  sourceThatReturns(t, nil, someError),
 			wantErr: someError,
 		},
 		{
-			name:      "generator error",
-			parser:    parserThatReturns(t, somePayload, nil),
-			generator: generatorThatReturns(t, nil, someError),
-			wantErr:   someError,
-		},
-		{
-			name:      "notifier error",
-			parser:    parserThatReturns(t, somePayload, nil),
-			generator: generatorThatReturns(t, someNotifications, nil),
-			notifier:  notifierThatReturns(t, someError),
-			wantErr:   someError,
+			name:     "notifier error",
+			source:   sourceThatReturns(t, someNotifications, nil),
+			notifier: notifierThatReturns(t, someError),
+			wantErr:  someError,
 		},
 	}
 
@@ -74,11 +63,7 @@ func TestHandler(t *testing.T) {
 
 			handler := CreateEventHandler(
 				context.Background(),
-				&source.Source{
-					Key:       "some-source",
-					Parser:    tc.parser,
-					Generator: tc.generator,
-				},
+				tc.source,
 				tc.notifier,
 			)
 
@@ -96,22 +81,14 @@ func TestHandler(t *testing.T) {
 	}
 }
 
-func parserThatReturns(t *testing.T, payload *struct{}, err error) source.PayloadParser {
+func sourceThatReturns(t *testing.T, notifs []common.Notification, err error) source.Source {
 	t.Helper()
 
-	parser := source.MockPayloadParser{}
-	parser.On("Parse", mock.Anything).Return(payload, err)
+	src := source.MockSource{}
+	src.On("Key").Return("some-source")
+	src.On("Parse", mock.Anything).Return(notifs, err)
 
-	return &parser
-}
-
-func generatorThatReturns(t *testing.T, notifications []common.Notification, err error) source.NotificationGenerator {
-	t.Helper()
-
-	generator := source.MockNotificationGenerator{}
-	generator.On("Generate", mock.Anything).Return(notifications, err)
-
-	return &generator
+	return &src
 }
 
 func notifierThatReturns(t *testing.T, err error) notifier.Notifier {

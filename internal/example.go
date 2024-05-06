@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom/mailroom"
@@ -24,51 +23,42 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
-type PlaygroundPayload struct {
-	// identifier, e.g. "gitlab.com/id:123"
-	Recipient string `json:"recipient"`
-	Message   string `json:"message"`
+type MessageSentEvent struct {
+	AuthorName     string `json:"from"`
+	RecipientEmail string `json:"to"`
+	Comment        string `json:"comment"`
 }
 
-type PlaygroundParser struct{}
+var messageSentType = event.Type("com.example.message_sent")
 
-func (t *PlaygroundParser[PlaygroundPayload]) Parse(req *http.Request) (*event.Event[PlaygroundPayload], error) {
-	payload := PlaygroundPayload{}
+type ExampleSource struct{}
+
+var _ source.Source = &ExampleSource{}
+
+func (s *ExampleSource) Key() string {
+	return "example"
+}
+
+func (s *ExampleSource) Parse(req *http.Request) ([]common.Notification, error) {
+	payload := MessageSentEvent{}
 	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
 		return nil, err
 	}
 
-	return &event.Event[PlaygroundPayload]{
-		Context: event.Context{
-			ID: event.ID(uuid.New().String()),
-			Type: event.Type("local.playground.message"),
-		},
-		Data: payload,
-	}, nil
-}
-
-// PlaygroundGenerator is...
-type PlaygroundGenerator struct{}
-
-// Generate returns some dummy notifications
-func (p *PlaygroundGenerator) Generate(e event.Event[PlaygroundPayload]) ([]common.Notification, error) {
-	body := e.Data
-	ident := strings.Split(body.Recipient, ":")
-	if len(ident) != 2 {
-		return nil, fmt.Errorf("invalid recipient identifier: %s", body.Recipient)
-	}
-
 	return []common.Notification{
-		notification.NewBuilder(e.Context.ID, e.Context.Type).WithDefaultMessage(body.Message).WithRecipientIdentifiers(identifier.New(ident[0], ident[1])).Build(),
+		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "local.playground.message").
+			WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
+			WithRecipientIdentifiers(identifier.New("email", payload.RecipientEmail)).
+			Build(),
 	}, nil
 }
 
-func (p *PlaygroundGenerator) EventTypes() []event.TypeDescriptor {
+func (s *ExampleSource) EventTypes() []event.TypeDescriptor {
 	return []event.TypeDescriptor{
 		{
-			Key:         "local.playground.message",
+			Key:         messageSentType,
 			Title:       "Message",
-			Description: "A message sent from to local playground",
+			Description: "A message sent from one user to another",
 		},
 	}
 }
@@ -85,12 +75,9 @@ func main() {
 
 	app := mailroom.New(
 		mailroom.WithSources(
-			source.New[PlaygroundPayload](
-				"playground",
-				&PlaygroundParser{},
-				&PlaygroundGenerator{},
-			),
-			// source.New(
+			&ExampleSource{},
+			// source.New[ArgoEventPayload](
+			//  "argocd",
 			//	argocd.NewPayloadParser(
 			//		argocd.WithEvents(argocd.AppSyncFailedEvent, argocd.AppSyncSucceededEvent),
 			//	),

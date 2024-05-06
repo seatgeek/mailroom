@@ -29,7 +29,7 @@ var ErrShutdown = errors.New("shutting down")
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
 	listenAddr string
-	sources    []*source.Source
+	sources    []source.Source
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
@@ -62,7 +62,7 @@ func WithListenAddr(addr string) Opt {
 }
 
 // WithSources adds sources to the server
-func WithSources(sources ...*source.Source) Opt {
+func WithSources(sources ...source.Source) Opt {
 	return func(s *Server) {
 		s.sources = append(s.sources, sources...)
 	}
@@ -91,15 +91,9 @@ func WithRouter(router *mux.Router) Opt {
 
 func (s *Server) validate(ctx context.Context) error {
 	for _, src := range s.sources {
-		if v, ok := src.Parser.(common.Validator); ok {
+		if v, ok := src.(common.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("parser %s failed to validate: %w", src.Key, err)
-			}
-		}
-
-		if v, ok := src.Generator.(common.Validator); ok {
-			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("generator %s failed to validate: %w", src.Key, err)
+				return fmt.Errorf("parser %s failed to validate: %w", src.Key(), err)
 			}
 		}
 	}
@@ -152,8 +146,8 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) buildCurrentUserPreferences(p user.Preferences) user.Preferences {
 	hydratedPreferences := make(user.Preferences)
 
-	for _, source := range s.sources {
-		for _, eventType := range source.Generator.EventTypes() {
+	for _, src := range s.sources {
+		for _, eventType := range src.EventTypes() {
 			for _, transport := range s.transports {
 				if hydratedPreferences[eventType.Key] == nil {
 					hydratedPreferences[eventType.Key] = make(map[common.TransportKey]bool)
@@ -239,8 +233,8 @@ func (s *Server) handleGetConfiguration(writer http.ResponseWriter, _ *http.Requ
 	sources := make([]APISource, len(s.sources))
 	for i, src := range s.sources {
 		src := APISource{
-			Key:        src.Key,
-			EventTypes: src.Generator.EventTypes(),
+			Key:        src.Key(),
+			EventTypes: src.EventTypes(),
 		}
 		sources[i] = src
 	}
@@ -275,7 +269,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 
 	// Mount all sources wrapped with our error handler
 	for _, src := range s.sources {
-		endpoint := "/event/" + src.Key
+		endpoint := "/event/" + src.Key()
 		slog.Debug("mounting source", "endpoint", endpoint)
 		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateEventHandler(ctx, src, s.notifier)))
 	}

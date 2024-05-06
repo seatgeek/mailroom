@@ -12,13 +12,13 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 - **Event**: An event is some action that occurs in an external system that we want to send a **notification** for.
 - **Notification**: A notification is a string that should be sent to a **user** via some **transport**.
-- **Sources**: A "source" is any external system that sends webhook events to Mailroom. It composes a **payload parser** and a **notification generator**.
-- **Payload Parser**: The payload parser is responsible for:
-  - Receiving an **event** via an incoming HTTP request
-  - Validating the request (e.g. verifying the signature or shared secret)
-  - Parsing the raw request body into a useful **payload** object if the event is of interest to us
-- **Notification Generator**: The notification generator takes the parsed **payload** and generates one or more **notifications** from it
-- **Payload**: A payload is a structured object that represents an **event** that occurred.
+- **Sources**: A "source" is any external system that sends webhook events to Mailroom. It receives an HTTP request and returns any number of notifications to send.
+  - A **source** object can optionally be composed of a **payload parser** and a **notification generator**:
+    - **Payload Parser**: The payload parser is responsible for:
+      - Receiving a serialized **event** via an incoming HTTP request
+      - Validating the request (e.g. verifying the signature or shared secret)
+      - Parsing the raw request body into a useful **event** object if the event is of interest to us
+    - **Notification Generator**: The notification generator takes the parsed **event** and generates one or more **notifications** from it
 - **Transport**: A transport is a way to send a **notification** to a user. It could be email, Slack, Discord, or something else.
 - **User**: A user is a person who wants to receive **notifications** from Mailroom and has **preferences** on how they'd like to receive them.
 - **Identifier**: An identifier is a unique string that identifies an initiator or potential recipient (**user**) of some event. It could be an email address, a Slack user ID, or something else.
