@@ -86,8 +86,8 @@ func handlerThatReturns(t *testing.T, notifs []common.Notification, err error) h
 	t.Helper()
 
 	src := handler.NewMockHandler(t)
-	src.On("Key").Return("some-handler")
-	src.On("Process", mock.Anything).Return(notifs, err)
+	src.EXPECT().Key().Return("some-handler")
+	src.EXPECT().Process(mock.Anything).Return(notifs, err)
 
 	return src
 }
@@ -96,7 +96,7 @@ func notifierThatReturns(t *testing.T, err error) notifier.Notifier {
 	t.Helper()
 
 	notif := notifier.MockNotifier{}
-	notif.On("Push", mock.Anything, mock.Anything).Return(err)
+	notif.EXPECT().Push(mock.Anything, mock.Anything).Return(err)
 
 	return &notif
 }

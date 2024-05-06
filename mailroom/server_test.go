@@ -200,9 +200,9 @@ func mkServer(t *testing.T) *Server {
 	})
 
 	tpSlack := notifier.NewMockTransport(t)
-	tpSlack.On("Key").Return(common.TransportKey("slack"))
+	tpSlack.EXPECT().Key().Return("slack")
 	tpEmail := notifier.NewMockTransport(t)
-	tpEmail.On("Key").Return(common.TransportKey("email"))
+	tpEmail.EXPECT().Key().Return("email")
 
 	u := user.New(
 		"rufus",
