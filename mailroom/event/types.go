@@ -4,6 +4,21 @@
 
 package event
 
+// Event is some action that occurred in an external system that we may want to send notifications for
+type Event[T Payload] struct {
+	Context
+	Data T
+}
+
+type Payload = any
+
+// Context contains the metadata for an event
+// The fields are based on the CloudEvent spec: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
+type Context struct {
+	ID      ID        // required
+	Type    Type      // required
+}
+
 // ID is a unique identifier for an event occurrence
 // It should be a non-empty string that is unique within the context of the EventSource
 // See https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#id

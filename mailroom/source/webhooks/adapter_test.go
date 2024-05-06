@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/webhooks/v6/gitlab"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -19,28 +20,30 @@ func TestAdapter_Parse(t *testing.T) {
 	somePayload := struct{}{}
 
 	tests := []struct {
-		name        string
-		hook        hook[string]
-		wantPayload any
-		wantErr     error
+		name      string
+		hook      hook[string]
+		wantEvent *event.Event[any]
+		wantErr   error
 	}{
 		{
-			name:        "ok",
-			hook:        hookThatReturns(t, somePayload, nil),
-			wantPayload: somePayload,
-			wantErr:     nil,
+			name: "ok",
+			hook: hookThatReturns(t, somePayload, nil),
+			wantEvent: &event.Event[any]{
+				Data: somePayload,
+			},
+			wantErr: nil,
 		},
 		{
-			name:        "error",
-			hook:        hookThatReturns(t, nil, gitlab.ErrParsingPayload),
-			wantPayload: nil,
-			wantErr:     gitlab.ErrParsingPayload,
+			name:      "error",
+			hook:      hookThatReturns(t, nil, gitlab.ErrParsingPayload),
+			wantEvent: nil,
+			wantErr:   gitlab.ErrParsingPayload,
 		},
 		{
-			name:        "event not allowlisted",
-			hook:        hookThatReturns(t, nil, gitlab.ErrEventNotFound),
-			wantPayload: nil,
-			wantErr:     nil,
+			name:      "event not allowlisted",
+			hook:      hookThatReturns(t, nil, gitlab.ErrEventNotFound),
+			wantEvent: nil,
+			wantErr:   nil,
 		},
 	}
 
@@ -52,7 +55,12 @@ func TestAdapter_Parse(t *testing.T) {
 
 			payload, err := adapter.Parse(httptest.NewRequest("POST", "/webhook", nil))
 
-			assert.Equal(t, tc.wantPayload, payload)
+			if tc.wantEvent == nil {
+				assert.Nil(t, payload)
+			} else {
+				assert.Equal(t, tc.wantEvent.Data, payload.Data)
+			}
+
 			assert.Equal(t, tc.wantErr, err)
 		})
 	}

@@ -12,22 +12,22 @@ import (
 )
 
 // PayloadParser is an interface for anything that parses incoming webhooks
-type PayloadParser interface {
+type PayloadParser[T event.Payload] interface {
 	// Parse verifies and parses incoming webhooks and returns a well-defined payload object or an error
 	//
 	// The payload return value contains the parsed payload struct, which will be passed to the NotificationGenerator.
 	// Returning nil, nil is valid and indicates that the payload was parsed and determined to not be allowlisted, and
 	// thus should be ignored.
-	Parse(req *http.Request) (payload any, err error)
+	Parse(req *http.Request) (*event.Event[T], error)
 }
 
 // NotificationGenerator is an interface for anything that generates notifications from a parsed payload
-type NotificationGenerator interface {
+type NotificationGenerator[T event.Payload] interface {
 	// Generate takes a payload and returns a list of Notifications to be sent
 	//
 	// Some payloads may result in multiple notifications, for example the creation of a new merge request in GitLab
 	// might result in notifications to multiple reviewers.
-	Generate(payload any) ([]common.Notification, error)
+	Generate(event.Event[T]) ([]common.Notification, error)
 	// EventTypes returns descriptors for all EventTypes that the generator may emit
 	EventTypes() []event.TypeDescriptor
 }
@@ -35,16 +35,16 @@ type NotificationGenerator interface {
 // Source is a combination of a PayloadParser and a NotificationGenerator
 // Both are required to be able to generate notifications from incoming webhooks, but they are kept separate to allow
 // users to easily override the default generator with a custom one if needed.
-type Source struct {
+type Source[T event.Payload] struct {
 	// Key is both a unique identifier for the source, and the endpoint that it listens on
 	Key       string
-	Parser    PayloadParser
-	Generator NotificationGenerator
+	Parser    PayloadParser[T]
+       Generator NotificationGenerator[T]
 }
 
 // New returns a new Source, pairing a PayloadParser and a NotificationGenerator together with some key
-func New(key string, parser PayloadParser, generator NotificationGenerator) *Source {
-	return &Source{
+func New[T event.Payload](key string, parser PayloadParser[T], generator NotificationGenerator[T]) *Source {
+	return &Source[T]{
 		Key:       key,
 		Parser:    parser,
 		Generator: generator,

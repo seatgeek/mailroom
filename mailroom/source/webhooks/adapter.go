@@ -7,6 +7,7 @@ package webhooks
 import (
 	"errors"
 	"net/http"
+	"reflect"
 
 	"github.com/go-playground/webhooks/v6/azuredevops"
 	"github.com/go-playground/webhooks/v6/bitbucket"
@@ -16,6 +17,8 @@ import (
 	"github.com/go-playground/webhooks/v6/github"
 	"github.com/go-playground/webhooks/v6/gitlab"
 	"github.com/go-playground/webhooks/v6/gogs"
+	"github.com/google/uuid"
+	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/seatgeek/mailroom/mailroom/source"
 )
 
@@ -52,7 +55,7 @@ func NewAdapter[Event EventType](hook hook[Event], events ...Event) *Adapter[Eve
 	return adapter
 }
 
-func (a Adapter[Event]) Parse(req *http.Request) (any, error) {
+func (a Adapter[Event]) Parse(req *http.Request) (*event.Event[any], error) {
 	payload, err := a.hook.Parse(req, a.events...)
 	if err != nil {
 		if isErrEventNotFound(err) {
@@ -62,10 +65,22 @@ func (a Adapter[Event]) Parse(req *http.Request) (any, error) {
 		return nil, err
 	}
 
-	return payload, nil
+	if payload == nil {
+		return nil, nil
+	}
+
+	payloadType := reflect.TypeOf(payload).Name()
+
+	return &event.Event[any]{
+		Context: event.Context{
+			ID:     event.ID(uuid.New().String()),
+			Type:   event.Type(payloadType),
+		},
+		Data: payload,
+	}, nil
 }
 
-var _ source.PayloadParser = &Adapter[string]{}
+var _ source.PayloadParser[any] = &Adapter[string]{}
 
 // isErrEventNotFound checks if the error returned by webhooks means that the event was not on the allowlist
 // It's kinda hacky, but it's the least-worst way I could think to do this.

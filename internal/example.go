@@ -32,28 +32,34 @@ type PlaygroundPayload struct {
 
 type PlaygroundParser struct{}
 
-func (t *PlaygroundParser) Parse(req *http.Request) (any, error) {
+func (t *PlaygroundParser[PlaygroundPayload]) Parse(req *http.Request) (*event.Event[PlaygroundPayload], error) {
 	payload := PlaygroundPayload{}
 	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
 		return nil, err
 	}
 
-	return payload, nil
+	return &event.Event[PlaygroundPayload]{
+		Context: event.Context{
+			ID: event.ID(uuid.New().String()),
+			Type: event.Type("local.playground.message"),
+		},
+		Data: payload,
+	}, nil
 }
 
 // PlaygroundGenerator is...
 type PlaygroundGenerator struct{}
 
 // Generate returns some dummy notifications
-func (p *PlaygroundGenerator) Generate(payload any) ([]common.Notification, error) {
-	body := payload.(PlaygroundPayload)
+func (p *PlaygroundGenerator) Generate(e event.Event[PlaygroundPayload]) ([]common.Notification, error) {
+	body := e.Data
 	ident := strings.Split(body.Recipient, ":")
 	if len(ident) != 2 {
 		return nil, fmt.Errorf("invalid recipient identifier: %s", body.Recipient)
 	}
 
 	return []common.Notification{
-		notification.NewBuilder("a1c11a53-c4be-488f-89b6-f83bf2d48dab", "local.playground.message").WithDefaultMessage(body.Message).WithRecipientIdentifiers(identifier.New(ident[0], ident[1])).Build(),
+		notification.NewBuilder(e.Context.ID, e.Context.Type).WithDefaultMessage(body.Message).WithRecipientIdentifiers(identifier.New(ident[0], ident[1])).Build(),
 	}, nil
 }
 
@@ -79,7 +85,7 @@ func main() {
 
 	app := mailroom.New(
 		mailroom.WithSources(
-			source.New(
+			source.New[PlaygroundPayload](
 				"playground",
 				&PlaygroundParser{},
 				&PlaygroundGenerator{},
