@@ -12,9 +12,9 @@ import (
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/event"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
-	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -29,30 +29,30 @@ func TestHandler(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		source   source.Source
+		handler  handler.Handler
 		notifier notifier.Notifier
 		wantErr  error
 	}{
 		{
 			name:     "happy path",
-			source:   sourceThatReturns(t, someNotifications, nil),
+			handler:  handlerThatReturns(t, someNotifications, nil),
 			notifier: notifierThatReturns(t, nil),
 			wantErr:  nil,
 		},
 		{
 			name:     "no notifications generated",
-			source:   sourceThatReturns(t, nil, nil),
+			handler:  handlerThatReturns(t, nil, nil),
 			notifier: notifierThatReturns(t, nil),
 			wantErr:  nil,
 		},
 		{
 			name:    "parse error",
-			source:  sourceThatReturns(t, nil, someError),
+			handler: handlerThatReturns(t, nil, someError),
 			wantErr: someError,
 		},
 		{
 			name:     "notifier error",
-			source:   sourceThatReturns(t, someNotifications, nil),
+			handler:  handlerThatReturns(t, someNotifications, nil),
 			notifier: notifierThatReturns(t, someError),
 			wantErr:  someError,
 		},
@@ -64,13 +64,13 @@ func TestHandler(t *testing.T) {
 
 			handler := CreateEventHandler(
 				context.Background(),
-				tc.source,
+				tc.handler,
 				tc.notifier,
 			)
 
 			writer := httptest.NewRecorder()
 
-			err := handler(writer, httptest.NewRequest("POST", "/some-source", nil))
+			err := handler(writer, httptest.NewRequest("POST", "/some-handler", nil))
 
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
@@ -82,14 +82,14 @@ func TestHandler(t *testing.T) {
 	}
 }
 
-func sourceThatReturns(t *testing.T, notifs []common.Notification, err error) source.Source {
+func handlerThatReturns(t *testing.T, notifs []common.Notification, err error) handler.Handler {
 	t.Helper()
 
-	src := source.MockSource{}
-	src.On("Key").Return("some-source")
-	src.On("Parse", mock.Anything).Return(notifs, err)
+	src := handler.NewMockHandler(t)
+	src.On("Key").Return("some-handler")
+	src.On("Process", mock.Anything).Return(notifs, err)
 
-	return &src
+	return src
 }
 
 func notifierThatReturns(t *testing.T, err error) notifier.Notifier {

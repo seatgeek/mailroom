@@ -12,8 +12,9 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 - **Event**: An event is some action that occurs in an external system that we want to send a **notification** for.
 - **Notification**: A notification is a string that should be sent to a **user** via some **transport**.
-- **Sources**: A "source" is any external system that sends webhook events to Mailroom. It receives an HTTP request and returns any number of notifications to send.
-  - A **source** object can optionally be composed of a **payload parser** and a **notification generator**:
+- **Source**: A source is any external system that sends webhook events to Mailroom.
+- **Handler:** A handler is a function that processes an incoming HTTP request from a **source** and returns a list of **notifications** to send.
+  - A **handler** can optionally be composed of separate **payload parser** and **notification generator** objects:
     - **Payload Parser**: The payload parser is responsible for:
       - Receiving a serialized **event** via an incoming HTTP request
       - Validating the request (e.g. verifying the signature or shared secret)

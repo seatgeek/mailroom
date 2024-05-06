@@ -19,7 +19,7 @@ import (
 	"github.com/go-playground/webhooks/v6/gogs"
 	"github.com/google/uuid"
 	"github.com/seatgeek/mailroom/mailroom/event"
-	"github.com/seatgeek/mailroom/mailroom/source"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 )
 
 type EventType interface{ ~string }
@@ -39,13 +39,13 @@ var _ hook[github.Event] = &github.Webhook{}
 var _ hook[gitlab.Event] = &gitlab.Webhook{}
 var _ hook[gogs.Event] = &gogs.Webhook{}
 
-// Adapter allows the use of webhooks as a source.PayloadParser
+// Adapter allows the use of webhooks as a handler.PayloadParser
 type Adapter[Event EventType] struct {
 	hook   hook[Event]
 	events []Event
 }
 
-// NewAdapter returns a new Adapter allowing the webhook library's hooks to be used as a source.PayloadParser
+// NewAdapter returns a new Adapter allowing the webhook library's hooks to be used as a handler.PayloadParser
 func NewAdapter[Event EventType](hook hook[Event], events ...Event) *Adapter[Event] {
 	adapter := &Adapter[Event]{
 		hook:   hook,
@@ -82,7 +82,7 @@ func (a Adapter[Event]) Parse(req *http.Request) (*event.Event[any], error) {
 	}, nil
 }
 
-var _ source.PayloadParser[any] = &Adapter[string]{}
+var _ handler.PayloadParser[any] = &Adapter[string]{}
 
 // isErrEventNotFound checks if the error returned by webhooks means that the event was not on the allowlist
 // It's kinda hacky, but it's the least-worst way I could think to do this.

@@ -16,10 +16,10 @@ import (
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/event"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notification"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
-	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
@@ -31,15 +31,15 @@ type MessageSentEvent struct {
 
 var messageSentType = event.Type("com.example.message_sent")
 
-type ExampleSource struct{}
+type ExampleHandler struct{}
 
-var _ source.Source = &ExampleSource{}
+var _ handler.Handler = &ExampleHandler{}
 
-func (s *ExampleSource) Key() string {
+func (h *ExampleHandler) Key() string {
 	return "example"
 }
 
-func (s *ExampleSource) Parse(req *http.Request) ([]common.Notification, error) {
+func (h *ExampleHandler) Process(req *http.Request) ([]common.Notification, error) {
 	payload := MessageSentEvent{}
 	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (s *ExampleSource) Parse(req *http.Request) ([]common.Notification, error) 
 	}, nil
 }
 
-func (s *ExampleSource) EventTypes() []event.TypeDescriptor {
+func (h *ExampleHandler) EventTypes() []event.TypeDescriptor {
 	return []event.TypeDescriptor{
 		{
 			Key:         messageSentType,
@@ -78,9 +78,9 @@ func main() {
 	))
 
 	app := mailroom.New(
-		mailroom.WithSources(
-			&ExampleSource{},
-			// source.New[ArgoEventPayload](
+		mailroom.WithHandlers(
+			&ExampleHandler{},
+			// handler.New[ArgoEventPayload](
 			//  "argocd",
 			//	argocd.NewPayloadParser(
 			//		argocd.WithEvents(argocd.AppSyncFailedEvent, argocd.AppSyncSucceededEvent),

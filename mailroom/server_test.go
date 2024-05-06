@@ -16,10 +16,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/event"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
-	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/user"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,17 +31,17 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "0.0.0.0:8000", s.listenAddr)
 }
 
-func TestWithSources(t *testing.T) {
-	src1 := source.NewMockSource(t)
+func TestWithHandlers(t *testing.T) {
+	src1 := handler.NewMockHandler(t)
 	src1.EXPECT().Key().Return("foo").Maybe()
-	src2 := source.NewMockSource(t)
+	src2 := handler.NewMockHandler(t)
 	src2.EXPECT().Key().Return("bar").Maybe()
 
-	s := New(WithSources(src1, src2))
+	s := New(WithHandlers(src1, src2))
 
 	assert.NotNil(t, s)
-	assert.Contains(t, s.sources, src1)
-	assert.Contains(t, s.sources, src2)
+	assert.Contains(t, s.handlers, src1)
+	assert.Contains(t, s.handlers, src2)
 }
 
 func TestRun(t *testing.T) {
@@ -62,10 +62,10 @@ func TestRun(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "returns error if a source fails to validate",
+			name: "returns error if a handler fails to validate",
 			opts: []Opt{
 				WithListenAddr(":0"),
-				WithSources(&sourceThatFailsToValidate{err: errValidationFailed}),
+				WithHandlers(&handlerThatFailsToValidate{err: errValidationFailed}),
 			},
 			wantErr: errValidationFailed,
 		},
@@ -113,26 +113,26 @@ func TestRun(t *testing.T) {
 	}
 }
 
-type sourceThatFailsToValidate struct {
+type handlerThatFailsToValidate struct {
 	err error
 }
 
-var _ source.Source = sourceThatFailsToValidate{}
-var _ common.Validator = sourceThatFailsToValidate{}
+var _ handler.Handler = handlerThatFailsToValidate{}
+var _ common.Validator = handlerThatFailsToValidate{}
 
-func (s sourceThatFailsToValidate) Validate(_ context.Context) error {
+func (s handlerThatFailsToValidate) Validate(_ context.Context) error {
 	return s.err
 }
 
-func (s sourceThatFailsToValidate) Key() string {
-	return "some-source"
+func (s handlerThatFailsToValidate) Key() string {
+	return "some-handler"
 }
 
-func (s sourceThatFailsToValidate) Parse(_ *http.Request) ([]common.Notification, error) {
+func (s handlerThatFailsToValidate) Process(_ *http.Request) ([]common.Notification, error) {
 	panic("not implemented")
 }
 
-func (s sourceThatFailsToValidate) EventTypes() []event.TypeDescriptor {
+func (s handlerThatFailsToValidate) EventTypes() []event.TypeDescriptor {
 	panic("not implemented")
 }
 
@@ -179,7 +179,7 @@ func (s userStoreThatFailsToValidate) Validate(_ context.Context) error {
 func mkServer(t *testing.T) *Server {
 	t.Helper()
 
-	srcGitlab := source.NewMockSource(t)
+	srcGitlab := handler.NewMockHandler(t)
 	srcGitlab.EXPECT().Key().Return("gitlab").Maybe()
 	srcGitlab.EXPECT().EventTypes().Return([]event.TypeDescriptor{
 		{
@@ -189,7 +189,7 @@ func mkServer(t *testing.T) *Server {
 		},
 	})
 
-	srcArgo := source.NewMockSource(t)
+	srcArgo := handler.NewMockHandler(t)
 	srcArgo.EXPECT().Key().Return("argo").Maybe()
 	srcArgo.EXPECT().EventTypes().Return([]event.TypeDescriptor{
 		{
@@ -210,7 +210,7 @@ func mkServer(t *testing.T) *Server {
 	)
 	userStore := user.NewInMemoryStore(u)
 
-	return New(WithSources(srcGitlab, srcArgo), WithTransports(tpSlack, tpEmail), WithUserStore(userStore))
+	return New(WithHandlers(srcGitlab, srcArgo), WithTransports(tpSlack, tpEmail), WithUserStore(userStore))
 }
 
 func TestHydrateUserPreferences(t *testing.T) {

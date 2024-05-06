@@ -70,7 +70,7 @@ func hookThatReturns(t *testing.T, event interface{}, err error) hook[string] {
 	t.Helper()
 
 	h := NewMockhook[string](t)
-	h.On("Parse", mock.Anything).Return(event, err)
+	h.EXPECT().Parse(mock.Anything, mock.Anything).Return(event, err)
 
 	return h
 }

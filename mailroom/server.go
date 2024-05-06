@@ -16,9 +16,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/event"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
-	"github.com/seatgeek/mailroom/mailroom/source"
 	"github.com/seatgeek/mailroom/mailroom/user"
 	"gopkg.in/tomb.v2"
 )
@@ -29,7 +29,7 @@ var ErrShutdown = errors.New("shutting down")
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
 	listenAddr string
-	sources    []source.Source
+	handlers   []handler.Handler
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
@@ -61,10 +61,10 @@ func WithListenAddr(addr string) Opt {
 	}
 }
 
-// WithSources adds sources to the server
-func WithSources(sources ...source.Source) Opt {
+// WithHandlers adds handlers to the server
+func WithHandlers(handlers ...handler.Handler) Opt {
 	return func(s *Server) {
-		s.sources = append(s.sources, sources...)
+		s.handlers = append(s.handlers, handlers...)
 	}
 }
 
@@ -90,7 +90,7 @@ func WithRouter(router *mux.Router) Opt {
 }
 
 func (s *Server) validate(ctx context.Context) error {
-	for _, src := range s.sources {
+	for _, src := range s.handlers {
 		if v, ok := src.(common.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
 				return fmt.Errorf("parser %s failed to validate: %w", src.Key(), err)
@@ -138,7 +138,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 // Builds a current mapping of user preferences based on what is stored in the
-// user store and the sources and transports that are registered with the server.
+// user store and the handlers and transports that are registered with the server.
 //
 // Only event types and transports that are currently active in the server will
 // be included in the preference map. User is opted in to any preference that is
@@ -146,7 +146,7 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) buildCurrentUserPreferences(p user.Preferences) user.Preferences {
 	hydratedPreferences := make(user.Preferences)
 
-	for _, src := range s.sources {
+	for _, src := range s.handlers {
 		for _, eventType := range src.EventTypes() {
 			for _, transport := range s.transports {
 				if hydratedPreferences[eventType.Key] == nil {
@@ -230,8 +230,8 @@ type APIConfiguration struct {
 }
 
 func (s *Server) handleGetConfiguration(writer http.ResponseWriter, _ *http.Request) error {
-	sources := make([]APISource, len(s.sources))
-	for i, src := range s.sources {
+	sources := make([]APISource, len(s.handlers))
+	for i, src := range s.handlers {
 		src := APISource{
 			Key:        src.Key(),
 			EventTypes: src.EventTypes(),
@@ -267,10 +267,10 @@ func (s *Server) serveHttp(ctx context.Context) error {
 		_, _ = writer.Write([]byte("^_^\n"))
 	})
 
-	// Mount all sources wrapped with our error handler
-	for _, src := range s.sources {
+	// Mount all handlers wrapped with our error handler
+	for _, src := range s.handlers {
 		endpoint := "/event/" + src.Key()
-		slog.Debug("mounting source", "endpoint", endpoint)
+		slog.Debug("mounting handler", "endpoint", endpoint)
 		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateEventHandler(ctx, src, s.notifier)))
 	}
 

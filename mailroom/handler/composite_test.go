@@ -2,7 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
-package source_test
+package handler_test
 
 import (
 	"context"
@@ -12,11 +12,11 @@ import (
 
 	"github.com/seatgeek/mailroom/mailroom/common"
 	"github.com/seatgeek/mailroom/mailroom/event"
-	"github.com/seatgeek/mailroom/mailroom/source"
+	"github.com/seatgeek/mailroom/mailroom/handler"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCompositeSource_Parse(t *testing.T) {
+func TestComposite_Parse(t *testing.T) {
 	t.Parallel()
 
 	somePayload := event.Event[any]{
@@ -31,8 +31,8 @@ func TestCompositeSource_Parse(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		parser            source.PayloadParser[any]
-		generator         source.NotificationGenerator[any]
+		parser            handler.PayloadParser[any]
+		generator         handler.NotificationGenerator[any]
 		wantNotifications []common.Notification
 		wantErr           error
 	}{
@@ -68,9 +68,9 @@ func TestCompositeSource_Parse(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			src := source.New[any]("foo", tc.parser, tc.generator)
+			src := handler.New[any]("foo", tc.parser, tc.generator)
 
-			got, gotErr := src.Parse(&http.Request{})
+			got, gotErr := src.Process(&http.Request{})
 
 			assert.Equal(t, tc.wantNotifications, got)
 			assert.Equal(t, tc.wantErr, gotErr)
@@ -78,7 +78,7 @@ func TestCompositeSource_Parse(t *testing.T) {
 	}
 }
 
-func TestCompositeSource_EventTypes(t *testing.T) {
+func TestComposite_EventTypes(t *testing.T) {
 	t.Parallel()
 
 	someEventTypes := []event.TypeDescriptor{
@@ -89,20 +89,20 @@ func TestCompositeSource_EventTypes(t *testing.T) {
 		},
 	}
 
-	src := source.New[any]("foo", fakeParser{}, fakeGenerator{ReturnsEventTypes: someEventTypes})
+	src := handler.New[any]("foo", fakeParser{}, fakeGenerator{ReturnsEventTypes: someEventTypes})
 
 	assert.Equal(t, someEventTypes, src.EventTypes())
 }
 
-func TestCompositeSource_Validate(t *testing.T) {
+func TestComposite_Validate(t *testing.T) {
 	t.Parallel()
 
 	someValidationError := errors.New("some error")
 
 	tests := []struct {
 		name      string
-		parser    source.PayloadParser[any]
-		generator source.NotificationGenerator[any]
+		parser    handler.PayloadParser[any]
+		generator handler.NotificationGenerator[any]
 		want      error
 	}{
 		{
@@ -129,7 +129,7 @@ func TestCompositeSource_Validate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			src := source.New[any]("foo", tc.parser, tc.generator)
+			src := handler.New[any]("foo", tc.parser, tc.generator)
 
 			got := src.Validate(context.Background())
 
@@ -152,7 +152,7 @@ func (f fakeParser) Validate(_ context.Context) error {
 	return f.Validates
 }
 
-var _ source.PayloadParser[any] = (*fakeParser)(nil)
+var _ handler.PayloadParser[any] = (*fakeParser)(nil)
 var _ common.Validator = (*fakeParser)(nil)
 
 type fakeGenerator struct {
@@ -174,5 +174,5 @@ func (f fakeGenerator) Validate(_ context.Context) error {
 	return f.Validates
 }
 
-var _ source.NotificationGenerator[any] = (*fakeGenerator)(nil)
+var _ handler.NotificationGenerator[any] = (*fakeGenerator)(nil)
 var _ common.Validator = (*fakeGenerator)(nil)
