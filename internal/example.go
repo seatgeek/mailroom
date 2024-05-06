@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom/mailroom"
 	"github.com/seatgeek/mailroom/mailroom/common"
@@ -48,7 +49,7 @@ func (h *ExampleHandler) Process(req *http.Request) ([]common.Notification, erro
 	return []common.Notification{
 		notification.NewBuilder(
 			event.Context{
-				ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+				ID:   event.ID(uuid.New().String()),
 				Type: "local.playground.message",
 			}).
 			WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
