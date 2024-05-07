@@ -27,6 +27,36 @@ type Context struct {
 	Time    time.Time // optional
 }
 
+// WithID returns a copy of the Context with the ID field set to the provided value
+func (c Context) WithID(newID ID) Context {
+	c.ID = newID
+	return c
+}
+
+// WithSource returns a copy of the Context with the Source field set to the provided value
+func (c Context) WithSource(newSource Source) Context {
+	c.Source = newSource
+	return c
+}
+
+// WithType returns a copy of the Context with the Type field set to the provided value
+func (c Context) WithType(newType Type) Context {
+	c.Type = newType
+	return c
+}
+
+// WithSubject returns a copy of the Context with the Subject field set to the provided value
+func (c Context) WithSubject(newSubject string) Context {
+	c.Subject = newSubject
+	return c
+}
+
+// WithTime returns a copy of the Context with the Time field set to the provided value
+func (c Context) WithTime(newTime time.Time) Context {
+	c.Time = newTime
+	return c
+}
+
 // ID is a unique identifier for an event occurrence
 // It should be a non-empty string that is unique within the context of the EventSource
 // See https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#id

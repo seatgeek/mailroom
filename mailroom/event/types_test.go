@@ -6,10 +6,140 @@ package event_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/seatgeek/mailroom/mailroom/event"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestContext_WithID(t *testing.T) {
+	t.Parallel()
+
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.event",
+		Subject: "subject",
+		Time:    time.Now(),
+	}
+
+	newContext := originalContext.WithID("new-id")
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, event.ID("original-id"), originalContext.ID)
+	assert.Equal(t, event.ID("new-id"), newContext.ID)
+
+	assert.Equal(t, originalContext.Source, newContext.Source)
+	assert.Equal(t, originalContext.Type, newContext.Type)
+	assert.Equal(t, originalContext.Subject, newContext.Subject)
+	assert.Equal(t, originalContext.Time, newContext.Time)
+}
+
+func TestContext_WithSource(t *testing.T) {
+	t.Parallel()
+
+	originalSource := event.MustSource("https://www.example.com/foo")
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  originalSource,
+		Type:    "com.example.event",
+		Subject: "subject",
+		Time:    time.Now(),
+	}
+
+	newSource := event.MustSource("https://www.example.com/bar")
+	newContext := originalContext.WithSource(newSource)
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, originalSource, originalContext.Source)
+	assert.Equal(t, newSource, newContext.Source)
+
+	assert.Equal(t, originalContext.ID, newContext.ID)
+	assert.Equal(t, originalContext.Type, newContext.Type)
+	assert.Equal(t, originalContext.Subject, newContext.Subject)
+	assert.Equal(t, originalContext.Time, newContext.Time)
+}
+
+func TestContext_WithType(t *testing.T) {
+	t.Parallel()
+
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.foo",
+		Subject: "subject",
+		Time:    time.Now(),
+	}
+
+	newContext := originalContext.WithType("com.example.bar")
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, event.Type("com.example.foo"), originalContext.Type)
+	assert.Equal(t, event.Type("com.example.bar"), newContext.Type)
+
+	assert.Equal(t, originalContext.ID, newContext.ID)
+	assert.Equal(t, originalContext.Source, newContext.Source)
+	assert.Equal(t, originalContext.Subject, newContext.Subject)
+	assert.Equal(t, originalContext.Time, newContext.Time)
+}
+
+func TestContext_WithSubject(t *testing.T) {
+	t.Parallel()
+
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.event",
+		Subject: "original-subject",
+		Time:    time.Now(),
+	}
+
+	newContext := originalContext.WithSubject("new-subject")
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, "original-subject", originalContext.Subject)
+	assert.Equal(t, "new-subject", newContext.Subject)
+
+	assert.Equal(t, originalContext.ID, newContext.ID)
+	assert.Equal(t, originalContext.Source, newContext.Source)
+	assert.Equal(t, originalContext.Type, newContext.Type)
+	assert.Equal(t, originalContext.Time, newContext.Time)
+}
+
+func TestContext_WithTime(t *testing.T) {
+	t.Parallel()
+
+	originalTime := time.Now()
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.event",
+		Subject: "subject",
+		Time:    originalTime,
+	}
+
+	newTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	newContext := originalContext.WithTime(newTime)
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, originalTime, originalContext.Time)
+	assert.Equal(t, newTime, newContext.Time)
+
+	assert.Equal(t, originalContext.ID, newContext.ID)
+	assert.Equal(t, originalContext.Source, newContext.Source)
+	assert.Equal(t, originalContext.Type, newContext.Type)
+	assert.Equal(t, originalContext.Subject, newContext.Subject)
+}
 
 func TestSource(t *testing.T) {
 	t.Parallel()
