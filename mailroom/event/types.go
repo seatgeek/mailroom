@@ -86,6 +86,16 @@ func NewSource(uri string) *Source {
 	}
 }
 
+// MustSource creates a new EventSource from a URI string, panicking if the URI is invalid
+func MustSource(uri string) Source {
+	s := NewSource(uri)
+	if s == nil {
+		panic("invalid source URI")
+	}
+
+	return *s
+}
+
 func (s *Source) String() string {
 	if s == nil {
 		return ""

@@ -190,6 +190,17 @@ func TestSource(t *testing.T) {
 
 			assert.NotNil(t, source)
 			assert.Equal(t, tc.uri, source.String())
+
+			// We'll also test the MustSource function here since the cases are the same
+			if tc.wantNil {
+				assert.Panics(t, func() {
+					event.MustSource(tc.uri)
+				})
+			} else {
+				assert.NotPanics(t, func() {
+					event.MustSource(tc.uri)
+				})
+			}
 		})
 	}
 }
