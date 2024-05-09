@@ -1,6 +1,6 @@
 module github.com/seatgeek/mailroom
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
