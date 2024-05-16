@@ -24,19 +24,19 @@ func CreateEventHandler(ctx context.Context, s handler.Handler, n notifier.Notif
 
 		notifications, err := s.Process(request)
 		if err != nil {
-			slog.Error("failed to generate notifications", "handler", s.Key, "error", err)
+			slog.Error("failed to generate notifications", "handler", s.Key(), "error", err)
 			return fmt.Errorf("failed to generate notifications: %w", err)
 		}
 
 		if len(notifications) == 0 {
-			slog.Debug("no notifications to send", "handler", s.Key)
+			slog.Debug("no notifications to send", "handler", s.Key())
 			writer.WriteHeader(200)
 			_, _ = writer.Write([]byte("thanks but we're not interested in that event"))
 			return nil
 		}
 
 		id := notifications[0].Context().ID
-		slog.Debug("dispatching notifications", "id", id, "handler", s.Key, "notifications", len(notifications))
+		slog.Debug("dispatching notifications", "id", id, "handler", s.Key(), "notifications", len(notifications))
 
 		var errs []error
 		for _, notification := range notifications {
