@@ -5,7 +5,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"net/http/httptest"
 	"testing"
@@ -63,7 +62,6 @@ func TestHandler(t *testing.T) {
 			t.Parallel()
 
 			handler := CreateEventHandler(
-				context.Background(),
 				tc.handler,
 				tc.notifier,
 			)

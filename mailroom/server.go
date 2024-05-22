@@ -271,7 +271,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	for _, src := range s.handlers {
 		endpoint := "/event/" + src.Key()
 		slog.Debug("mounting handler", "endpoint", endpoint)
-		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateEventHandler(ctx, src, s.notifier)))
+		hsm.HandleFunc(endpoint, server.HandleErr(server.CreateEventHandler(src, s.notifier)))
 	}
 
 	hsm.HandleFunc("/users/{key}/preferences", server.HandleErr(s.handleGetPreferences)).Methods("GET")

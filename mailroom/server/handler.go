@@ -5,7 +5,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,7 +17,7 @@ import (
 // CreateEventHandler returns a handlerFunc that can be used to handle incoming webhooks
 // It choreographs the parsing of the incoming request, the generation of notifications, dispatching the notifications
 // to the notifier, and returning a success or error response to the client.
-func CreateEventHandler(ctx context.Context, s handler.Handler, n notifier.Notifier) handlerFunc {
+func CreateEventHandler(s handler.Handler, n notifier.Notifier) handlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) error {
 		slog.Debug("handling incoming webhook", "handler", s.Key(), "path", request.URL.Path)
 
@@ -40,7 +39,7 @@ func CreateEventHandler(ctx context.Context, s handler.Handler, n notifier.Notif
 
 		var errs []error
 		for _, notification := range notifications {
-			err = n.Push(ctx, notification)
+			err = n.Push(request.Context(), notification)
 			if err != nil {
 				errs = append(errs, err)
 			}
