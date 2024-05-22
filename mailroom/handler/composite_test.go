@@ -162,7 +162,7 @@ type fakeGenerator struct {
 	Validates         error
 }
 
-func (f fakeGenerator) Generate(_ event.Event[any]) ([]common.Notification, error) {
+func (f fakeGenerator) Generate(_ context.Context, _ event.Event[any]) ([]common.Notification, error) {
 	return f.Generates, f.GeneratesError
 }
 

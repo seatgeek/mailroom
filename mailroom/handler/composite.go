@@ -30,7 +30,7 @@ type NotificationGenerator[T event.Payload] interface {
 	//
 	// Some payloads may result in multiple notifications, for example the creation of a new merge request in GitLab
 	// might result in notifications to multiple reviewers.
-	Generate(event.Event[T]) ([]common.Notification, error)
+	Generate(context.Context, event.Event[T]) ([]common.Notification, error)
 	// EventTypes returns descriptors for all EventTypes that the generator may emit
 	EventTypes() []event.TypeDescriptor
 }
@@ -65,7 +65,7 @@ func (c composite[T]) Process(req *http.Request) ([]common.Notification, error) 
 		return nil, nil
 	}
 
-	return c.Generator.Generate(*payload)
+	return c.Generator.Generate(req.Context(), *payload)
 }
 
 func (c composite[T]) Validate(ctx context.Context) error {
