@@ -1,7 +1,7 @@
 # renovate: datasource=go depName=github.com/golangci/golangci-lint
 GOLANGCI_LINT_VERSION=v1.58.2
 # renovate: datasource=go depName=gotest.tools/gotestsum
-GOTESTSUM_VERSION=v1.11.0
+GOTESTSUM_VERSION=v1.12.0
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
 GOCOVER_COBERTURA_VERSION=v1.2.0
 # renovate: datasource=github-releases depName=mockery/mockery
