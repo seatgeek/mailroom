@@ -165,6 +165,12 @@ func TestPostgresStore_Find(t *testing.T) {
 			expected: nil,
 			wantErr:  user.ErrUserNotFound,
 		},
+		{
+			name:     "no identifiers given",
+			arg:      identifier.NewCollection(),
+			expected: nil,
+			wantErr:  user.ErrUserNotFound,
+		},
 	}
 
 	for _, tc := range tests {

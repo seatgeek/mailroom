@@ -88,11 +88,19 @@ type Collection interface {
 	ToList() []Identifier
 	String() string
 	ToMap() map[NamespaceAndKind]string
+	Len() int
 }
 
 type collection struct {
 	ids   map[NamespaceAndKind]string
 	mutex sync.RWMutex
+}
+
+func (c *collection) Len() int {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	return len(c.ids)
 }
 
 func (c *collection) Get(namespaceAndKind NamespaceAndKind) (string, bool) {

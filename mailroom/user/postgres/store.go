@@ -68,6 +68,10 @@ func (s *Store) Add(u *user.User) error {
 
 // Find implements user.Store.
 func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, error) {
+	if possibleIdentifiers.Len() == 0 {
+		return nil, fmt.Errorf("%w: no identifiers provided", user.ErrUserNotFound)
+	}
+
 	query := s.db.Model(&UserModel{})
 	for _, id := range possibleIdentifiers.ToList() {
 		query = query.Or("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, id.NamespaceAndKind, id.Value))
