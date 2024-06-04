@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/seatgeek/mailroom/mailroom/user"
 )
 
 // Error is a custom error type that includes an HTTP status code
@@ -44,6 +46,11 @@ func HandleErr(h handlerFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if err := h(writer, request); err != nil {
 			code := 500
+
+			if errors.Is(err, user.ErrUserNotFound) {
+				code = http.StatusNotFound
+			}
+
 			if he := (*Error)(nil); errors.As(err, &he) {
 				code = he.Code
 			}

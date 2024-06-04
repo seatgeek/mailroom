@@ -172,7 +172,6 @@ func (s *Server) handleGetPreferences(writer http.ResponseWriter, request *http.
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
 			slog.Info("user not found", "key", key)
-			return &server.Error{Code: http.StatusNotFound, Reason: err}
 		}
 
 		return err
@@ -201,7 +200,6 @@ func (s *Server) handlePutPreferences(writer http.ResponseWriter, request *http.
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
 			slog.Info("user not found", "key", key)
-			return &server.Error{Code: http.StatusNotFound, Reason: err}
 		}
 
 		return err

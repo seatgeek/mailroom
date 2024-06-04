@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/seatgeek/mailroom/mailroom/user"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,6 +42,12 @@ func TestErrHandler(t *testing.T) {
 			err:         errors.New("something went wrong"),
 			wantStatus:  500,
 			wantMessage: "something went wrong",
+		},
+		{
+			testName:    "user not found error",
+			err:         user.ErrUserNotFound,
+			wantStatus:  404,
+			wantMessage: "user not found",
 		},
 	}
 
