@@ -20,10 +20,7 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/notifier"
 	"github.com/seatgeek/mailroom/mailroom/server"
 	"github.com/seatgeek/mailroom/mailroom/user"
-	"gopkg.in/tomb.v2"
 )
-
-var ErrShutdown = errors.New("shutting down")
 
 // Server is the heart of the mailroom application
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
@@ -115,26 +112,14 @@ func (s *Server) validate(ctx context.Context) error {
 	return nil
 }
 
-// Run starts the server
+// Run starts the server in a Goroutine and blocks until the server is shut down
+// If the given context is canceled, the server will attempt to shut down gracefully
 func (s *Server) Run(ctx context.Context) error {
 	if err := s.validate(ctx); err != nil {
 		return fmt.Errorf("server validation failed: %w", err)
 	}
 
-	httpTomb, httpTombCtx := tomb.WithContext(ctx)
-	defer httpTomb.Kill(ErrShutdown)
-	httpTomb.Go(func() error { return s.serveHttp(httpTombCtx) })
-
-	for {
-		select {
-		case <-httpTomb.Dead():
-			slog.Warn("httpTomb died")
-			return httpTomb.Err()
-		case <-ctx.Done():
-			slog.Warn("shutting down due to user signal, byee")
-			return nil
-		}
-	}
+	return s.serveHttp(ctx)
 }
 
 // Builds a current mapping of user preferences based on what is stored in the
@@ -282,6 +267,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 		ReadHeaderTimeout: 2 * time.Second,
 	}
 
+	// Run the server in a Goroutine
 	httpExited := make(chan error)
 	go (func() {
 		defer close(httpExited)
@@ -292,9 +278,19 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	})()
 
 	select {
+	// Wait for the context to be canceled
 	case <-ctx.Done():
-		return ErrShutdown
+		slog.Info("shutting down http server gracefully")
+		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelShutdown()
+
+		if err := hs.Shutdown(shutdownCtx); err != nil { //nolint:contextcheck
+			return fmt.Errorf("failed to gracefully shutdown http server: %w", err)
+		}
+
+		return nil
+	// Or wait for the server to exit on its own (with some error)
 	case err := <-httpExited:
-		return fmt.Errorf("internal server exited: %w", err)
+		return err
 	}
 }
