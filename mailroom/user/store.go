@@ -10,6 +10,9 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/identifier"
 )
 
+// ErrUserNotFound is returned when a user is not found in the store
+// It should only be returned when the lookup process itself succeeded (e.g. no db connection errors), but
+// we failed to locate a single known user in the store. Think of it like a 404 error.
 var ErrUserNotFound = errors.New("user not found")
 
 // Store is the interface that all user stores must implement

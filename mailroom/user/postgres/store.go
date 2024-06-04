@@ -79,7 +79,7 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 	}
 
 	if len(users) > 1 {
-		return nil, fmt.Errorf("found multiple users with identifiers: %v", possibleIdentifiers)
+		return nil, fmt.Errorf("%w: found multiple users with identifiers %v", user.ErrUserNotFound, possibleIdentifiers)
 	}
 
 	if len(users) == 1 {
@@ -95,7 +95,7 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 	}
 
 	if len(possibleEmails) == 0 {
-		return nil, user.ErrUserNotFound
+		return nil, fmt.Errorf("%w: no identifiers matched and no fallback emails were available", user.ErrUserNotFound)
 	}
 
 	query = s.db.Model(&UserModel{})
@@ -108,7 +108,7 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 	}
 
 	if len(users) > 1 {
-		return nil, fmt.Errorf("found multiple users with email identifiers: %v", possibleEmails)
+		return nil, fmt.Errorf("%w: found multiple users with email identifiers %v", user.ErrUserNotFound, possibleEmails)
 	}
 
 	if len(users) == 1 {

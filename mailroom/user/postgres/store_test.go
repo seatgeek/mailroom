@@ -159,6 +159,12 @@ func TestPostgresStore_Find(t *testing.T) {
 			expected: nil,
 			wantErr:  user.ErrUserNotFound,
 		},
+		{
+			name:     "user not found; no fallback emails",
+			arg:      identifier.NewCollection(identifier.New("slack.com/id", "U123")),
+			expected: nil,
+			wantErr:  user.ErrUserNotFound,
+		},
 	}
 
 	for _, tc := range tests {
@@ -207,6 +213,7 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 	wantErr := errors.New("found multiple users with identifiers: [email:dup@dup.com]")
 	//nolint:testifylint
 	assert.ErrorAs(t, err, &wantErr)
+	assert.ErrorIs(t, err, user.ErrUserNotFound)
 	assert.Nil(t, got)
 }
 
