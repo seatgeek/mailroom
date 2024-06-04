@@ -108,7 +108,7 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 	}
 
 	if len(users) > 1 {
-		return nil, fmt.Errorf("found multiple users with email identifiers: %v", possibleIdentifiers)
+		return nil, fmt.Errorf("found multiple users with email identifiers: %v", possibleEmails)
 	}
 
 	if len(users) == 1 {
