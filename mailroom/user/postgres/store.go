@@ -94,6 +94,10 @@ func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, err
 		}
 	}
 
+	if len(possibleEmails) == 0 {
+		return nil, user.ErrUserNotFound
+	}
+
 	query = s.db.Model(&UserModel{})
 	for email := range possibleEmails {
 		query = query.Or("emails @> ?", fmt.Sprintf(`"%s"`, email))
