@@ -7,7 +7,7 @@ require (
 	github.com/go-playground/webhooks/v6 v6.3.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.0.5
-	github.com/slack-go/slack v0.13.0
+	github.com/slack-go/slack v0.13.1
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.31.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.31.0
