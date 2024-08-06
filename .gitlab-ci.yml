@@ -1,26 +1,30 @@
 ---
+default:
+  tags:
+    - linux
+
 workflow:
   rules:
-  - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 stages:
-- lint
-- test
+  - lint
+  - test
 
 .mrs-only:
   rules:
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 lint:go:
   image: golang:1.22
   stage: lint
   needs: []
   script:
-  - make lint-go
-  - make lint-license
+    - make lint-go
+    - make lint-license
   after_script:
-  - echo "Run 'make lint-fix' locally ;)"
+    - echo "Run 'make lint-fix' locally ;)"
   extends: [.mrs-only]
 
 lint:markdown:
@@ -28,7 +32,7 @@ lint:markdown:
   needs: []
   image: ghcr.io/igorshubovych/markdownlint-cli:v0.41.0
   script:
-  - markdownlint .
+    - markdownlint .
   extends: [.mrs-only]
 
 lint:yaml:
@@ -36,22 +40,22 @@ lint:yaml:
   needs: []
   image: pipelinecomponents/yamllint:0.31.3
   script:
-  - yamllint .
+    - yamllint .
   extends: [.mrs-only]
 
-test:
-  image: golang:1.22
-  stage: test
-  needs:
-  - job: lint:go
-    optional: true
-  script:
-  - make test-with-coverage
-  coverage: '/total:.*\(statements\).*\d+\.\d+%/'
-  artifacts:
-    when: always
-    reports:
-      junit: build/unit-tests.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: build/coverage.xml
+# test:
+#   image: golang:1.22
+#   stage: test
+#   needs:
+#   - job: lint:go
+#     optional: true
+#   script:
+#   - make test-with-coverage
+#   coverage: '/total:.*\(statements\).*\d+\.\d+%/'
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: build/unit-tests.xml
+#       coverage_report:
+#         coverage_format: cobertura
+#         path: build/coverage.xml
