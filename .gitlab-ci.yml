@@ -17,7 +17,7 @@ stages:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 lint:go:
-  image: golang:1.22
+  image: golang:1.23
   stage: lint
   needs: []
   script:
