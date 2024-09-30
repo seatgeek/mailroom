@@ -31,7 +31,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 	}
 
 	// The store may know of other identifiers for this user, so we merge those in
-	notification.AddRecipients(recipientUser.Identifiers)
+	notification.Recipient().Merge(recipientUser.Identifiers)
 
 	for _, transport := range d.transports {
 		if !recipientUser.Wants(notification.Context().Type, transport.Key()) {

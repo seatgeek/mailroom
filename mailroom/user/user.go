@@ -36,7 +36,7 @@ type User struct {
 	Key string
 	// Identifiers are unique attributes attached to a user that represent that user in the
 	// scope of external systems, e.g. a gitlab.com/id or a slack.com/id.
-	Identifiers identifier.Collection
+	Identifiers identifier.Set
 	Preferences
 }
 
@@ -44,7 +44,7 @@ type User struct {
 func New(key string, options ...Option) *User {
 	u := &User{
 		Key:         key,
-		Identifiers: identifier.NewCollection(),
+		Identifiers: identifier.NewSet(),
 		Preferences: make(Preferences),
 	}
 
@@ -65,7 +65,7 @@ func WithIdentifier(id identifier.Identifier) Option {
 }
 
 // WithIdentifiers adds multiple identifiers to a User
-func WithIdentifiers(ids identifier.Collection) Option {
+func WithIdentifiers(ids identifier.Set) Option {
 	return func(u *User) {
 		u.Identifiers.Merge(ids)
 	}

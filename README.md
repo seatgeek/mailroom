@@ -23,6 +23,12 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 - **Transport**: A transport is a way to send a **notification** to a user. It could be email, Slack, Discord, or something else.
 - **User**: A user is a person who wants to receive **notifications** from Mailroom and has **preferences** on how they'd like to receive them.
 - **Identifier**: An identifier is a unique string that identifies an initiator or potential recipient (**user**) of some event. It could be an email address, a Slack user ID, or something else.
+  - It is composed of three parts:
+    - **Namespace** (optional): The namespace of the identifier (e.g. `slack.com`, `github.com`)
+    - **Kind**: The kind of identifier (e.g. `email`, `username`, `id`)
+    - **Value**: The actual value of the identifier (e.g. `rufus@seatgeek.com`, `rufus`, `U123456`)
+  - For example, `slack.com/email:rufus@seatgeek.com` means that Slack knows this user by the email address `rufus@seatgeek.com`.
+- **Identifier Set**: All known **identifiers** that are associated with a single **user**.
 - **Preferences**: Preferences are how users specify which **notifications** they want, and which **transports** they prefer to receive them on.
 - **User Store**: The user store is a database that stores user information, including their **identifiers** and **preferences**.
 

@@ -14,9 +14,8 @@ import (
 // Notification is a notification that should be sent
 type Notification interface {
 	Context() event.Context
-	Recipient() identifier.Collection
+	Recipient() identifier.Set
 	Render(TransportKey) string
-	AddRecipients(identifier.Collection)
 }
 
 // TransportKey is a type that identifies a specific type of transport for sending notifications

@@ -128,22 +128,22 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func TestCollection_ToList(t *testing.T) {
+func TestSet_ToList(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		collection Collection
-		want       []Identifier
+		name string
+		set  Set
+		want []Identifier
 	}{
 		{
-			name:       "empty",
-			collection: NewCollection(),
-			want:       nil,
+			name: "empty",
+			set:  NewSet(),
+			want: nil,
 		},
 		{
 			name: "non-empty",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
@@ -158,50 +158,50 @@ func TestCollection_ToList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := tc.collection.ToList()
+			got := tc.set.ToList()
 
 			assert.ElementsMatch(t, tc.want, got)
 		})
 	}
 }
 
-func TestCollection_Add(t *testing.T) {
+func TestSet_Add(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name     string
-		original Collection
+		original Set
 		add      Identifier
-		want     Collection
+		want     Set
 	}{
 		{
 			name: "adds",
-			original: NewCollection(
+			original: NewSet(
 				New("username", "rufus"),
 			),
 			add: New("email", "rufus@seatgeek.com"),
-			want: NewCollection(
+			want: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
 		},
 		{
 			name: "overwrites",
-			original: NewCollection(
+			original: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@example.com"),
 			),
 			add: New("email", "rufus@seatgeek.com"),
-			want: NewCollection(
+			want: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
 		},
 		{
 			name:     "empty original",
-			original: NewCollection(),
+			original: NewSet(),
 			add:      New("username", "rufus"),
-			want:     NewCollection(New("username", "rufus")),
+			want:     NewSet(New("username", "rufus")),
 		},
 	}
 
@@ -216,26 +216,26 @@ func TestCollection_Add(t *testing.T) {
 	}
 }
 
-func TestCollection_Merge(t *testing.T) {
+func TestSet_Merge(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name     string
-		original Collection
-		merge    Collection
-		want     Collection
+		original Set
+		merge    Set
+		want     Set
 	}{
 		{
 			name: "adds and overwrites",
-			original: NewCollection(
+			original: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
-			merge: NewCollection(
+			merge: NewSet(
 				New("id", "123"),
 				New("email", "rufus@example.com"),
 			),
-			want: NewCollection(
+			want: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@example.com"),
 				New("id", "123"),
@@ -243,15 +243,15 @@ func TestCollection_Merge(t *testing.T) {
 		},
 		{
 			name:     "empty original",
-			original: NewCollection(),
-			merge:    NewCollection(New("username", "rufus")),
-			want:     NewCollection(New("username", "rufus")),
+			original: NewSet(),
+			merge:    NewSet(New("username", "rufus")),
+			want:     NewSet(New("username", "rufus")),
 		},
 		{
 			name:     "empty merge",
-			original: NewCollection(New("username", "rufus")),
-			merge:    NewCollection(),
-			want:     NewCollection(New("username", "rufus")),
+			original: NewSet(New("username", "rufus")),
+			merge:    NewSet(),
+			want:     NewSet(New("username", "rufus")),
 		},
 	}
 
@@ -266,19 +266,97 @@ func TestCollection_Merge(t *testing.T) {
 	}
 }
 
-func TestCollection_Get(t *testing.T) {
+func TestSet_Intersect(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		collection Collection
-		key        NamespaceAndKind
-		want       string
-		wantOK     bool
+		name     string
+		set1     Set
+		set2     Set
+		expected Set
+	}{
+		{
+			name:     "both empty",
+			set1:     NewSet(),
+			set2:     NewSet(),
+			expected: NewSet(),
+		},
+		{
+			name: "one empty",
+			set1: NewSet(),
+			set2: NewSet(
+				New("username", "rufus"),
+			),
+			expected: NewSet(),
+		},
+		{
+			name: "no intersection",
+			set1: NewSet(
+				New("username", "rufus"),
+			),
+			set2: NewSet(
+				New("email", "rufus@seatgeek.com"),
+			),
+			expected: NewSet(),
+		},
+		{
+			name: "partial intersection",
+			set1: NewSet(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			set2: NewSet(
+				New("email", "rufus@seatgeek.com"),
+				New("id", "123"),
+			),
+			expected: NewSet(
+				New("email", "rufus@seatgeek.com"),
+			),
+		},
+		{
+			name: "full intersection",
+			set1: NewSet(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			set2: NewSet(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+			expected: NewSet(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+			),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Test both directions to ensure the method is commutative
+			result1 := tc.set1.Intersect(tc.set2)
+			result2 := tc.set2.Intersect(tc.set1)
+
+			assert.Equal(t, tc.expected, result1)
+			assert.Equal(t, tc.expected, result2)
+		})
+	}
+}
+
+func TestSet_Get(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		set    Set
+		key    NamespaceAndKind
+		want   string
+		wantOK bool
 	}{
 		{
 			name: "found",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 			),
 			key:    "username",
@@ -287,7 +365,7 @@ func TestCollection_Get(t *testing.T) {
 		},
 		{
 			name: "not found",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 			),
 			key:    "email",
@@ -300,7 +378,7 @@ func TestCollection_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, ok := tc.collection.Get(tc.key)
+			got, ok := tc.set.Get(tc.key)
 
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantOK, ok)
@@ -308,19 +386,19 @@ func TestCollection_Get(t *testing.T) {
 	}
 }
 
-func TestCollection_MustGet(t *testing.T) {
+func TestSet_MustGet(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		collection Collection
-		key        NamespaceAndKind
-		want       string
-		wantPanic  bool
+		name      string
+		set       Set
+		key       NamespaceAndKind
+		want      string
+		wantPanic bool
 	}{
 		{
 			name: "found",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 			),
 			key:       "username",
@@ -329,7 +407,7 @@ func TestCollection_MustGet(t *testing.T) {
 		},
 		{
 			name: "not found",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 			),
 			key:       "email",
@@ -343,11 +421,11 @@ func TestCollection_MustGet(t *testing.T) {
 
 			if tc.wantPanic {
 				assert.Panics(t, func() {
-					tc.collection.MustGet(tc.key)
+					tc.set.MustGet(tc.key)
 				})
 			} else {
 				assert.NotPanics(t, func() {
-					got := tc.collection.MustGet(tc.key)
+					got := tc.set.MustGet(tc.key)
 					assert.Equal(t, tc.want, got)
 				})
 			}
@@ -355,29 +433,29 @@ func TestCollection_MustGet(t *testing.T) {
 	}
 }
 
-func TestCollection_String(t *testing.T) {
+func TestSet_String(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		collection Collection
-		want       string
+		name string
+		set  Set
+		want string
 	}{
 		{
-			name:       "empty",
-			collection: NewCollection(),
-			want:       "[]",
+			name: "empty",
+			set:  NewSet(),
+			want: "[]",
 		},
 		{
 			name: "one item",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 			),
 			want: "[username:rufus]",
 		},
 		{
 			name: "multiple items",
-			collection: NewCollection(
+			set: NewSet(
 				New("username", "rufus"),
 				New("email", "rufus@seatgeek.com"),
 			),
@@ -389,7 +467,7 @@ func TestCollection_String(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := tc.collection.String()
+			got := tc.set.String()
 
 			assert.Equal(t, tc.want, got)
 		})

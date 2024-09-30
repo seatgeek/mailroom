@@ -132,13 +132,13 @@ func TestPostgresStore_Find(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		arg      identifier.Collection
+		arg      identifier.Set
 		expected *user.User
 		wantErr  error
 	}{
 		{
 			name: "find user by email",
-			arg:  identifier.NewCollection(identifier.New("email", "bbecker@seatgeek.com")),
+			arg:  identifier.NewSet(identifier.New("email", "bbecker@seatgeek.com")),
 			expected: user.New(
 				"bckr",
 				user.WithIdentifier(identifier.New("email", "bbecker@seatgeek.com")),
@@ -147,7 +147,7 @@ func TestPostgresStore_Find(t *testing.T) {
 		},
 		{
 			name: "find user by email (using fallback)",
-			arg:  identifier.NewCollection(identifier.New("slack.com/email", "codell@seatgeek.com")),
+			arg:  identifier.NewSet(identifier.New("slack.com/email", "codell@seatgeek.com")),
 			expected: user.New(
 				"codell",
 				user.WithIdentifier(identifier.New("gitlab.com/email", "codell@seatgeek.com")),
@@ -155,19 +155,19 @@ func TestPostgresStore_Find(t *testing.T) {
 		},
 		{
 			name:     "user not found",
-			arg:      identifier.NewCollection(identifier.New("email", "bbecker")),
+			arg:      identifier.NewSet(identifier.New("email", "bbecker")),
 			expected: nil,
 			wantErr:  user.ErrUserNotFound,
 		},
 		{
 			name:     "user not found; no fallback emails",
-			arg:      identifier.NewCollection(identifier.New("slack.com/id", "U123")),
+			arg:      identifier.NewSet(identifier.New("slack.com/id", "U123")),
 			expected: nil,
 			wantErr:  user.ErrUserNotFound,
 		},
 		{
 			name:     "no identifiers given",
-			arg:      identifier.NewCollection(),
+			arg:      identifier.NewSet(),
 			expected: nil,
 			wantErr:  user.ErrUserNotFound,
 		},
@@ -214,7 +214,7 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 	))
 	assert.NoError(t, err)
 
-	got, err := store.Find(identifier.NewCollection(duplicateIdentifier))
+	got, err := store.Find(identifier.NewSet(duplicateIdentifier))
 
 	wantErr := errors.New("found multiple users with identifiers: [email:dup@dup.com]")
 	//nolint:testifylint

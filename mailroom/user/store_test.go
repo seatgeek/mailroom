@@ -83,28 +83,28 @@ func TestInMemoryStore_Find(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   identifier.Collection
+		input   identifier.Set
 		want    *User
 		wantErr error
 	}{
 		{
 			name:  "exact match (test 1)",
-			input: identifier.NewCollection(id1),
+			input: identifier.NewSet(id1),
 			want:  userA,
 		},
 		{
 			name:  "exact match (test 2)",
-			input: identifier.NewCollection(id2),
+			input: identifier.NewSet(id2),
 			want:  userA,
 		},
 		{
 			name:  "exact match (test 3)",
-			input: identifier.NewCollection(id3),
+			input: identifier.NewSet(id3),
 			want:  userB,
 		},
 		{
 			name: "exact match (multiple inputs)",
-			input: identifier.NewCollection(
+			input: identifier.NewSet(
 				identifier.New("email", "foo@example.com"),
 				identifier.New("email", "bar@example.com"),
 				id1,
@@ -113,12 +113,12 @@ func TestInMemoryStore_Find(t *testing.T) {
 		},
 		{
 			name:    "no match",
-			input:   identifier.NewCollection(identifier.New("email", "foo@example.com")),
+			input:   identifier.NewSet(identifier.New("email", "foo@example.com")),
 			wantErr: ErrUserNotFound,
 		},
 		{
 			name:  "fallback to any email",
-			input: identifier.NewCollection(identifier.New("slack.com/email", "colin.odell@seatgeek.com")),
+			input: identifier.NewSet(identifier.New("slack.com/email", "colin.odell@seatgeek.com")),
 			want:  userA,
 		},
 	}

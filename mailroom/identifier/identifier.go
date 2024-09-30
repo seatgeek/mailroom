@@ -78,32 +78,33 @@ func New[T1 ~string, T2 valueType](namespaceAndKind T1, value T2) Identifier {
 	}
 }
 
-// Collection holds a thread-safe map of NamespaceAndKind to a value.
+// Set holds a thread-safe map of NamespaceAndKind to a value.
 // Each entry is basically an Identifier.
-type Collection interface {
+type Set interface {
 	Get(NamespaceAndKind) (string, bool)
 	MustGet(NamespaceAndKind) string
 	Add(Identifier)
-	Merge(Collection)
+	Merge(Set)
+	Intersect(Set) Set
 	ToList() []Identifier
 	String() string
 	ToMap() map[NamespaceAndKind]string
 	Len() int
 }
 
-type collection struct {
+type set struct {
 	ids   map[NamespaceAndKind]string
 	mutex sync.RWMutex
 }
 
-func (c *collection) Len() int {
+func (c *set) Len() int {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	return len(c.ids)
 }
 
-func (c *collection) Get(namespaceAndKind NamespaceAndKind) (string, bool) {
+func (c *set) Get(namespaceAndKind NamespaceAndKind) (string, bool) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -111,7 +112,7 @@ func (c *collection) Get(namespaceAndKind NamespaceAndKind) (string, bool) {
 	return val, ok
 }
 
-func (c *collection) MustGet(namespaceAndKind NamespaceAndKind) string {
+func (c *set) MustGet(namespaceAndKind NamespaceAndKind) string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -123,21 +124,41 @@ func (c *collection) MustGet(namespaceAndKind NamespaceAndKind) string {
 	return val
 }
 
-func (c *collection) Add(id Identifier) {
+func (c *set) Add(id Identifier) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	c.ids[id.NamespaceAndKind] = id.Value
 }
 
-func (c *collection) Merge(otherIdentifiers Collection) {
+// Merge adds all the identifiers from another Set to this Set.
+func (c *set) Merge(otherIdentifiers Set) {
 	for _, id := range otherIdentifiers.ToList() {
 		c.Add(id)
 	}
 }
 
-// ToList returns the Collection as a slice of Identifier objects.
-func (c *collection) ToList() []Identifier {
+// Intersect returns a new Set that contains only the identifiers that are present in both this Set and another Set.
+func (c *set) Intersect(other Set) Set {
+	if c.Len() == 0 || other.Len() == 0 {
+		return NewSet()
+	}
+
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	var common []Identifier
+	for _, id := range other.ToList() {
+		if val, ok := c.ids[id.NamespaceAndKind]; ok && val == id.Value {
+			common = append(common, id)
+		}
+	}
+
+	return NewSet(common...)
+}
+
+// ToList returns the Set as a slice of Identifier objects.
+func (c *set) ToList() []Identifier {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -152,23 +173,23 @@ func (c *collection) ToList() []Identifier {
 	return res
 }
 
-func (c *collection) String() string {
+func (c *set) String() string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	return strings.TrimPrefix(fmt.Sprintf("%v", c.ids), "map")
 }
 
-func (c *collection) MarshalJSON() ([]byte, error) {
+func (c *set) MarshalJSON() ([]byte, error) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	return json.Marshal(c.ids)
 }
 
-// NewCollection creates a new Collection from a slice of Identifier objects
-func NewCollection(ids ...Identifier) Collection {
-	res := &collection{
+// NewSet creates a new Set from a slice of Identifier objects
+func NewSet(ids ...Identifier) Set {
+	res := &set{
 		ids: make(map[NamespaceAndKind]string, len(ids)),
 	}
 
@@ -179,9 +200,9 @@ func NewCollection(ids ...Identifier) Collection {
 	return res
 }
 
-// NewCollectionFromMap creates a new Collection from a map of NamespaceAndKind to value.
-func NewCollectionFromMap(ids map[NamespaceAndKind]string) Collection {
-	res := &collection{
+// NewSetFromMap creates a new Set from a map of NamespaceAndKind to value.
+func NewSetFromMap(ids map[NamespaceAndKind]string) Set {
+	res := &set{
 		ids: make(map[NamespaceAndKind]string, len(ids)),
 	}
 
@@ -192,8 +213,8 @@ func NewCollectionFromMap(ids map[NamespaceAndKind]string) Collection {
 	return res
 }
 
-// ToMap returns the Collection as a map of NamespaceAndKind to value from a Collection.
-func (c *collection) ToMap() map[NamespaceAndKind]string {
+// ToMap returns the Set as a map of NamespaceAndKind to value from a Set.
+func (c *set) ToMap() map[NamespaceAndKind]string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

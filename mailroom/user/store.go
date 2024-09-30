@@ -28,7 +28,7 @@ type Store interface {
 
 	// Find searches for a user matching any of the given identifiers
 	// (The user is not required to match all of them, just one is enough)
-	Find(possibleIdentifiers identifier.Collection) (*User, error)
+	Find(possibleIdentifiers identifier.Set) (*User, error)
 
 	SetPreferences(key string, prefs Preferences) error
 }
@@ -82,7 +82,7 @@ func (s *InMemoryStore) GetByIdentifier(identifier identifier.Identifier) (*User
 	return nil, ErrUserNotFound
 }
 
-func (s *InMemoryStore) Find(possibleIdentifiers identifier.Collection) (*User, error) {
+func (s *InMemoryStore) Find(possibleIdentifiers identifier.Set) (*User, error) {
 	for _, i := range possibleIdentifiers.ToList() {
 		u, err := s.GetByIdentifier(i)
 		if err == nil {

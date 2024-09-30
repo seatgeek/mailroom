@@ -19,7 +19,7 @@ func TestNew(t *testing.T) {
 	user := New(
 		"rufus",
 		WithIdentifier(identifier.New("username", "rufus")),
-		WithIdentifiers(identifier.NewCollection(
+		WithIdentifiers(identifier.NewSet(
 			identifier.New("email", "rufus@seatgeek.com"),
 		)),
 		WithPreference("com.example.notification", "email", true),

@@ -35,7 +35,7 @@ func (u *UserModel) ToUser() *user.User {
 	return &user.User{
 		Key:         u.Key,
 		Preferences: u.Preferences,
-		Identifiers: identifier.NewCollectionFromMap(u.Identifiers),
+		Identifiers: identifier.NewSetFromMap(u.Identifiers),
 	}
 }
 
@@ -67,7 +67,7 @@ func (s *Store) Add(u *user.User) error {
 }
 
 // Find implements user.Store.
-func (s *Store) Find(possibleIdentifiers identifier.Collection) (*user.User, error) {
+func (s *Store) Find(possibleIdentifiers identifier.Set) (*user.User, error) {
 	if possibleIdentifiers.Len() == 0 {
 		return nil, fmt.Errorf("%w: no identifiers provided", user.ErrUserNotFound)
 	}

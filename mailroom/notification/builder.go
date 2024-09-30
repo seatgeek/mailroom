@@ -14,7 +14,7 @@ import (
 
 type builderOpts struct {
 	context             event.Context
-	recipients          identifier.Collection
+	recipients          identifier.Set
 	fallbackMessage     string
 	messagePerTransport map[common.TransportKey]string
 	slackOpts           []slack.MsgOption
@@ -28,15 +28,15 @@ func NewBuilder(context event.Context) *Builder {
 	return &Builder{
 		opts: builderOpts{
 			context:             context,
-			recipients:          identifier.NewCollection(),
+			recipients:          identifier.NewSet(),
 			messagePerTransport: make(map[common.TransportKey]string),
 		},
 	}
 }
 
 // WithRecipient sets the recipient of the notification
-// It's like WithRecipientIdentifiers but it accepts a single identifier collection
-func (b *Builder) WithRecipient(identifiers identifier.Collection) *Builder {
+// It's like WithRecipientIdentifiers, but it accepts a single identifier set
+func (b *Builder) WithRecipient(identifiers identifier.Set) *Builder {
 	b.opts.recipients = identifiers
 	return b
 }
@@ -44,7 +44,7 @@ func (b *Builder) WithRecipient(identifiers identifier.Collection) *Builder {
 // WithRecipientIdentifiers sets the recipient of the notification
 // It's like WithRecipient but it accepts multiple identifiers as variadic arguments
 func (b *Builder) WithRecipientIdentifiers(identifiers ...identifier.Identifier) *Builder {
-	b.opts.recipients = identifier.NewCollection(identifiers...)
+	b.opts.recipients = identifier.NewSet(identifiers...)
 	return b
 }
 
@@ -73,7 +73,7 @@ func (b *builderOpts) Context() event.Context {
 	return b.context
 }
 
-func (b *builderOpts) Recipient() identifier.Collection {
+func (b *builderOpts) Recipient() identifier.Set {
 	return b.recipients
 }
 
@@ -83,10 +83,6 @@ func (b *builderOpts) Render(key common.TransportKey) string {
 	}
 
 	return b.fallbackMessage
-}
-
-func (b *builderOpts) AddRecipients(collection identifier.Collection) {
-	b.recipients.Merge(collection)
 }
 
 func (b *builderOpts) GetSlackOptions() []slack.MsgOption {

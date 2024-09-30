@@ -26,7 +26,7 @@ type wantSent struct {
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
-	unknownUser := identifier.NewCollection()
+	unknownUser := identifier.NewSet()
 
 	knownUser := user.New(
 		"rufus",
@@ -158,7 +158,7 @@ func (f *fakeTransport) Push(_ context.Context, notification common.Notification
 	return nil
 }
 
-func notificationFor(eventType event.Type, identifiers identifier.Collection) common.Notification {
+func notificationFor(eventType event.Type, identifiers identifier.Set) common.Notification {
 	return notification.NewBuilder(
 		event.Context{
 			ID:   event.ID(eventType),

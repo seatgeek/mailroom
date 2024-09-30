@@ -164,7 +164,7 @@ func (s userStoreThatFailsToValidate) GetByIdentifier(identifier identifier.Iden
 	panic("not called in our tests")
 }
 
-func (s userStoreThatFailsToValidate) Find(_ identifier.Collection) (*user.User, error) {
+func (s userStoreThatFailsToValidate) Find(_ identifier.Set) (*user.User, error) {
 	panic("not called in our tests")
 }
 
