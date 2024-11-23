@@ -30,7 +30,7 @@ lint:go:
 lint:markdown:
   stage: lint
   needs: []
-  image: ghcr.io/igorshubovych/markdownlint-cli:v0.42.0
+  image: ghcr.io/igorshubovych/markdownlint-cli:v0.43.0
   script:
     - markdownlint .
   extends: [.mrs-only]
