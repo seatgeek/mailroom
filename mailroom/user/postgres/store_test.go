@@ -320,8 +320,7 @@ func createDatastore(t *testing.T) *postgres.Store {
 
 	ctx := context.Background()
 
-	container, err := pgtc.RunContainer(ctx,
-		testcontainers.WithImage("postgres:16.2"),
+	container, err := pgtc.Run(ctx, "postgres:16.2",
 		pgtc.WithInitScripts("../../../test/initdb/init.sql"),
 		pgtc.WithDatabase("mailroom"),
 		testcontainers.WithWaitStrategy(
