@@ -30,6 +30,7 @@ jobs:
       - uses: github/super-linter/slim@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINTER_RULES_PATH: '.' # From https://github.com/github/super-linter/pull/859#issuecomment-709625090
           VALIDATE_MARKDOWN: true
           MARKDOWN_CONFIG_FILE: .markdownlint.yaml
           VALIDATE_YAML: true
