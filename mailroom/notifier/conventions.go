@@ -2,6 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
+// Package notifier encapsulates the concept of sending a common.Notification via some Transport
 package notifier
 
 import (
@@ -11,7 +12,7 @@ import (
 	"github.com/seatgeek/mailroom/mailroom/common"
 )
 
-// Permanent wraps the given err as a permanent error
+// Permanent wraps the given err as a permanent error which should not be retried
 func Permanent(err error) error {
 	return backoff.Permanent(err)
 }
@@ -30,7 +31,9 @@ type Notifier interface {
 	Push(context.Context, common.Notification) error
 }
 
-// Transport is any notifier with a distinct, named key
+// Transport is any notifier with a distinct, named key.
+// The key is used to route notifications to the correct transport.
+// You will typically have one Transport implementation per notification service. For example: one for Slack, another for email, etc.
 type Transport interface {
 	Notifier
 	// Key returns a unique identifier for this transport, useful for routing purposes

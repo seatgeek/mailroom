@@ -2,6 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
+// Package slack provides a notifier.Transport implementation for sending notifications to Slack
 package slack
 
 import (
@@ -27,6 +28,7 @@ type Transport struct {
 // RichNotification is an optional interface that can be implemented by any notification supporting Slack formatting
 type RichNotification interface {
 	common.Notification
+	// GetSlackOptions returns the slack.MsgOptions to be used when sending the notification
 	GetSlackOptions() []slack.MsgOption
 }
 

@@ -51,35 +51,35 @@ func New(opts ...Opt) *Server {
 	return s
 }
 
-// WithListenAddr sets the IP and port the server listens on
+// WithListenAddr sets the IP and port the server listens on, in the form "host:port"
 func WithListenAddr(addr string) Opt {
 	return func(s *Server) {
 		s.listenAddr = addr
 	}
 }
 
-// WithHandlers adds handlers to the server
+// WithHandlers adds handler.Handler instances to the server
 func WithHandlers(handlers ...handler.Handler) Opt {
 	return func(s *Server) {
 		s.handlers = append(s.handlers, handlers...)
 	}
 }
 
-// WithTransports adds named transports to the server
+// WithTransports adds notifier.Transport instances to the server
 func WithTransports(transports ...notifier.Transport) Opt {
 	return func(s *Server) {
 		s.transports = append(s.transports, transports...)
 	}
 }
 
-// WithUserStore sets the user store for the server
+// WithUserStore sets the user.Store for the server
 func WithUserStore(us user.Store) Opt {
 	return func(s *Server) {
 		s.userStore = us
 	}
 }
 
-// WithRouter sets the function used to create a router for the server
+// WithRouter sets the mux.Router used for the server
 func WithRouter(router *mux.Router) Opt {
 	return func(s *Server) {
 		s.router = router
@@ -112,8 +112,8 @@ func (s *Server) validate(ctx context.Context) error {
 	return nil
 }
 
-// Run starts the server in a Goroutine and blocks until the server is shut down
-// If the given context is canceled, the server will attempt to shut down gracefully
+// Run starts the server in a Goroutine and blocks until the server is shut down.
+// If the given context is canceled, the server will attempt to shut down gracefully.
 func (s *Server) Run(ctx context.Context) error {
 	if err := s.validate(ctx); err != nil {
 		return fmt.Errorf("server validation failed: %w", err)

@@ -55,6 +55,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 
 var _ Notifier = &DefaultNotifier{}
 
+// New creates a new DefaultNotifier
 func New(userStore user.Store, transports ...Transport) *DefaultNotifier {
 	return &DefaultNotifier{
 		userStore:  userStore,
