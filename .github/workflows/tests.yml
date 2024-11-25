@@ -39,6 +39,9 @@ jobs:
           YAML_CONFIG_FILE: .yamllint.yaml
 
   test:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      checks: write  # for mikepenz/action-junit-report to update checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +53,18 @@ jobs:
       - run: make test-with-coverage
 
       - uses: mikepenz/action-junit-report@v5
-        if: success() || failure() # always run
+        if: ${{ !cancelled() }}
         with:
           report_paths: '**/build/unit-tests.xml'
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./build/unit-tests.xml
+
+      - uses: codecov/codecov-action@v4.2.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./build/coverage.out
