@@ -1,5 +1,12 @@
 # ![mailroom](./mailroom.png)
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/seatgeek/mailroom.svg?style=flat-square)](https://pkg.go.dev/github.com/seatgeek/mailroom)
+[![go.mod](https://img.shields.io/github/go-mod/go-version/seatgeek/mailroom?style=flat-square)](go.mod)
+[![LICENSE](https://img.shields.io/github/license/seatgeek/mailroom?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/seatgeek/mailroom/tests.yml?branch=main&style=flat-square)](https://github.com/seatgeek/mailroom/actions?query=workflow%3Atests+branch%3Amain)
+[![Go Report Card](https://goreportcard.com/badge/github.com/seatgeek/mailroom?style=flat-square)](https://goreportcard.com/report/github.com/seatgeek/mailroom)
+[![Codecov](https://img.shields.io/codecov/c/github/seatgeek/mailroom?style=flat-square)](https://codecov.io/gh/seatgeek/mailroom)
+
 A notification relay framework
 
 ## Usage
