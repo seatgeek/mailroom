@@ -17,6 +17,9 @@
     ]
   },
 
+  "reviewers": ["team:developer-experience"],
+  "reviewersSampleSize": 1,
+
   "gomod": {
     "postUpdateOptions": [
       "gomodUpdateImportPaths",
@@ -45,6 +48,29 @@
       "description": "Group markdownlint-cli updates together",
       "matchPackageNames": ["igorshubovych/markdownlint-cli", "ghcr.io/igorshubovych/markdownlint-cli"],
       "groupName": "markdownlint-cli",
+    },
+    {
+      "description": "Auto-merge non-major test deps",
+      "matchPackageNames": [
+        "actions/checkout",
+        "actions/setup-go",
+        "github/super-linter",
+        "codecov/codecov-action",
+        "codecov/test-results-action",
+        "github.com/stretchr/testify",
+        "github.com/testcontainers/testcontainers-go",
+        "github.com/testcontainers/testcontainers-go/**",
+        "github.com/golangci/golangci-lint",
+        "gotest.tools/gotestsum",
+        "github.com/boumenot/gocover-cobertura",
+        "mockery/mockery",
+        "palantir/go-license",
+        "igorshubovych/markdownlint-cli",
+        "pipelinecomponents/yamllint",
+      ],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true,
+      "minimumReleaseAge": "3 days",
     },
   ],
 }
