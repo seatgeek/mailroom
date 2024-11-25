@@ -17,6 +17,9 @@
     ]
   },
 
+  "reviewers": ["team:developer-experience"],
+  "reviewersSampleSize": 1,
+
   "gomod": {
     "postUpdateOptions": [
       "gomodUpdateImportPaths",
