@@ -52,6 +52,7 @@ test: .install-gotestsum .ensure-build-dir generate-mocks
 .PHONY: report-coverage
 report-coverage: .install-cover-cobertura .ensure-build-dir
 	@sed -i.bak '/\/mock_.*\.go/d' build/coverage.out
+	@sed -i.bak '/internal\/example\.go/d' build/coverage.out
 	@go tool cover -func=build/coverage.out
 	@gocover-cobertura < build/coverage.out > build/coverage.xml
 
