@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/go-playground/webhooks/v6 v6.3.0
+	github.com/go-playground/webhooks/v6 v6.4.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.0.5
 	github.com/slack-go/slack v0.13.1
