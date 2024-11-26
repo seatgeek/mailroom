@@ -1,4 +1,4 @@
-# ![mailroom](./mailroom.png)
+# ![mailroom](./docs/mailroom.png)
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/seatgeek/mailroom.svg?style=flat-square)](https://pkg.go.dev/github.com/seatgeek/mailroom)
 [![go.mod](https://img.shields.io/github/go-mod/go-version/seatgeek/mailroom?style=flat-square)](go.mod)
@@ -41,6 +41,6 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
+See [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for contribution guidelines.
 
 Use `make` to run all linters and tests locally.
