@@ -55,16 +55,16 @@ jobs:
       - uses: mikepenz/action-junit-report@v5
         if: ${{ !cancelled() }}
         with:
-          report_paths: '**/build/unit-tests.xml'
+          report_paths: '**/build/reports/unit-tests.xml'
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./build/unit-tests.xml
+          files: ./build/reports/unit-tests.xml
 
       - uses: codecov/codecov-action@v5.0.7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./build/coverage.out
+          files: ./build/reports/coverage.out
