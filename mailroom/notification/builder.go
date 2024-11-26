@@ -20,10 +20,12 @@ type builderOpts struct {
 	slackOpts           []slack.MsgOption
 }
 
+// Builder provides a fluent interface for constructing rich notification objects
 type Builder struct {
 	opts builderOpts
 }
 
+// NewBuilder creates a new fluent Builder instance
 func NewBuilder(context event.Context) *Builder {
 	return &Builder{
 		opts: builderOpts{
@@ -48,21 +50,25 @@ func (b *Builder) WithRecipientIdentifiers(identifiers ...identifier.Identifier)
 	return b
 }
 
+// WithDefaultMessage sets the default message to be used if no message is provided for a specific transport
 func (b *Builder) WithDefaultMessage(message string) *Builder {
 	b.opts.fallbackMessage = message
 	return b
 }
 
+// WithMessageForTransport sets a specific message to be used for a specific transport
 func (b *Builder) WithMessageForTransport(transportKey common.TransportKey, message string) *Builder {
 	b.opts.messagePerTransport[transportKey] = message
 	return b
 }
 
+// WithSlackOptions sets the Slack options (like attachments, blocks, etc.) to be used when sending the notification
 func (b *Builder) WithSlackOptions(opts ...slack.MsgOption) *Builder {
 	b.opts.slackOpts = opts
 	return b
 }
 
+// Build constructs the rich notification object from the previously set options
 func (b *Builder) Build() slack2.RichNotification {
 	return &b.opts
 }

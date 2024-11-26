@@ -2,7 +2,7 @@
 # https://golangci-lint.run/usage/configuration/
 
 output:
-  format: code-climate:code-quality-report.json,colored-line-number
+  format: code-climate:build/reports/code-quality-report.json,colored-line-number
 
 run:
   timeout: 1m

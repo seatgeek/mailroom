@@ -2,6 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
+// Package postgres provides a postgresql-backed implementation of the user.Store interface
 package postgres
 
 import (
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// UserModel is the gorm model for a user
 type UserModel struct {
 	Key         string           `gorm:"primarykey"`
 	Preferences user.Preferences `gorm:"serializer:json"`
@@ -31,6 +33,7 @@ func (u *UserModel) TableName() string {
 	return "users"
 }
 
+// ToUser converts a UserModel to a user.User
 func (u *UserModel) ToUser() *user.User {
 	return &user.User{
 		Key:         u.Key,

@@ -13,12 +13,15 @@ MARKDOWNLINT_VERSION=v0.43.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
 YAMLLINT_VERSION=0.33.0
 
+REPORTS_DIR=build/reports
+CONFIG_DIR=build/config
+
 .PHONY: all
 check: clean generate lint test
 
 .PHONY: clean
 clean:
-	@rm -rf build
+	@rm -rf $(REPORTS_DIR)
 	@find . -type f -name "mock_*.go" -delete
 
 .PHONY: lint
@@ -26,34 +29,35 @@ lint: lint-go lint-license lint-markdown lint-yaml
 
 .PHONY: lint-go
 lint-go: .install-linter generate
-	@golangci-lint run ./...
+	@golangci-lint run --config $(CONFIG_DIR)/.golangci.yml ./...
 
 .PHONY: lint-fix
 lint-fix: .install-linter .install-go-license
-	@golangci-lint run --fix ./...
-	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config .go-license.yaml
+	@golangci-lint run --fix --config $(CONFIG_DIR)/.golangci.yml ./...
+	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config $(CONFIG_DIR)/.go-license.yaml
 
 .PHONY: lint-license
 lint-license: .install-go-license
-	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config .go-license.yaml --verify
+	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config $(CONFIG_DIR)/.go-license.yaml --verify
 
 .PHONY: lint-markdown
 lint-markdown:
-	@docker run -it --rm -v `pwd`:/workdir:ro ghcr.io/igorshubovych/markdownlint-cli:$(MARKDOWNLINT_VERSION) .
+	@docker run -it --rm -v `pwd`:/workdir:ro ghcr.io/igorshubovych/markdownlint-cli:$(MARKDOWNLINT_VERSION) --config $(CONFIG_DIR)/.markdownlint.yaml .
 
 .PHONY: lint-yaml
 lint-yaml:
-	@docker run -it --rm -v `pwd`:/code:ro pipelinecomponents/yamllint:$(YAMLLINT_VERSION) yamllint .
+	@docker run -it --rm -v `pwd`:/code:ro pipelinecomponents/yamllint:$(YAMLLINT_VERSION) yamllint --config-file $(CONFIG_DIR)/.yamllint.yaml .
 
 .PHONY: test
-test: .install-gotestsum .ensure-build-dir generate-mocks
-	@gotestsum --junitfile build/unit-tests.xml -- -race -v -coverprofile=build/coverage.out -covermode=atomic -v -cover ./...
+test: .install-gotestsum .ensure-reports-dir generate-mocks
+	@gotestsum --junitfile $(REPORTS_DIR)/unit-tests.xml -- -race -v -coverprofile=$(REPORTS_DIR)/coverage.out -covermode=atomic -v -cover ./...
 
 .PHONY: report-coverage
-report-coverage: .install-cover-cobertura .ensure-build-dir
-	@sed -i.bak '/\/mock_.*\.go/d' build/coverage.out
-	@go tool cover -func=build/coverage.out
-	@gocover-cobertura < build/coverage.out > build/coverage.xml
+report-coverage: .install-cover-cobertura .ensure-reports-dir
+	@sed -i.bak '/\/mock_.*\.go/d' $(REPORTS_DIR)/coverage.out
+	@sed -i.bak '/internal\/example\.go/d' $(REPORTS_DIR)/coverage.out
+	@go tool cover -func=$(REPORTS_DIR)/coverage.out
+	@gocover-cobertura < $(REPORTS_DIR)/coverage.out > $(REPORTS_DIR)/coverage.xml
 
 .PHONY: test-with-coverage
 test-with-coverage: test report-coverage
@@ -63,7 +67,7 @@ generate: clean generate-mocks
 
 .PHONY: generate-mocks
 generate-mocks: .install-mockery
-	@mockery
+	@mockery --config $(CONFIG_DIR)/.mockery.yaml
 
 .install-linter:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
@@ -80,5 +84,5 @@ generate-mocks: .install-mockery
 .install-mockery:
 	@go install github.com/vektra/mockery/v2@$(MOCKERY_VERSION)
 
-.ensure-build-dir:
-	@mkdir -p build
+.ensure-reports-dir:
+	@mkdir -p $(REPORTS_DIR)

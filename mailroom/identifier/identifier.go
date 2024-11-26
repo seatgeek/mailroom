@@ -2,6 +2,7 @@
 //
 // Licensed under the terms of the Apache-2.0 license. See LICENSE file in project root for terms.
 
+// Package identifier provides a way to identify users across different systems.
 package identifier
 
 import (
@@ -14,12 +15,18 @@ import (
 // NamespaceAndKind is a combination of a namespace and a kind.
 // For example, in "slack.com/email", "slack.com" is the namespace and "email" is the kind.
 // The namespace part is considered optional, and if it is not present, it is represented as an empty string.
+// This is useful when a user is known by different emails, usernames, or IDs across different systems.
 type NamespaceAndKind string
 
 var (
-	GenericEmail    = NamespaceAndKind(KindEmail)
+	// GenericEmail is any email address not associated with a specific namespace or system.
+	GenericEmail = NamespaceAndKind(KindEmail)
+
+	// GenericUsername is any username not associated with a specific namespace or system.
 	GenericUsername = NamespaceAndKind(KindUsername)
-	GenericID       = NamespaceAndKind(KindID)
+
+	// GenericID is any ID not associated with a specific namespace or system.
+	GenericID = NamespaceAndKind(KindID)
 )
 
 // Split returns the namespace and kind parts of the NamespaceAndKind.
@@ -42,7 +49,7 @@ func (n NamespaceAndKind) Kind() Kind {
 	return Kind(kind)
 }
 
-// NewNamespaceAndKind creates a new NamespaceAndKind from a namespace and a kind.
+// NewNamespaceAndKind creates a new NamespaceAndKind from a namespace and a Kind.
 func NewNamespaceAndKind[T ~string](namespace string, kind T) NamespaceAndKind {
 	if namespace == "" {
 		return NamespaceAndKind(kind)
@@ -51,6 +58,8 @@ func NewNamespaceAndKind[T ~string](namespace string, kind T) NamespaceAndKind {
 	return NamespaceAndKind(fmt.Sprintf("%s/%s", namespace, kind))
 }
 
+// Kind represents the type of identifier, such as an "email" or "username".
+// This is used in conjunction with a namespace to uniquely identify a user in some system.
 type Kind string
 
 const (

@@ -34,9 +34,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: '.' # From https://github.com/github/super-linter/pull/859#issuecomment-709625090
           VALIDATE_MARKDOWN: true
-          MARKDOWN_CONFIG_FILE: .markdownlint.yaml
+          MARKDOWN_CONFIG_FILE: build/config/.markdownlint.yaml
           VALIDATE_YAML: true
-          YAML_CONFIG_FILE: .yamllint.yaml
+          YAML_CONFIG_FILE: build/config/.yamllint.yaml
 
   test:
     permissions:
@@ -55,16 +55,16 @@ jobs:
       - uses: mikepenz/action-junit-report@v5
         if: ${{ !cancelled() }}
         with:
-          report_paths: '**/build/unit-tests.xml'
+          report_paths: '**/build/reports/unit-tests.xml'
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./build/unit-tests.xml
+          files: ./build/reports/unit-tests.xml
 
       - uses: codecov/codecov-action@v5.0.7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./build/coverage.out
+          files: ./build/reports/coverage.out
