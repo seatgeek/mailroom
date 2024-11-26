@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lmittmann/tint"
-	"github.com/seatgeek/mailroom/pkg"
+	"github.com/seatgeek/mailroom"
 	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/handler"
@@ -78,8 +78,8 @@ func main() {
 		}),
 	))
 
-	app := pkg.New(
-		pkg.WithHandlers(
+	app := mailroom.New(
+		mailroom.WithHandlers(
 			&ExampleHandler{},
 			// handler.New[ArgoEventPayload](
 			//  "argocd",
@@ -89,7 +89,7 @@ func main() {
 			//	argocd.NewNotificationGenerator(),
 			// ),
 		),
-		pkg.WithTransports(
+		mailroom.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),
 			// notifier.WithRetry(
 			//	notifier.WithTimeout(
@@ -103,7 +103,7 @@ func main() {
 			//	backoff.WithMaxElapsedTime(30*time.Second),
 			// ),
 		),
-		pkg.WithUserStore(
+		mailroom.WithUserStore(
 			user.NewInMemoryStore(
 				user.New(
 					"codell",
