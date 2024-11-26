@@ -14,14 +14,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lmittmann/tint"
-	"github.com/seatgeek/mailroom/mailroom"
-	"github.com/seatgeek/mailroom/mailroom/common"
-	"github.com/seatgeek/mailroom/mailroom/event"
-	"github.com/seatgeek/mailroom/mailroom/handler"
-	"github.com/seatgeek/mailroom/mailroom/identifier"
-	"github.com/seatgeek/mailroom/mailroom/notification"
-	"github.com/seatgeek/mailroom/mailroom/notifier"
-	"github.com/seatgeek/mailroom/mailroom/user"
+	"github.com/seatgeek/mailroom/pkg"
+	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
+	"github.com/seatgeek/mailroom/pkg/handler"
+	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notification"
+	"github.com/seatgeek/mailroom/pkg/notifier"
+	"github.com/seatgeek/mailroom/pkg/user"
 )
 
 type MessageSentEvent struct {
@@ -78,8 +78,8 @@ func main() {
 		}),
 	))
 
-	app := mailroom.New(
-		mailroom.WithHandlers(
+	app := pkg.New(
+		pkg.WithHandlers(
 			&ExampleHandler{},
 			// handler.New[ArgoEventPayload](
 			//  "argocd",
@@ -89,7 +89,7 @@ func main() {
 			//	argocd.NewNotificationGenerator(),
 			// ),
 		),
-		mailroom.WithTransports(
+		pkg.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),
 			// notifier.WithRetry(
 			//	notifier.WithTimeout(
@@ -103,7 +103,7 @@ func main() {
 			//	backoff.WithMaxElapsedTime(30*time.Second),
 			// ),
 		),
-		mailroom.WithUserStore(
+		pkg.WithUserStore(
 			user.NewInMemoryStore(
 				user.New(
 					"codell",
