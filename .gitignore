@@ -1,6 +1,5 @@
 .DS_Store
 .idea
 
-build/
 code-quality-report.json
 mock_*.go

@@ -13,6 +13,8 @@ MARKDOWNLINT_VERSION=v0.43.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
 YAMLLINT_VERSION=0.32.1
 
+CONFIG_DIR=build/config
+
 .PHONY: all
 check: clean generate lint test
 
@@ -26,24 +28,24 @@ lint: lint-go lint-license lint-markdown lint-yaml
 
 .PHONY: lint-go
 lint-go: .install-linter generate
-	@golangci-lint run ./...
+	@golangci-lint run --config $(CONFIG_DIR)/.golangci.yml ./...
 
 .PHONY: lint-fix
 lint-fix: .install-linter .install-go-license
-	@golangci-lint run --fix ./...
-	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config .go-license.yaml
+	@golangci-lint run --fix --config $(CONFIG_DIR)/.golangci.yml ./...
+	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config $(CONFIG_DIR)/.go-license.yaml
 
 .PHONY: lint-license
 lint-license: .install-go-license
-	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config .go-license.yaml --verify
+	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config $(CONFIG_DIR)/.go-license.yaml --verify
 
 .PHONY: lint-markdown
 lint-markdown:
-	@docker run -it --rm -v `pwd`:/workdir:ro ghcr.io/igorshubovych/markdownlint-cli:$(MARKDOWNLINT_VERSION) .
+	@docker run -it --rm -v `pwd`:/workdir:ro ghcr.io/igorshubovych/markdownlint-cli:$(MARKDOWNLINT_VERSION) --config $(CONFIG_DIR)/.markdownlint.yaml .
 
 .PHONY: lint-yaml
 lint-yaml:
-	@docker run -it --rm -v `pwd`:/code:ro pipelinecomponents/yamllint:$(YAMLLINT_VERSION) yamllint .
+	@docker run -it --rm -v `pwd`:/code:ro pipelinecomponents/yamllint:$(YAMLLINT_VERSION) yamllint --config-file $(CONFIG_DIR)/.yamllint.yaml .
 
 .PHONY: test
 test: .install-gotestsum .ensure-build-dir generate-mocks
@@ -64,7 +66,7 @@ generate: clean generate-mocks
 
 .PHONY: generate-mocks
 generate-mocks: .install-mockery
-	@mockery
+	@mockery --config $(CONFIG_DIR)/.mockery.yaml
 
 .install-linter:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)

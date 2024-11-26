@@ -34,9 +34,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: '.' # From https://github.com/github/super-linter/pull/859#issuecomment-709625090
           VALIDATE_MARKDOWN: true
-          MARKDOWN_CONFIG_FILE: .markdownlint.yaml
+          MARKDOWN_CONFIG_FILE: build/config/.markdownlint.yaml
           VALIDATE_YAML: true
-          YAML_CONFIG_FILE: .yamllint.yaml
+          YAML_CONFIG_FILE: build/config/.yamllint.yaml
 
   test:
     permissions:

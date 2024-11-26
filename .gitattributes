@@ -2,9 +2,6 @@
 /.gitattributes       export-ignore
 /.github              export-ignore
 /.gitignore           export-ignore
-/.go-license.yaml     export-ignore
-/.golangci.yml        export-ignore
-/.mockery.yaml        export-ignore
-/.yamllint.yaml       export-ignore
+/build                export-ignore
 /docs                 export-ignore
 /Makefile             export-ignore
