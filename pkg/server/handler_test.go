@@ -50,6 +50,14 @@ func TestHandler(t *testing.T) {
 			wantStatusCode: 500,
 		},
 		{
+			name: "parse error with custom HTTP status code",
+			handler: handlerThatReturns(t, nil, &Error{
+				Code:   400,
+				Reason: someError,
+			}),
+			wantStatusCode: 400,
+		},
+		{
 			name:           "notifier error",
 			handler:        handlerThatReturns(t, someNotifications, nil),
 			notifier:       notifierThatReturns(t, someError),
