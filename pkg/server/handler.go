@@ -6,6 +6,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -23,8 +24,7 @@ func CreateEventHandler(s handler.Handler, n notifier.Notifier) http.HandlerFunc
 
 		notifications, err := s.Process(request)
 		if err != nil {
-			slog.Error("failed to generate notifications", "handler", s.Key(), "error", err)
-			http.Error(writer, fmt.Sprintf("failed to generate notifications: %v", err), 500)
+			logAndSendErrorResponse(writer, s.Key(), "failed to generate notifications", err)
 			return
 		}
 
@@ -50,4 +50,22 @@ func CreateEventHandler(s handler.Handler, n notifier.Notifier) http.HandlerFunc
 			return
 		}
 	}
+}
+
+func logAndSendErrorResponse(writer http.ResponseWriter, handlerKey string, errorPrefix string, err error) {
+	statusCode := 500
+
+	var httpError *Error
+	if errors.As(err, &httpError) {
+		statusCode = httpError.Code
+		err = httpError.Reason
+	}
+
+	if statusCode < 500 {
+		slog.Warn(errorPrefix, "handler", handlerKey, "error", err)
+	} else {
+		slog.Error(errorPrefix, "handler", handlerKey, "error", err)
+	}
+
+	http.Error(writer, fmt.Sprintf("%s: %v", errorPrefix, err), statusCode)
 }
