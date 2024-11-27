@@ -30,6 +30,10 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 Also see the [GoDoc](https://pkg.go.dev/github.com/seatgeek/mailroom) for documentation.
 
+## Stability
+
+Mailroom is currently in alpha. It works well in production, but the API may change at any time. We will do our best to note breaking changes in the release notes.
+
 ## Contributing
 
 See [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for contribution guidelines.
