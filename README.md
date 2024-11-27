@@ -1,5 +1,6 @@
 # ![mailroom](./docs/mailroom.png)
 
+[![GitHub Release](https://img.shields.io/github/v/release/seatgeek/mailroom?style=flat-square)](https://github.com/seatgeek/mailroom/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/seatgeek/mailroom.svg?style=flat-square)](https://pkg.go.dev/github.com/seatgeek/mailroom)
 [![go.mod](https://img.shields.io/github/go-mod/go-version/seatgeek/mailroom?style=flat-square)](go.mod)
 [![LICENSE](https://img.shields.io/github/license/seatgeek/mailroom?style=flat-square)](LICENSE)
