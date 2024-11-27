@@ -6,8 +6,6 @@ package mailroom
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -15,7 +13,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/common"
-	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/seatgeek/mailroom/pkg/notifier"
 	"github.com/seatgeek/mailroom/pkg/server"
@@ -122,126 +119,6 @@ func (s *Server) Run(ctx context.Context) error {
 	return s.serveHttp(ctx)
 }
 
-// Builds a current mapping of user preferences based on what is stored in the
-// user store and the handlers and transports that are registered with the server.
-//
-// Only event types and transports that are currently active in the server will
-// be included in the preference map. User is opted in to any preference that is
-// not stored.
-func (s *Server) buildCurrentUserPreferences(p user.Preferences) user.Preferences {
-	hydratedPreferences := make(user.Preferences)
-
-	for _, src := range s.handlers {
-		for _, eventType := range src.EventTypes() {
-			for _, transport := range s.transports {
-				if hydratedPreferences[eventType.Key] == nil {
-					hydratedPreferences[eventType.Key] = make(map[common.TransportKey]bool)
-				}
-				hydratedPreferences[eventType.Key][transport.Key()] = p.Wants(eventType.Key, transport.Key())
-			}
-		}
-	}
-
-	return hydratedPreferences
-}
-
-type PreferencesBody struct {
-	Preferences user.Preferences `json:"preferences"`
-}
-
-func (s *Server) handleGetPreferences(writer http.ResponseWriter, request *http.Request) error {
-	vars := mux.Vars(request)
-	key := vars["key"]
-
-	u, err := s.userStore.Get(key)
-	if err != nil {
-		if errors.Is(err, user.ErrUserNotFound) {
-			slog.Info("user not found", "key", key)
-		}
-
-		return err
-	}
-
-	hydratedUserPreferences := s.buildCurrentUserPreferences(u.Preferences)
-	resp := PreferencesBody{Preferences: hydratedUserPreferences}
-
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Server) handlePutPreferences(writer http.ResponseWriter, request *http.Request) error {
-	vars := mux.Vars(request)
-	key := vars["key"]
-
-	var req PreferencesBody
-	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
-		return err
-	}
-
-	err := s.userStore.SetPreferences(key, req.Preferences)
-	if err != nil {
-		if errors.Is(err, user.ErrUserNotFound) {
-			slog.Info("user not found", "key", key)
-		}
-
-		return err
-	}
-
-	resp := PreferencesBody{Preferences: s.buildCurrentUserPreferences(req.Preferences)}
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-type APITransport struct {
-	Key common.TransportKey `json:"key"`
-}
-
-type APISource struct {
-	Key        string                 `json:"key"`
-	EventTypes []event.TypeDescriptor `json:"event_types"`
-}
-
-type APIConfiguration struct {
-	Sources    []APISource    `json:"sources"`
-	Transports []APITransport `json:"transports"`
-}
-
-func (s *Server) handleGetConfiguration(writer http.ResponseWriter, _ *http.Request) error {
-	sources := make([]APISource, len(s.handlers))
-	for i, src := range s.handlers {
-		src := APISource{
-			Key:        src.Key(),
-			EventTypes: src.EventTypes(),
-		}
-		sources[i] = src
-	}
-
-	transports := make([]APITransport, len(s.transports))
-	for i, transport := range s.transports {
-		tp := APITransport{
-			Key: transport.Key(),
-		}
-		transports[i] = tp
-	}
-
-	resp := APIConfiguration{
-		Sources:    sources,
-		Transports: transports,
-	}
-
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *Server) serveHttp(ctx context.Context) error {
 	hsm := s.router
 
@@ -257,9 +134,11 @@ func (s *Server) serveHttp(ctx context.Context) error {
 		hsm.HandleFunc(endpoint, server.CreateEventHandler(src, s.notifier))
 	}
 
-	hsm.HandleFunc("/users/{key}/preferences", s.handleGetPreferences).Methods("GET")
-	hsm.HandleFunc("/users/{key}/preferences", s.handlePutPreferences).Methods("PUT")
-	hsm.HandleFunc("/configuration", s.handleGetConfiguration).Methods("GET")
+	// Expose routes for managing user preferences
+	prefs := user.NewPreferencesHandler(s.userStore, s.handlers, transportKeys(s.transports))
+	hsm.HandleFunc("/users/{key}/preferences", prefs.GetPreferences).Methods("GET")
+	hsm.HandleFunc("/users/{key}/preferences", prefs.UpdatePreferences).Methods("PUT")
+	hsm.HandleFunc("/configuration", prefs.ListOptions).Methods("GET")
 
 	hs := &http.Server{
 		Addr:              s.listenAddr,
@@ -293,4 +172,12 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	case err := <-httpExited:
 		return err
 	}
+}
+
+func transportKeys(transports []notifier.Transport) []common.TransportKey {
+	keys := make([]common.TransportKey, len(transports))
+	for i, t := range transports {
+		keys[i] = t.Key()
+	}
+	return keys
 }
