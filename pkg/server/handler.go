@@ -6,7 +6,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,21 +17,21 @@ import (
 // CreateEventHandler returns a handlerFunc that can be used to handle incoming webhooks
 // It choreographs the parsing of the incoming request, the generation of notifications, dispatching the notifications
 // to the notifier, and returning a success or error response to the client.
-func CreateEventHandler(s handler.Handler, n notifier.Notifier) handlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) error {
+func CreateEventHandler(s handler.Handler, n notifier.Notifier) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
 		slog.Debug("handling incoming webhook", "handler", s.Key(), "path", request.URL.Path)
 
 		notifications, err := s.Process(request)
 		if err != nil {
 			slog.Error("failed to generate notifications", "handler", s.Key(), "error", err)
-			return fmt.Errorf("failed to generate notifications: %w", err)
+			http.Error(writer, fmt.Sprintf("failed to generate notifications: %v", err), 500)
+			return
 		}
 
 		if len(notifications) == 0 {
 			slog.Debug("no notifications to send", "handler", s.Key())
-			writer.WriteHeader(200)
-			_, _ = writer.Write([]byte("thanks but we're not interested in that event"))
-			return nil
+			http.Error(writer, "thanks but we're not interested in that event", 200)
+			return
 		}
 
 		id := notifications[0].Context().ID
@@ -46,6 +45,9 @@ func CreateEventHandler(s handler.Handler, n notifier.Notifier) handlerFunc {
 			}
 		}
 
-		return errors.Join(errs...)
+		if len(errs) > 0 {
+			http.Error(writer, fmt.Sprintf("failed to send notifications: %v", errs), 500)
+			return
+		}
 	}
 }

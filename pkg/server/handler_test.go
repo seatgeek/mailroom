@@ -27,33 +27,33 @@ func TestHandler(t *testing.T) {
 	someError := errors.New("some error")
 
 	tests := []struct {
-		name     string
-		handler  handler.Handler
-		notifier notifier.Notifier
-		wantErr  error
+		name           string
+		handler        handler.Handler
+		notifier       notifier.Notifier
+		wantStatusCode int
 	}{
 		{
-			name:     "happy path",
-			handler:  handlerThatReturns(t, someNotifications, nil),
-			notifier: notifierThatReturns(t, nil),
-			wantErr:  nil,
+			name:           "happy path",
+			handler:        handlerThatReturns(t, someNotifications, nil),
+			notifier:       notifierThatReturns(t, nil),
+			wantStatusCode: 200,
 		},
 		{
-			name:     "no notifications generated",
-			handler:  handlerThatReturns(t, nil, nil),
-			notifier: notifierThatReturns(t, nil),
-			wantErr:  nil,
+			name:           "no notifications generated",
+			handler:        handlerThatReturns(t, nil, nil),
+			notifier:       notifierThatReturns(t, nil),
+			wantStatusCode: 200,
 		},
 		{
-			name:    "parse error",
-			handler: handlerThatReturns(t, nil, someError),
-			wantErr: someError,
+			name:           "parse error",
+			handler:        handlerThatReturns(t, nil, someError),
+			wantStatusCode: 500,
 		},
 		{
-			name:     "notifier error",
-			handler:  handlerThatReturns(t, someNotifications, nil),
-			notifier: notifierThatReturns(t, someError),
-			wantErr:  someError,
+			name:           "notifier error",
+			handler:        handlerThatReturns(t, someNotifications, nil),
+			notifier:       notifierThatReturns(t, someError),
+			wantStatusCode: 500,
 		},
 	}
 
@@ -68,14 +68,9 @@ func TestHandler(t *testing.T) {
 
 			writer := httptest.NewRecorder()
 
-			err := handler(writer, httptest.NewRequest("POST", "/some-handler", nil))
+			handler(writer, httptest.NewRequest("POST", "/some-handler", nil))
 
-			if tc.wantErr == nil {
-				assert.NoError(t, err)
-				assert.Equal(t, 200, writer.Code)
-			} else {
-				assert.Errorf(t, err, tc.wantErr.Error())
-			}
+			assert.Equal(t, tc.wantStatusCode, writer.Code)
 		})
 	}
 }
