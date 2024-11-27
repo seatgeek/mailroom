@@ -57,10 +57,7 @@ func (ph *PreferencesHandler) GetPreferences(writer http.ResponseWriter, request
 	hydratedUserPreferences := ph.buildCurrentUserPreferences(u.Preferences)
 	resp := preferencesBody{Preferences: hydratedUserPreferences}
 
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
-		slog.Error("failed to encode response", "error", err)
-		writer.WriteHeader(http.StatusInternalServerError)
-	}
+	writeJson(writer, resp)
 }
 
 // UpdatePreferences updates the preferences for a given user
@@ -88,11 +85,9 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 		return
 	}
 
-	resp := preferencesBody{Preferences: ph.buildCurrentUserPreferences(req.Preferences)}
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
-		slog.Error("failed to encode response", "error", err)
-		writer.WriteHeader(http.StatusInternalServerError)
-	}
+	writeJson(writer, preferencesBody{
+		Preferences: ph.buildCurrentUserPreferences(req.Preferences),
+	})
 }
 
 // Builds a current mapping of user preferences based on what is stored in the
@@ -154,7 +149,11 @@ func (ph *PreferencesHandler) ListOptions(writer http.ResponseWriter, _ *http.Re
 		Transports: transports,
 	}
 
-	if err := json.NewEncoder(writer).Encode(resp); err != nil {
+	writeJson(writer, resp)
+}
+
+func writeJson(writer http.ResponseWriter, value any) {
+	if err := json.NewEncoder(writer).Encode(value); err != nil {
 		slog.Error("failed to encode response", "error", err)
 		writer.WriteHeader(500)
 	}

@@ -134,3 +134,27 @@ func TestInMemoryStore_Find(t *testing.T) {
 		})
 	}
 }
+
+func TestInMemoryStore_Add(t *testing.T) {
+	t.Parallel()
+
+	id1 := identifier.New("email", "codell@seatgeek.com")
+	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
+	id3 := identifier.New("email", "zhammer@seatgeek.com")
+
+	userA := New("codell", WithIdentifier(id1), WithIdentifier(id2))
+	userB := New("zhammer", WithIdentifier(id3))
+
+	store := NewInMemoryStore(userA)
+
+	u, err := store.Get("zhammer")
+	assert.Nil(t, u)
+	assert.ErrorIs(t, ErrUserNotFound, err)
+
+	err = store.Add(userB)
+	assert.NoError(t, err)
+
+	u, err = store.Get("zhammer")
+	assert.Equal(t, userB, u)
+	assert.NoError(t, err)
+}

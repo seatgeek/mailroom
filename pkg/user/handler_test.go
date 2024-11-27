@@ -238,6 +238,15 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 
 		assert.Equal(t, 404, writer.Code)
 	})
+
+	t.Run("Bad request body", func(t *testing.T) {
+		t.Parallel()
+
+		writer := httptest.NewRecorder()
+		router.ServeHTTP(writer, httptest.NewRequest("PUT", "/users/rufus/preferences", bytes.NewBufferString(`{{{{ lol this isn't json!`)))
+
+		assert.Equal(t, 400, writer.Code)
+	})
 }
 
 func TestPreferencesHandler_ListOptions(t *testing.T) {
@@ -291,7 +300,7 @@ func createHandler(t *testing.T) *PreferencesHandler {
 
 	srcGitlab := handler.NewMockHandler(t)
 	srcGitlab.EXPECT().Key().Return("gitlab").Maybe()
-	srcGitlab.EXPECT().EventTypes().Return([]event.TypeDescriptor{
+	srcGitlab.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
 			Key:         "com.gitlab.push",
 			Title:       "Push",
@@ -301,7 +310,7 @@ func createHandler(t *testing.T) *PreferencesHandler {
 
 	srcArgo := handler.NewMockHandler(t)
 	srcArgo.EXPECT().Key().Return("argo").Maybe()
-	srcArgo.EXPECT().EventTypes().Return([]event.TypeDescriptor{
+	srcArgo.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
 			Key:         "com.argocd.sync-succeeded",
 			Title:       "Sync Succeeded",
