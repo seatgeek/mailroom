@@ -1,5 +1,6 @@
 # ![mailroom](./docs/mailroom.png)
 
+[![GitHub Release](https://img.shields.io/github/v/release/seatgeek/mailroom?style=flat-square)](https://github.com/seatgeek/mailroom/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/seatgeek/mailroom.svg?style=flat-square)](https://pkg.go.dev/github.com/seatgeek/mailroom)
 [![go.mod](https://img.shields.io/github/go-mod/go-version/seatgeek/mailroom?style=flat-square)](go.mod)
 [![LICENSE](https://img.shields.io/github/license/seatgeek/mailroom?style=flat-square)](LICENSE)
@@ -23,34 +24,16 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 ## Documentation
 
-See the [GoDoc](https://pkg.go.dev/github.com/seatgeek/mailroom) for documentation.
+- [Getting Started](./docs/getting-started.md)
+- [Core Concepts](./docs/core-concepts.md)
+- [Advanced Topics](./docs/advanced-topics.md)
+- [Integrations](./docs/integrations.md)
 
-More detailed documentation is coming soon.
+Also see the [GoDoc](https://pkg.go.dev/github.com/seatgeek/mailroom) for documentation.
 
-### Terminology
+## Stability
 
-- **Event**: An event is some action that occurs in an external system that we want to send a **notification** for.
-- **Notification**: A notification is a string that should be sent to a **user** via some **transport**.
-- **Source**: A source is any external system that sends webhook events to Mailroom.
-- **Handler:** A handler is a function that processes an incoming HTTP request from a **source** and returns a list of **notifications** to send.
-  - A **handler** can optionally be composed of separate **payload parser** and **notification generator** objects:
-    - **Payload Parser**: The payload parser is responsible for:
-      - Receiving a serialized **event** via an incoming HTTP request
-      - Validating the request (e.g. verifying the signature or shared secret)
-      - Parsing the raw request body into a useful **event** object if the event is of interest to us
-    - **Notification Generator**: The notification generator takes the parsed **event** and generates one or more **notifications** from it
-- **Notifier**: A notifier takes the notifications and dispatches them to the appropriate **transports** for delivery based on the **user**'s **preferences**.
-- **Transport**: A transport is a way to send a **notification** to a user. It could be email, Slack, Discord, or something else.
-- **User**: A user is a person who wants to receive **notifications** from Mailroom and has **preferences** on how they'd like to receive them.
-- **Identifier**: An identifier is a unique string that identifies an initiator or potential recipient (**user**) of some event. It could be an email address, a Slack user ID, or something else.
-  - It is composed of three parts:
-    - **Namespace** (optional): The namespace of the identifier (e.g. `slack.com`, `github.com`)
-    - **Kind**: The kind of identifier (e.g. `email`, `username`, `id`)
-    - **Value**: The actual value of the identifier (e.g. `rufus@seatgeek.com`, `rufus`, `U123456`)
-  - For example, `slack.com/email:rufus@seatgeek.com` means that Slack knows this user by the email address `rufus@seatgeek.com`.
-- **Identifier Set**: All known **identifiers** that are associated with a single **user**.
-- **Preferences**: Preferences are how users specify which **notifications** they want, and which **transports** they prefer to receive them on.
-- **User Store**: The user store is a database that stores user information, including their **identifiers** and **preferences**.
+Mailroom is currently in alpha. It works well in production, but the API may change at any time. We will do our best to note breaking changes in the release notes.
 
 ## Contributing
 
