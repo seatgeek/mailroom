@@ -61,7 +61,7 @@ func (s *Store) Add(ctx context.Context, u *user.User) error {
 		}
 	}
 
-	result := s.db.Save(&UserModel{
+	result := s.db.WithContext(ctx).Save(&UserModel{
 		Key:         u.Key,
 		Preferences: u.Preferences,
 		Identifiers: u.Identifiers.ToMap(),
@@ -76,7 +76,7 @@ func (s *Store) Find(ctx context.Context, possibleIdentifiers identifier.Set) (*
 		return nil, fmt.Errorf("%w: no identifiers provided", user.ErrUserNotFound)
 	}
 
-	query := s.db.Model(&UserModel{})
+	query := s.db.WithContext(ctx).Model(&UserModel{})
 	for _, id := range possibleIdentifiers.ToList() {
 		query = query.Or("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, id.NamespaceAndKind, id.Value))
 	}
@@ -106,7 +106,7 @@ func (s *Store) Find(ctx context.Context, possibleIdentifiers identifier.Set) (*
 		return nil, fmt.Errorf("%w: no identifiers matched and no fallback emails were available", user.ErrUserNotFound)
 	}
 
-	query = s.db.Model(&UserModel{})
+	query = s.db.WithContext(ctx).Model(&UserModel{})
 	for email := range possibleEmails {
 		query = query.Or("emails @> ?", fmt.Sprintf(`"%s"`, email))
 	}
@@ -129,7 +129,7 @@ func (s *Store) Find(ctx context.Context, possibleIdentifiers identifier.Set) (*
 // Get implements user.Store.
 func (s *Store) Get(ctx context.Context, key string) (*user.User, error) {
 	var u UserModel
-	if err := s.db.Where("key = ?", key).First(&u).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where("key = ?", key).First(&u).Error; err != nil {
 		return nil, err
 	}
 
@@ -139,13 +139,13 @@ func (s *Store) Get(ctx context.Context, key string) (*user.User, error) {
 // GetByIdentifier implements user.Store.
 func (s *Store) GetByIdentifier(ctx context.Context, id identifier.Identifier) (*user.User, error) {
 	var u UserModel
-	if err := s.db.Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, id.NamespaceAndKind, id.Value)).First(&u).Error; err == nil {
+	if err := s.db.WithContext(ctx).Where("identifiers @> ?", fmt.Sprintf(`{"%s": "%s"}`, id.NamespaceAndKind, id.Value)).First(&u).Error; err == nil {
 		return u.ToUser(), nil
 	}
 
 	// Fall back to any email identifier
 	if id.Kind() == identifier.KindEmail {
-		if err := s.db.Where("emails @> ?", fmt.Sprintf(`"%s"`, id.Value)).First(&u).Error; err == nil {
+		if err := s.db.WithContext(ctx).Where("emails @> ?", fmt.Sprintf(`"%s"`, id.Value)).First(&u).Error; err == nil {
 			return u.ToUser(), nil
 		}
 	}
@@ -155,7 +155,7 @@ func (s *Store) GetByIdentifier(ctx context.Context, id identifier.Identifier) (
 
 // SetPreferences implements user.Store.
 func (s *Store) SetPreferences(ctx context.Context, key string, prefs user.Preferences) error {
-	return s.db.Model(&UserModel{}).Where("key = ?", key).Update("preferences", prefs).Error
+	return s.db.WithContext(ctx).Model(&UserModel{}).Where("key = ?", key).Update("preferences", prefs).Error
 }
 
 var _ user.Store = &Store{}
