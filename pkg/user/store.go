@@ -5,6 +5,7 @@
 package user
 
 import (
+	"context"
 	"errors"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
@@ -24,16 +25,16 @@ var ErrUserNotFound = errors.New("user not found")
 // new integrations that utilize email identifiers without having to update all existing user information in the store.
 type Store interface {
 	// Get returns a user by its key, or an error if the user is not found
-	Get(key string) (*User, error)
+	Get(ctx context.Context, key string) (*User, error)
 	// GetByIdentifier returns a user by a given identifier, or an error if the user is not found
-	GetByIdentifier(identifier identifier.Identifier) (*User, error)
+	GetByIdentifier(ctx context.Context, identifier identifier.Identifier) (*User, error)
 
 	// Find searches for a user matching any of the given identifiers
 	// (The user is not required to match all of them, just one is enough)
-	Find(possibleIdentifiers identifier.Set) (*User, error)
+	Find(ctx context.Context, possibleIdentifiers identifier.Set) (*User, error)
 
 	// SetPreferences replaces the preferences for a user by key
-	SetPreferences(key string, prefs Preferences) error
+	SetPreferences(ctx context.Context, key string, prefs Preferences) error
 }
 
 // InMemoryStore is a simple in-memory implementation of the Store interface
@@ -50,12 +51,12 @@ func NewInMemoryStore(users ...*User) *InMemoryStore {
 }
 
 // Add adds a user to the in-memory store
-func (s *InMemoryStore) Add(u *User) error {
+func (s *InMemoryStore) Add(ctx context.Context, u *User) error {
 	s.users = append(s.users, u)
 	return nil
 }
 
-func (s *InMemoryStore) Get(key string) (*User, error) {
+func (s *InMemoryStore) Get(ctx context.Context, key string) (*User, error) {
 	for _, u := range s.users {
 		if u.Key == key {
 			return u, nil
@@ -65,7 +66,7 @@ func (s *InMemoryStore) Get(key string) (*User, error) {
 	return nil, ErrUserNotFound
 }
 
-func (s *InMemoryStore) GetByIdentifier(identifier identifier.Identifier) (*User, error) {
+func (s *InMemoryStore) GetByIdentifier(ctx context.Context, identifier identifier.Identifier) (*User, error) {
 	isEmail := identifier.Kind() == "email"
 
 	for _, u := range s.users {
@@ -85,9 +86,9 @@ func (s *InMemoryStore) GetByIdentifier(identifier identifier.Identifier) (*User
 	return nil, ErrUserNotFound
 }
 
-func (s *InMemoryStore) Find(possibleIdentifiers identifier.Set) (*User, error) {
+func (s *InMemoryStore) Find(ctx context.Context, possibleIdentifiers identifier.Set) (*User, error) {
 	for _, i := range possibleIdentifiers.ToList() {
-		u, err := s.GetByIdentifier(i)
+		u, err := s.GetByIdentifier(ctx, i)
 		if err == nil {
 			return u, nil
 		}
@@ -96,8 +97,8 @@ func (s *InMemoryStore) Find(possibleIdentifiers identifier.Set) (*User, error) 
 	return nil, ErrUserNotFound
 }
 
-func (s *InMemoryStore) SetPreferences(key string, prefs Preferences) error {
-	u, err := s.Get(key)
+func (s *InMemoryStore) SetPreferences(ctx context.Context, key string, prefs Preferences) error {
+	u, err := s.Get(ctx, key)
 	if err != nil {
 		return err
 	}

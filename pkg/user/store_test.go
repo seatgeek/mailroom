@@ -5,6 +5,7 @@
 package user
 
 import (
+	"context"
 	"testing"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
@@ -14,6 +15,8 @@ import (
 
 func TestInMemoryStore_Get(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
@@ -61,7 +64,7 @@ func TestInMemoryStore_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := store.GetByIdentifier(tc.input)
+			got, err := store.GetByIdentifier(ctx, tc.input)
 
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, err)
@@ -71,6 +74,8 @@ func TestInMemoryStore_Get(t *testing.T) {
 
 func TestInMemoryStore_Find(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
@@ -127,7 +132,7 @@ func TestInMemoryStore_Find(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := store.Find(tc.input)
+			got, err := store.Find(ctx, tc.input)
 
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, err)
@@ -138,6 +143,8 @@ func TestInMemoryStore_Find(t *testing.T) {
 func TestInMemoryStore_Add(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
 	id3 := identifier.New("email", "zhammer@seatgeek.com")
@@ -147,14 +154,14 @@ func TestInMemoryStore_Add(t *testing.T) {
 
 	store := NewInMemoryStore(userA)
 
-	u, err := store.Get("zhammer")
+	u, err := store.Get(ctx, "zhammer")
 	assert.Nil(t, u)
 	assert.ErrorIs(t, ErrUserNotFound, err)
 
-	err = store.Add(userB)
+	err = store.Add(ctx, userB)
 	assert.NoError(t, err)
 
-	u, err = store.Get("zhammer")
+	u, err = store.Get(ctx, "zhammer")
 	assert.Equal(t, userB, u)
 	assert.NoError(t, err)
 }

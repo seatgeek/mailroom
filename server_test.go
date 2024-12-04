@@ -151,19 +151,19 @@ type userStoreThatFailsToValidate struct {
 	err error
 }
 
-func (s userStoreThatFailsToValidate) Get(_ string) (*user.User, error) {
+func (s userStoreThatFailsToValidate) Get(_ context.Context, _ string) (*user.User, error) {
 	panic("not called in our tests")
 }
 
-func (s userStoreThatFailsToValidate) GetByIdentifier(identifier identifier.Identifier) (*user.User, error) {
+func (s userStoreThatFailsToValidate) GetByIdentifier(_ context.Context, identifier identifier.Identifier) (*user.User, error) {
 	panic("not called in our tests")
 }
 
-func (s userStoreThatFailsToValidate) Find(_ identifier.Set) (*user.User, error) {
+func (s userStoreThatFailsToValidate) Find(_ context.Context, _ identifier.Set) (*user.User, error) {
 	panic("not called in our tests")
 }
 
-func (s userStoreThatFailsToValidate) SetPreferences(_ string, _ user.Preferences) error {
+func (s userStoreThatFailsToValidate) SetPreferences(_ context.Context, _ string, _ user.Preferences) error {
 	panic("not called in our tests")
 }
 
