@@ -19,6 +19,11 @@ import (
 	"github.com/seatgeek/mailroom/pkg/user"
 )
 
+type MuxRouter interface {
+	http.Handler
+	HandleFunc(path string, f func(http.ResponseWriter, *http.Request)) *mux.Route
+}
+
 // Server is the heart of the mailroom application
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
@@ -27,7 +32,7 @@ type Server struct {
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
-	router     *mux.Router
+	router     MuxRouter
 }
 
 type Opt func(s *Server)
@@ -77,7 +82,7 @@ func WithUserStore(us user.Store) Opt {
 }
 
 // WithRouter sets the mux.Router used for the server
-func WithRouter(router *mux.Router) Opt {
+func WithRouter(router MuxRouter) Opt {
 	return func(s *Server) {
 		s.router = router
 	}

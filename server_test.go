@@ -11,12 +11,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"github.com/stretchr/testify/assert"
+	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 )
 
 func TestNew(t *testing.T) {
@@ -106,6 +108,28 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWithRouter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("works with gorilla/mux", func(t *testing.T) {
+		t.Parallel()
+
+		r := mux.NewRouter()
+		s := New(WithRouter(r))
+
+		assert.Equal(t, r, s.router)
+	})
+
+	t.Run("works with dd-trace-go muxtrace", func(t *testing.T) {
+		t.Parallel()
+
+		r := muxtrace.NewRouter()
+		s := New(WithRouter(r))
+
+		assert.Equal(t, r, s.router)
+	})
 }
 
 type handlerThatFailsToValidate struct {
