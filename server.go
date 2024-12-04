@@ -19,6 +19,7 @@ import (
 	"github.com/seatgeek/mailroom/pkg/user"
 )
 
+// interface for gorilla/mux router
 type MuxRouter interface {
 	http.Handler
 	HandleFunc(path string, f func(http.ResponseWriter, *http.Request)) *mux.Route
