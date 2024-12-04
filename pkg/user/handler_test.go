@@ -6,6 +6,7 @@ package user
 
 import (
 	"bytes"
+	"context"
 	"net/http/httptest"
 	"testing"
 
@@ -210,7 +211,7 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 				}
 			}`, writer.Body.String())
 
-		user, err := handler.userStore.Get("rufus")
+		user, err := handler.userStore.Get(context.Background(), "rufus")
 		assert.NoError(t, err)
 
 		assert.False(t, user.Wants("com.gitlab.push", "slack"))

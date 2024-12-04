@@ -27,7 +27,7 @@ func TestPostgresStore_Add(t *testing.T) {
 	store := createDatastore(t)
 
 	// Prove that our user doesn't exist in the database yet
-	_, err := store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	_, err := store.GetByIdentifier(context.Background(), identifier.New("email", "codell@seatgeek.com"))
 	assert.ErrorIs(t, err, user.ErrUserNotFound)
 
 	// Insert a new user
@@ -36,53 +36,53 @@ func TestPostgresStore_Add(t *testing.T) {
 		user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
 	)
 
-	err = store.Add(u)
+	err = store.Add(context.Background(), u)
 	assert.NoError(t, err)
 
 	// Check if inserted (by key)
-	got, err := store.Get(u.Key)
+	got, err := store.Get(context.Background(), u.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Check if inserted (by identifier)
-	got, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	got, err = store.GetByIdentifier(context.Background(), identifier.New("email", "codell@seatgeek.com"))
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Update that same user object
 	u.Identifiers.Add(identifier.New("gitlab.com/email", "codell@seatgeek.com"))
 
-	err = store.Add(u)
+	err = store.Add(context.Background(), u)
 	assert.NoError(t, err)
 
 	// Check if updated (by key)
-	got, err = store.Get(u.Key)
+	got, err = store.Get(context.Background(), u.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Check if updated (by identifier)
-	got, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	got, err = store.GetByIdentifier(context.Background(), identifier.New("email", "codell@seatgeek.com"))
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Update that user using a completely different object with the same key and different identifier
 	u = user.New("codell", user.WithIdentifier(identifier.New("email", "codell@example.com")))
 
-	err = store.Add(u)
+	err = store.Add(context.Background(), u)
 	assert.NoError(t, err)
 
 	// Check if updated (by key)
-	got, err = store.Get(u.Key)
+	got, err = store.Get(context.Background(), u.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Check if updated (by identifier)
-	got, err = store.GetByIdentifier(identifier.New("email", "codell@example.com"))
+	got, err = store.GetByIdentifier(context.Background(), identifier.New("email", "codell@example.com"))
 	assert.NoError(t, err)
 	assert.Equal(t, u, got)
 
 	// Check if old identifier is gone
-	_, err = store.GetByIdentifier(identifier.New("email", "codell@seatgeek.com"))
+	_, err = store.GetByIdentifier(context.Background(), identifier.New("email", "codell@seatgeek.com"))
 	assert.ErrorIs(t, err, user.ErrUserNotFound)
 }
 
@@ -115,10 +115,10 @@ func TestPostgresStore_Get(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := store.Add(tc.expected)
+			err := store.Add(context.Background(), tc.expected)
 			assert.NoError(t, err)
 
-			got, err := store.Get(tc.key)
+			got, err := store.Get(context.Background(), tc.key)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, got)
 		})
@@ -178,11 +178,11 @@ func TestPostgresStore_Find(t *testing.T) {
 			t.Parallel()
 
 			if tc.expected != nil {
-				err := store.Add(tc.expected)
+				err := store.Add(context.Background(), tc.expected)
 				assert.NoError(t, err)
 			}
 
-			got, err := store.Find(tc.arg)
+			got, err := store.Find(context.Background(), tc.arg)
 
 			if tc.wantErr != nil {
 				assert.ErrorIs(t, err, tc.wantErr)
@@ -202,19 +202,19 @@ func TestPostgresStore_Find_duplicate(t *testing.T) {
 
 	duplicateIdentifier := identifier.New("email", "dup@dup.com")
 
-	err := store.Add(user.New(
+	err := store.Add(context.Background(), user.New(
 		"duplicateA",
 		user.WithIdentifier(duplicateIdentifier),
 	))
 	assert.NoError(t, err)
 
-	err = store.Add(user.New(
+	err = store.Add(context.Background(), user.New(
 		"duplicateb",
 		user.WithIdentifier(duplicateIdentifier),
 	))
 	assert.NoError(t, err)
 
-	got, err := store.Find(identifier.NewSet(duplicateIdentifier))
+	got, err := store.Find(context.Background(), identifier.NewSet(duplicateIdentifier))
 
 	wantErr := errors.New("found multiple users with identifiers: [email:dup@dup.com]")
 	//nolint:testifylint
@@ -264,11 +264,11 @@ func TestPostgresStore_GetByIdentifier(t *testing.T) {
 			t.Parallel()
 
 			if tc.expected != nil {
-				err := store.Add(tc.expected)
+				err := store.Add(context.Background(), tc.expected)
 				assert.NoError(t, err)
 			}
 
-			got, err := store.GetByIdentifier(tc.arg)
+			got, err := store.GetByIdentifier(context.Background(), tc.arg)
 
 			if tc.wantErr != nil {
 				assert.ErrorIs(t, err, tc.wantErr)
@@ -291,7 +291,7 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 		"zach",
 		user.WithIdentifier(identifier.New("email", "zhammer@seatgeek.com")),
 	)
-	err := store.Add(userWithNoPreferences)
+	err := store.Add(context.Background(), userWithNoPreferences)
 	assert.NoError(t, err)
 
 	// Set preferences
@@ -301,7 +301,7 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 			"slack": false,
 		},
 	}
-	err = store.SetPreferences(userWithNoPreferences.Key, expectedPreferences)
+	err = store.SetPreferences(context.Background(), userWithNoPreferences.Key, expectedPreferences)
 	assert.NoError(t, err)
 
 	// Check if set
@@ -310,7 +310,7 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 		user.WithIdentifiers(userWithNoPreferences.Identifiers),
 		user.WithPreferences(expectedPreferences),
 	)
-	got, err := store.Get(userWithNoPreferences.Key)
+	got, err := store.Get(context.Background(), userWithNoPreferences.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUser, got)
 }

@@ -41,7 +41,7 @@ func (ph *PreferencesHandler) GetPreferences(writer http.ResponseWriter, request
 	vars := mux.Vars(request)
 	key := vars["key"]
 
-	u, err := ph.userStore.Get(key)
+	u, err := ph.userStore.Get(request.Context(), key)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
 			slog.Info("user not found", "key", key)
@@ -72,7 +72,7 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 		return
 	}
 
-	err := ph.userStore.SetPreferences(key, req.Preferences)
+	err := ph.userStore.SetPreferences(request.Context(), key, req.Preferences)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
 			slog.Info("user not found", "key", key)
