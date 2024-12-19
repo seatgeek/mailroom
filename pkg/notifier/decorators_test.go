@@ -58,18 +58,17 @@ func TestWithRetry(t *testing.T) {
 
 	err1 := errors.New("err 1")
 	err2 := errors.New("err 2")
-	err3 := errors.New("err 3")
 
 	tests := []struct {
 		name         string
-		maxRetries   uint64
+		maxTries     uint
 		givenErrs    []error
 		wantAttempts int
 		wantErr      error
 	}{
 		{
-			name:       "no errors",
-			maxRetries: 2,
+			name:     "no errors",
+			maxTries: 2,
 			givenErrs: []error{
 				nil,
 			},
@@ -77,8 +76,8 @@ func TestWithRetry(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
-			name:       "one error",
-			maxRetries: 2,
+			name:     "one error",
+			maxTries: 2,
 			givenErrs: []error{
 				err1,
 				nil,
@@ -87,8 +86,8 @@ func TestWithRetry(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
-			name:       "one permanent error",
-			maxRetries: 2,
+			name:     "one permanent error",
+			maxTries: 2,
 			givenErrs: []error{
 				notifier.Permanent(err1),
 			},
@@ -96,15 +95,14 @@ func TestWithRetry(t *testing.T) {
 			wantErr:      err1,
 		},
 		{
-			name:       "max attempts",
-			maxRetries: 2,
+			name:     "max attempts",
+			maxTries: 2,
 			givenErrs: []error{
 				err1,
 				err2,
-				err3,
 			},
-			wantAttempts: 3,
-			wantErr:      err3,
+			wantAttempts: 2,
+			wantErr:      err2,
 		},
 	}
 
@@ -118,7 +116,7 @@ func TestWithRetry(t *testing.T) {
 				transport.EXPECT().Push(mock.Anything, mock.Anything).Return(givenErr).Once()
 			}
 
-			wrapped := notifier.WithRetry(transport, tc.maxRetries, func() backoff.BackOff {
+			wrapped := notifier.WithRetry(transport, tc.maxTries, func() backoff.BackOff {
 				return backoff.NewConstantBackOff(10 * time.Millisecond)
 			})
 

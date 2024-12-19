@@ -44,18 +44,18 @@ func (w *withTimeout) Validate(ctx context.Context) error {
 type BackOff = backoff.BackOff
 
 // WithRetry decorates the given Transport with retry logic using the provided backoff
-func WithRetry(transport Transport, maxRetries uint64, backoffProvider func() BackOff) Transport {
+func WithRetry(transport Transport, maxTries uint, backoffProvider func() BackOff) Transport {
 	return &withRetry{
-		Transport:  transport,
-		maxRetries: maxRetries,
-		backoff:    backoffProvider,
+		Transport: transport,
+		maxTries:  maxTries,
+		backoff:   backoffProvider,
 	}
 }
 
 type withRetry struct {
 	Transport
-	maxRetries uint64
-	backoff    func() BackOff
+	maxTries uint
+	backoff  func() BackOff
 }
 
 func (w *withRetry) Push(ctx context.Context, notification common.Notification) error {
@@ -64,7 +64,7 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 		func() (bool, error) {
 			return true, w.Transport.Push(ctx, notification)
 		},
-		backoff.WithMaxTries(uint(w.maxRetries+1)),
+		backoff.WithMaxTries(w.maxTries),
 		backoff.WithBackOff(w.backoff()),
 		backoff.WithNotify(func(err error, duration time.Duration) {
 			slog.Error("failed to push notification", "id", notification.Context().ID, "error", err, "next_retry", duration.String())
