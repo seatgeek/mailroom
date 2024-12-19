@@ -8,7 +8,7 @@ package notifier
 import (
 	"context"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/seatgeek/mailroom/pkg/common"
 )
 
