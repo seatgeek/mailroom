@@ -56,6 +56,10 @@ func TestWithRetry(t *testing.T) {
 		Type: "test",
 	}).Build()
 
+	err1 := errors.New("err 1")
+	err2 := errors.New("err 2")
+	err3 := errors.New("err 3")
+
 	tests := []struct {
 		name         string
 		maxRetries   uint64
@@ -76,7 +80,7 @@ func TestWithRetry(t *testing.T) {
 			name:       "one error",
 			maxRetries: 2,
 			givenErrs: []error{
-				errors.New("test"),
+				err1,
 				nil,
 			},
 			wantAttempts: 2,
@@ -86,21 +90,21 @@ func TestWithRetry(t *testing.T) {
 			name:       "one permanent error",
 			maxRetries: 2,
 			givenErrs: []error{
-				notifier.Permanent(errors.New("test")),
+				notifier.Permanent(err1),
 			},
 			wantAttempts: 1,
-			wantErr:      errors.New("test"),
+			wantErr:      err1,
 		},
 		{
 			name:       "max attempts",
 			maxRetries: 2,
 			givenErrs: []error{
-				errors.New("err 1"),
-				errors.New("err 2"),
-				errors.New("err 3"),
+				err1,
+				err2,
+				err3,
 			},
 			wantAttempts: 3,
-			wantErr:      errors.New("err 3"),
+			wantErr:      err3,
 		},
 	}
 
@@ -124,7 +128,7 @@ func TestWithRetry(t *testing.T) {
 
 			err := wrapped.Push(context.Background(), fakeNotification)
 
-			assert.Equal(t, tc.wantErr, err, "Error should match")
+			assert.ErrorIs(t, err, tc.wantErr, "Error should match")
 		})
 	}
 }
