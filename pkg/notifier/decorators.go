@@ -41,19 +41,21 @@ func (w *withTimeout) Validate(ctx context.Context) error {
 	return nil
 }
 
-// WithRetry decorates the given Transport with retry logic using exponential backoff
-func WithRetry(transport Transport, maxRetries uint64, opts ...backoff.ExponentialBackOffOpts) Transport {
+type BackOff = backoff.BackOff
+
+// WithRetry decorates the given Transport with retry logic using the provided backoff
+func WithRetry(transport Transport, maxRetries uint64, backoffProvider func() BackOff) Transport {
 	return &withRetry{
 		Transport:  transport,
 		maxRetries: maxRetries,
-		opts:       opts,
+		backoff:    backoffProvider,
 	}
 }
 
 type withRetry struct {
 	Transport
 	maxRetries uint64
-	opts       []backoff.ExponentialBackOffOpts
+	backoff    func() BackOff
 }
 
 func (w *withRetry) Push(ctx context.Context, notification common.Notification) error {
@@ -63,7 +65,7 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 		},
 		backoff.WithMaxRetries(
 			backoff.WithContext(
-				backoff.NewExponentialBackOff(w.opts...),
+				w.backoff(),
 				ctx,
 			),
 			w.maxRetries,

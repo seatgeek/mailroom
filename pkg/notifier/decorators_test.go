@@ -118,10 +118,8 @@ func TestWithRetry(t *testing.T) {
 				transport.EXPECT().Push(mock.Anything, mock.Anything).Return(givenErr).Once()
 			}
 
-			wrapped := notifier.WithRetry(transport, tc.maxRetries, func(b *backoff.ExponentialBackOff) {
-				b.InitialInterval = 1 * time.Millisecond
-				b.MaxInterval = 10 * time.Millisecond
-				b.MaxElapsedTime = 20 * time.Millisecond
+			wrapped := notifier.WithRetry(transport, tc.maxRetries, func() backoff.BackOff {
+				return backoff.NewConstantBackOff(10 * time.Millisecond)
 			})
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")

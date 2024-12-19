@@ -100,7 +100,9 @@ func main() {
 			//		5*time.Second,
 			//	),
 			//	3,
-			//	backoff.WithMaxElapsedTime(30*time.Second),
+			//	func() notifier.BackOff {
+			//		return backoff.NewExponentialBackOff()
+			//	},
 			// ),
 		),
 		mailroom.WithUserStore(
