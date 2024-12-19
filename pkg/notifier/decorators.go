@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/seatgeek/mailroom/pkg/common"
 )
 
@@ -59,21 +59,19 @@ type withRetry struct {
 }
 
 func (w *withRetry) Push(ctx context.Context, notification common.Notification) error {
-	return backoff.RetryNotify(
-		func() error {
-			return w.Transport.Push(ctx, notification)
+	_, err := backoff.Retry(
+		ctx,
+		func() (bool, error) {
+			return true, w.Transport.Push(ctx, notification)
 		},
-		backoff.WithMaxRetries(
-			backoff.WithContext(
-				w.backoff(),
-				ctx,
-			),
-			w.maxRetries,
-		),
-		func(err error, duration time.Duration) {
+		backoff.WithMaxTries(uint(w.maxRetries+1)),
+		backoff.WithBackOff(w.backoff()),
+		backoff.WithNotify(func(err error, duration time.Duration) {
 			slog.Error("failed to push notification", "id", notification.Context().ID, "error", err, "next_retry", duration.String())
-		},
+		}),
 	)
+
+	return err
 }
 
 func (w *withRetry) Validate(ctx context.Context) error {
