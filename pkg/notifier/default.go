@@ -27,7 +27,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 	recipientUser, err := d.userStore.Find(ctx, notification.Recipient())
 	if err != nil {
 		if !errors.Is(err, user.ErrUserNotFound) {
-			return fmt.Errorf("failed to find user: %w", err)
+			return fmt.Errorf("failed to find recipient user: %w", err)
 		}
 		slog.DebugContext(ctx, "user doesn't exist in store, will attempt to notify on provided identifiers", "id", notification.Context().ID, "recipient", notification.Recipient().String())
 	}
