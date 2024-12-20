@@ -23,6 +23,18 @@ type wantSent struct {
 	transport common.TransportKey
 }
 
+type userStoreWithFindErr struct {
+	user.Store
+	findErr error
+}
+
+func (u *userStoreWithFindErr) Find(_ context.Context, possibleIdentifiers identifier.Set) (*user.User, error) {
+	if u.findErr != nil {
+		return nil, u.findErr
+	}
+	return u.Store.Find(context.Background(), possibleIdentifiers)
+}
+
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
@@ -43,6 +55,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		name         string
 		notification common.Notification
 		transports   []notifier.Transport
+		findErr      error
 		wantSent     []wantSent
 		wantErrs     []error
 	}{
@@ -90,6 +103,18 @@ func TestDefaultNotifier_Push(t *testing.T) {
 				{event: "com.example.one", transport: "email"},
 			},
 		},
+		// store failure should not prevent notifications from being attempted
+		{
+			name:         "store failure",
+			notification: notificationFor("com.example.one", knownUser.Identifiers),
+			transports: []notifier.Transport{
+				&fakeTransport{key: "slack"},
+				&fakeTransport{key: "email"},
+			},
+			wantSent: []wantSent{},
+			findErr:  errSomeStoreError,
+			wantErrs: []error{errSomeStoreError},
+		},
 		{
 			name:         "transport fails",
 			notification: notificationFor("com.example.one", knownUser.Identifiers),
@@ -105,6 +130,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			store := &userStoreWithFindErr{Store: store, findErr: tc.findErr}
 			notifier := notifier.New(store, tc.transports...)
 
 			errs := notifier.Push(context.Background(), tc.notification)
@@ -142,6 +168,7 @@ func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) 
 }
 
 var errSomethingFailed = errors.New("some transport error occurred")
+var errSomeStoreError = errors.New("some store error")
 
 type fakeTransport struct {
 	key     common.TransportKey
