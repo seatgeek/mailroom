@@ -25,7 +25,11 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notifica
 
 	recipientUser, err := d.userStore.Find(ctx, notification.Recipient())
 	if err != nil {
-		slog.Debug("failed to find user, will attempt to notify on provided identifiers", "id", notification.Context().ID, "user", notification.Recipient().String(), "error", err)
+		level := slog.LevelDebug
+		if !errors.Is(err, user.ErrUserNotFound) {
+			level = slog.LevelError
+		}
+		slog.Log(ctx, level, "failed to find user, will attempt to notify on provided identifiers", "id", notification.Context().ID, "user", notification.Recipient().String(), "error", err)
 	}
 
 	// The store may know of other identifiers for this user, so we merge those in
