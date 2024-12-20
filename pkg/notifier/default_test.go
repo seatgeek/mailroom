@@ -103,7 +103,6 @@ func TestDefaultNotifier_Push(t *testing.T) {
 				{event: "com.example.one", transport: "email"},
 			},
 		},
-		// store failure should not prevent notifications from being attempted
 		{
 			name:         "store failure",
 			notification: notificationFor("com.example.one", knownUser.Identifiers),
