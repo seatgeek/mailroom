@@ -77,11 +77,18 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			},
 			wantSent: []wantSent{},
 		},
+		// unknown user gets opted in to all transports
 		{
 			name:         "unknown user",
 			notification: notificationFor("com.example.one", unknownUser),
-			wantSent:     []wantSent{},
-			wantErrs:     []error{user.ErrUserNotFound, user.ErrUserNotFound},
+			transports: []notifier.Transport{
+				&fakeTransport{key: "slack"},
+				&fakeTransport{key: "email"},
+			},
+			wantSent: []wantSent{
+				{event: "com.example.one", transport: "slack"},
+				{event: "com.example.one", transport: "email"},
+			},
 		},
 		{
 			name:         "transport fails",
