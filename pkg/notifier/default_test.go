@@ -28,11 +28,11 @@ type userStoreWithFindErr struct {
 	findErr error
 }
 
-func (u *userStoreWithFindErr) Find(_ context.Context, possibleIdentifiers identifier.Set) (*user.User, error) {
+func (u *userStoreWithFindErr) Find(ctx context.Context, possibleIdentifiers identifier.Set) (*user.User, error) {
 	if u.findErr != nil {
 		return nil, u.findErr
 	}
-	return u.Store.Find(context.Background(), possibleIdentifiers)
+	return u.Store.Find(ctx, possibleIdentifiers)
 }
 
 func TestDefaultNotifier_Push(t *testing.T) {
