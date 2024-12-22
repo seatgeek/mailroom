@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
@@ -56,16 +56,19 @@ func TestWithRetry(t *testing.T) {
 		Type: "test",
 	}).Build()
 
+	err1 := errors.New("err 1")
+	err2 := errors.New("err 2")
+
 	tests := []struct {
 		name         string
-		maxRetries   uint64
+		maxTries     uint
 		givenErrs    []error
 		wantAttempts int
 		wantErr      error
 	}{
 		{
-			name:       "no errors",
-			maxRetries: 2,
+			name:     "no errors",
+			maxTries: 2,
 			givenErrs: []error{
 				nil,
 			},
@@ -73,34 +76,33 @@ func TestWithRetry(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
-			name:       "one error",
-			maxRetries: 2,
+			name:     "one error",
+			maxTries: 2,
 			givenErrs: []error{
-				errors.New("test"),
+				err1,
 				nil,
 			},
 			wantAttempts: 2,
 			wantErr:      nil,
 		},
 		{
-			name:       "one permanent error",
-			maxRetries: 2,
+			name:     "one permanent error",
+			maxTries: 2,
 			givenErrs: []error{
-				notifier.Permanent(errors.New("test")),
+				notifier.Permanent(err1),
 			},
 			wantAttempts: 1,
-			wantErr:      errors.New("test"),
+			wantErr:      err1,
 		},
 		{
-			name:       "max attempts",
-			maxRetries: 2,
+			name:     "max attempts",
+			maxTries: 2,
 			givenErrs: []error{
-				errors.New("err 1"),
-				errors.New("err 2"),
-				errors.New("err 3"),
+				err1,
+				err2,
 			},
-			wantAttempts: 3,
-			wantErr:      errors.New("err 3"),
+			wantAttempts: 2,
+			wantErr:      err2,
 		},
 	}
 
@@ -114,17 +116,15 @@ func TestWithRetry(t *testing.T) {
 				transport.EXPECT().Push(mock.Anything, mock.Anything).Return(givenErr).Once()
 			}
 
-			wrapped := notifier.WithRetry(transport, tc.maxRetries, func(b *backoff.ExponentialBackOff) {
-				b.InitialInterval = 1 * time.Millisecond
-				b.MaxInterval = 10 * time.Millisecond
-				b.MaxElapsedTime = 20 * time.Millisecond
+			wrapped := notifier.WithRetry(transport, tc.maxTries, func() backoff.BackOff {
+				return backoff.NewConstantBackOff(10 * time.Millisecond)
 			})
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
 			err := wrapped.Push(context.Background(), fakeNotification)
 
-			assert.Equal(t, tc.wantErr, err, "Error should match")
+			assert.ErrorIs(t, err, tc.wantErr, "Error should match")
 		})
 	}
 }

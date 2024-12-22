@@ -1,9 +1,11 @@
 module github.com/seatgeek/mailroom
 
-go 1.22.3
+go 1.23
+
+toolchain go1.23.4
 
 require (
-	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/cenkalti/backoff/v5 v5.0.0
 	github.com/go-playground/webhooks/v6 v6.4.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.0.6
@@ -18,6 +20,7 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/containerd/containerd v1.7.18 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
