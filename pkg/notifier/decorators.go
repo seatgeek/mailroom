@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/seatgeek/mailroom/pkg/common"
 )
 
@@ -41,37 +41,38 @@ func (w *withTimeout) Validate(ctx context.Context) error {
 	return nil
 }
 
-// WithRetry decorates the given Transport with retry logic using exponential backoff
-func WithRetry(transport Transport, maxRetries uint64, opts ...backoff.ExponentialBackOffOpts) Transport {
+type BackOff = backoff.BackOff
+type BackOffFactory = func() BackOff
+
+// WithRetry decorates the given Transport with retry logic using the provided backoff
+func WithRetry(transport Transport, maxTries uint, backoffFactory BackOffFactory) Transport {
 	return &withRetry{
-		Transport:  transport,
-		maxRetries: maxRetries,
-		opts:       opts,
+		Transport: transport,
+		maxTries:  maxTries,
+		backoff:   backoffFactory,
 	}
 }
 
 type withRetry struct {
 	Transport
-	maxRetries uint64
-	opts       []backoff.ExponentialBackOffOpts
+	maxTries uint
+	backoff  func() BackOff
 }
 
 func (w *withRetry) Push(ctx context.Context, notification common.Notification) error {
-	return backoff.RetryNotify(
-		func() error {
-			return w.Transport.Push(ctx, notification)
+	_, err := backoff.Retry(
+		ctx,
+		func() (bool, error) {
+			return true, w.Transport.Push(ctx, notification)
 		},
-		backoff.WithMaxRetries(
-			backoff.WithContext(
-				backoff.NewExponentialBackOff(w.opts...),
-				ctx,
-			),
-			w.maxRetries,
-		),
-		func(err error, duration time.Duration) {
+		backoff.WithMaxTries(w.maxTries),
+		backoff.WithBackOff(w.backoff()),
+		backoff.WithNotify(func(err error, duration time.Duration) {
 			slog.Error("failed to push notification", "id", notification.Context().ID, "error", err, "next_retry", duration.String())
-		},
+		}),
 	)
+
+	return err
 }
 
 func (w *withRetry) Validate(ctx context.Context) error {
