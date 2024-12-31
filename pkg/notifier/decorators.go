@@ -42,13 +42,14 @@ func (w *withTimeout) Validate(ctx context.Context) error {
 }
 
 type BackOff = backoff.BackOff
+type BackOffFactory = func() BackOff
 
 // WithRetry decorates the given Transport with retry logic using the provided backoff
-func WithRetry(transport Transport, maxTries uint, backoffProvider func() BackOff) Transport {
+func WithRetry(transport Transport, maxTries uint, backoffFactory BackOffFactory) Transport {
 	return &withRetry{
 		Transport: transport,
 		maxTries:  maxTries,
-		backoff:   backoffProvider,
+		backoff:   backoffFactory,
 	}
 }
 
