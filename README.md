@@ -26,7 +26,6 @@ See [`internal/example.go`](./internal/example.go) for an example of how to use 
 
 - [Getting Started](./docs/getting-started.md)
 - [Core Concepts](./docs/core-concepts.md)
-- [Advanced Topics](./docs/advanced-topics.md)
 - [Integrations](./docs/integrations.md)
 
 Also see the [GoDoc](https://pkg.go.dev/github.com/seatgeek/mailroom) for documentation.
