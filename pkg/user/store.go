@@ -7,6 +7,7 @@ package user
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
 )
@@ -41,6 +42,7 @@ type Store interface {
 // This is especially useful for testing, but can also be used for simple applications which don't need durable preference storage.
 type InMemoryStore struct {
 	users []*User
+	mu    sync.RWMutex
 }
 
 var _ Store = &InMemoryStore{}
@@ -52,11 +54,17 @@ func NewInMemoryStore(users ...*User) *InMemoryStore {
 
 // Add adds a user to the in-memory store
 func (s *InMemoryStore) Add(ctx context.Context, u *User) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.users = append(s.users, u)
 	return nil
 }
 
 func (s *InMemoryStore) Get(ctx context.Context, key string) (*User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	for _, u := range s.users {
 		if u.Key == key {
 			return u, nil
@@ -67,6 +75,9 @@ func (s *InMemoryStore) Get(ctx context.Context, key string) (*User, error) {
 }
 
 func (s *InMemoryStore) GetByIdentifier(ctx context.Context, identifier identifier.Identifier) (*User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	isEmail := identifier.Kind() == "email"
 
 	for _, u := range s.users {
