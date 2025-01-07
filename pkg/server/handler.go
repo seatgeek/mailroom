@@ -37,18 +37,20 @@ func CreateEventHandler(s handler.Handler, n notifier.Notifier) http.HandlerFunc
 		id := notifications[0].Context().ID
 		slog.Debug("dispatching notifications", "id", id, "handler", s.Key(), "notifications", len(notifications))
 
-		var errs []error
+		errorCount := 0
 		for _, notification := range notifications {
 			err = n.Push(request.Context(), notification)
 			if err != nil {
-				errs = append(errs, err)
+				// We assume that the notifier will log the error details, as it will have more context about what went wrong
+				errorCount++
 			}
 		}
 
-		if len(errs) > 0 {
-			http.Error(writer, fmt.Sprintf("failed to send notifications: %v", errs), 500)
-			return
+		if errorCount > 0 {
+			slog.Warn("some notifications failed to send", "id", id, "handler", s.Key(), "sent", len(notifications)-errorCount, "failed", errorCount)
 		}
+
+		http.Error(writer, "notifications enqueued", http.StatusAccepted)
 	}
 }
 
