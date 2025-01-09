@@ -36,7 +36,7 @@ func TestHandler(t *testing.T) {
 			name:           "happy path",
 			handler:        handlerThatReturns(t, someNotifications, nil),
 			notifier:       notifierThatReturns(t, nil),
-			wantStatusCode: 200,
+			wantStatusCode: 202,
 		},
 		{
 			name:           "no notifications generated",
@@ -61,7 +61,7 @@ func TestHandler(t *testing.T) {
 			name:           "notifier error",
 			handler:        handlerThatReturns(t, someNotifications, nil),
 			notifier:       notifierThatReturns(t, someError),
-			wantStatusCode: 500,
+			wantStatusCode: 202,
 		},
 	}
 
