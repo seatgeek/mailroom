@@ -64,7 +64,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/reports/unit-tests.xml
 
-      - uses: codecov/codecov-action@v5.3.1
+      - uses: codecov/codecov-action@v5.4.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/reports/coverage.out
