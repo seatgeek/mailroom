@@ -11,7 +11,7 @@ GO_LICENSE_VERSION=v1.41.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
 MARKDOWNLINT_VERSION=v0.44.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
-YAMLLINT_VERSION=0.33.0
+YAMLLINT_VERSION=0.34.0
 
 REPORTS_DIR=build/reports
 CONFIG_DIR=build/config
