@@ -1,42 +1,52 @@
 ---
 # https://golangci-lint.run/usage/configuration/
-
-output:
-  format: code-climate:build/reports/code-quality-report.json,colored-line-number
+version: "2"
 
 run:
   timeout: 1m
   modules-download-mode: readonly
-  skip-dirs-use-default: true
+
+output:
+  formats:
+    code-climate:
+      path: code-quality-report.json
+    text:
+      path: stdout
+      colors: true
+formatters:
+  enable:
+    - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
+
+    ## disabled
+    #- gci # controls golang package import order and makes it always deterministic
+    #- gofmt # checks if the code is formatted according to 'gofmt' command
+    #- gofumpt # checks whether code was gofumpt-ed
+    #- golines # checks if code is formatted, and fixes long lines
 
 linters:
   disable-all: true
   enable:
-    - govet # reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
-    - errcheck # checking for unchecked errors, these unchecked errors can be critical bugs in some cases
-    - gosimple # specializes in simplifying a code
-    - ineffassign # detects when assignments to existing variables are not used
-    - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
-    - typecheck # like the front-end of a Go compiler, parses and type-checks Go code
     - asciicheck # checks that your code does not contain non-ASCII identifiers
     - bidichk # checks for dangerous unicode character sequences
     - bodyclose # checks whether HTTP response body is closed successfully
-    - containedctx # detects struct contained context.Context field    - durationcheck # checks for two durations multiplied together
+    - containedctx # detects struct contained context.Context field
     - contextcheck # checks the function whether use a non-inherited context
     - copyloopvar # check for unnecessary loop var copies (Go 1.22+)
     - decorder # checks declaration order and count of types, constants, variables and functions
+    - durationcheck # checks for two durations multiplied together
+    - errcheck # checking for unchecked errors, these unchecked errors can be critical bugs in some cases
     - errchkjson # checks types passed to the json encoding functions. Reports unsupported types and optionally reports occasions, where the check for the returned error can be omitted
     - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
-    - exportloopref # checks for pointers to enclosing loop variables
     - forbidigo # forbids identifiers
     - goconst # finds repeated strings that could be replaced by a constant
     - gocritic # provides diagnostics that check for bugs, performance and style issues
-    - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
     - gomoddirectives # manages the use of 'replace', 'retract', and 'excludes' directives in go.mod
     - gomodguard # allow and block lists linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations
     - goprintffuncname # checks that printf-like functions are named with f at the end
     - gosec # inspects source code for security problems
+    - govet # reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
+    - ineffassign # detects when assignments to existing variables are not used
     - interfacebloat # checks the number of methods inside an interface
     - intrange # check for loops that could use int ranges instead (Go 1.22+)
     - loggercheck # checks key value pairs for common logger libraries (kitlog,klog,logr,zap)
@@ -55,10 +65,10 @@ linters:
     - reassign # checks that package variables are not reassigned
     - sloglint # ensure consistent code style when using log/slog
     - spancheck # checks usage of OpenTelemetry/Census spans
+    - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
     - tagalign # align and sort struct tags consistently
-    - tenv # detects using os.Setenv instead of t.Setenv since Go1.17
-    - testifylint # check usage of testify
     - testableexamples # checks if examples are testable (have an expected output)
+    - testifylint # check usage of testify
     - thelper # detects golang test helpers without t.Helper() call and checks the consistency of test helpers
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
     - unconvert # removes unnecessary type conversions
@@ -113,27 +123,23 @@ linters:
     #- varnamelen # [great idea, but too many false positives] checks that the length of a variable's name matches its scope
     #- wrapcheck # checks that errors returned from external packages are wrapped
     #- wsl # [too strict and mostly code is not more readable] whitespace linter forces you to use empty lines
-
-    ## deprecated
-    #- deadcode # [deprecated, replaced by unused] finds unused code
-    #- exhaustivestruct # [deprecated, replaced by exhaustruct] checks if all struct's fields are initialized
-    #- golint # [deprecated, replaced by revive] golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes
-    #- ifshort # [deprecated] checks that your code uses short syntax for if-statements whenever possible
-    #- interfacer # [deprecated] suggests narrower interface types
-    #- maligned # [deprecated, replaced by govet fieldalignment] detects Go structs that would take less memory if their fields were sorted
-    #- nosnakecase # [deprecated, replaced by revive var-naming] detects snake case of variable naming and function name
-    #- scopelint # [deprecated, replaced by exportloopref] checks for unpinned variables in go programs
-    #- structcheck # [deprecated, replaced by unused] finds unused struct fields
-    #- varcheck # [deprecated, replaced by unused] finds unused global variables and constants
-
-linters-settings:
-  nestif:
-    min-complexity: 6
-
-  tagalign:
-    align: true
-    sort: true
-
-  testifylint:
-    disable:
-      - require-error
+  settings:
+    nestif:
+      min-complexity: 6
+    tagalign:
+      align: true
+      sort: true
+    testifylint:
+      disable:
+        - require-error
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
