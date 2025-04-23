@@ -27,18 +27,20 @@ type EventType interface{ ~string }
 
 // hook is an interface that all webhooks implement upstream
 type hook[Event EventType] interface {
-	Parse(r *http.Request, events ...Event) (interface{}, error)
+	Parse(r *http.Request, events ...Event) (any, error)
 }
 
 // Make sure those webhooks indeed implement the hook interface
-var _ hook[azuredevops.Event] = &azuredevops.Webhook{}
-var _ hook[bitbucket.Event] = &bitbucket.Webhook{}
-var _ hook[bitbucketserver.Event] = &bitbucketserver.Webhook{}
-var _ hook[docker.Event] = &docker.Webhook{}
-var _ hook[gitea.Event] = &gitea.Webhook{}
-var _ hook[github.Event] = &github.Webhook{}
-var _ hook[gitlab.Event] = &gitlab.Webhook{}
-var _ hook[gogs.Event] = &gogs.Webhook{}
+var (
+	_ hook[azuredevops.Event]     = &azuredevops.Webhook{}
+	_ hook[bitbucket.Event]       = &bitbucket.Webhook{}
+	_ hook[bitbucketserver.Event] = &bitbucketserver.Webhook{}
+	_ hook[docker.Event]          = &docker.Webhook{}
+	_ hook[gitea.Event]           = &gitea.Webhook{}
+	_ hook[github.Event]          = &github.Webhook{}
+	_ hook[gitlab.Event]          = &gitlab.Webhook{}
+	_ hook[gogs.Event]            = &gogs.Webhook{}
+)
 
 // Adapter allows the use of webhooks as a handler.PayloadParser
 type Adapter[Event EventType] struct {
