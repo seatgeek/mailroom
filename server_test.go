@@ -20,6 +20,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	s := New()
 
 	assert.NotNil(t, s)
@@ -27,6 +29,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestWithHandlers(t *testing.T) {
+	t.Parallel()
+
 	src1 := handler.NewMockHandler(t)
 	src1.EXPECT().Key().Return("foo").Maybe()
 	src2 := handler.NewMockHandler(t)
@@ -112,8 +116,10 @@ type handlerThatFailsToValidate struct {
 	err error
 }
 
-var _ handler.Handler = handlerThatFailsToValidate{}
-var _ common.Validator = handlerThatFailsToValidate{}
+var (
+	_ handler.Handler  = handlerThatFailsToValidate{}
+	_ common.Validator = handlerThatFailsToValidate{}
+)
 
 func (s handlerThatFailsToValidate) Validate(_ context.Context) error {
 	return s.err

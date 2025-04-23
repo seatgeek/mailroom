@@ -152,8 +152,10 @@ func (f fakeParser) Validate(_ context.Context) error {
 	return f.Validates
 }
 
-var _ handler.PayloadParser[any] = (*fakeParser)(nil)
-var _ common.Validator = (*fakeParser)(nil)
+var (
+	_ handler.PayloadParser[any] = (*fakeParser)(nil)
+	_ common.Validator           = (*fakeParser)(nil)
+)
 
 type fakeGenerator struct {
 	Generates         []common.Notification
@@ -174,5 +176,7 @@ func (f fakeGenerator) Validate(_ context.Context) error {
 	return f.Validates
 }
 
-var _ handler.NotificationGenerator[any] = (*fakeGenerator)(nil)
-var _ common.Validator = (*fakeGenerator)(nil)
+var (
+	_ handler.NotificationGenerator[any] = (*fakeGenerator)(nil)
+	_ common.Validator                   = (*fakeGenerator)(nil)
+)

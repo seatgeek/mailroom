@@ -1,5 +1,5 @@
 # renovate: datasource=go depName=github.com/golangci/golangci-lint
-GOLANGCI_LINT_VERSION=v1.63.4
+GOLANGCI_LINT_VERSION=v2.1.2
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION=v1.12.1
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
@@ -70,7 +70,7 @@ generate-mocks: .install-mockery
 	@mockery --config $(CONFIG_DIR)/.mockery.yaml
 
 .install-linter:
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 .install-go-license:
 	@go install github.com/palantir/go-license@$(GO_LICENSE_VERSION)

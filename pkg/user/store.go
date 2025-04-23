@@ -53,7 +53,7 @@ func NewInMemoryStore(users ...*User) *InMemoryStore {
 }
 
 // Add adds a user to the in-memory store
-func (s *InMemoryStore) Add(ctx context.Context, u *User) error {
+func (s *InMemoryStore) Add(_ context.Context, u *User) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -61,7 +61,7 @@ func (s *InMemoryStore) Add(ctx context.Context, u *User) error {
 	return nil
 }
 
-func (s *InMemoryStore) Get(ctx context.Context, key string) (*User, error) {
+func (s *InMemoryStore) Get(_ context.Context, key string) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

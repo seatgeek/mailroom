@@ -77,8 +77,10 @@ func (s *Transport) Validate(ctx context.Context) error {
 	return nil
 }
 
-var _ notifier.Transport = &Transport{}
-var _ common.Validator = &Transport{}
+var (
+	_ notifier.Transport = &Transport{}
+	_ common.Validator   = &Transport{}
+)
 
 // NewTransport creates a new Slack Transport
 // It requires a TransportID, a Slack API token, and optionally some slack.Options

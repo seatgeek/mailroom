@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
-
 	"github.com/stretchr/testify/assert"
 )
 

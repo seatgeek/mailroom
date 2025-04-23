@@ -66,7 +66,7 @@ func TestAdapter_Parse(t *testing.T) {
 	}
 }
 
-func hookThatReturns(t *testing.T, event interface{}, err error) hook[string] {
+func hookThatReturns(t *testing.T, event any, err error) hook[string] {
 	t.Helper()
 
 	h := NewMockhook[string](t)
