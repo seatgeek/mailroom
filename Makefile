@@ -5,7 +5,7 @@ GOTESTSUM_VERSION=v1.12.1
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
 GOCOVER_COBERTURA_VERSION=v1.3.0
 # renovate: datasource=go depName=github.com/vektra/mockery/v2
-MOCKERY_VERSION=v2.53.3
+MOCKERY_VERSION=v3.2.4
 # renovate: datasource=github-releases depName=palantir/go-license
 GO_LICENSE_VERSION=v1.41.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
@@ -82,7 +82,7 @@ generate-mocks: .install-mockery
 	@go install github.com/boumenot/gocover-cobertura@$(GOCOVER_COBERTURA_VERSION)
 
 .install-mockery:
-	@go install github.com/vektra/mockery/v2@$(MOCKERY_VERSION)
+	@go install github.com/vektra/mockery/v3@$(MOCKERY_VERSION)
 
 .ensure-reports-dir:
 	@mkdir -p $(REPORTS_DIR)
