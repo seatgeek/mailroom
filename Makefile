@@ -4,8 +4,8 @@ GOLANGCI_LINT_VERSION=v2.1.2
 GOTESTSUM_VERSION=v1.12.1
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
 GOCOVER_COBERTURA_VERSION=v1.3.0
-# renovate: datasource=github-releases depName=mockery/mockery
-MOCKERY_VERSION=v2.42.0
+# renovate: datasource=go depName=github.com/vektra/mockery/v2
+MOCKERY_VERSION=v2.53.3
 # renovate: datasource=github-releases depName=palantir/go-license
 GO_LICENSE_VERSION=v1.41.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
