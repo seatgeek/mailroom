@@ -1,12 +1,11 @@
 ---
+template: testify
 packages:
   github.com/seatgeek/mailroom:
     config:
       all: true
+      dir: '{{ .InterfaceDir }}'
+      filename: "mock_all.go"
+      structname: Mock{{ .InterfaceName }}
+      pkgname: '{{ .SrcPackageName }}'
       recursive: true
-      inpackage: true
-      disable-version-string: true
-      dir: "{{ .InterfaceDir }}"
-      filename: "mock_{{ .InterfaceName }}.go"
-      mockname: "Mock{{ .InterfaceName }}"
-      outpkg: "{{ .PackageName }}"
