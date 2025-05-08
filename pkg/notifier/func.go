@@ -7,7 +7,7 @@ package notifier
 import (
 	"context"
 
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
 )
 
 // notifier provides a shortcut for using a function as a Notifier
@@ -15,7 +15,7 @@ type notifier struct {
 	pushFunc Func
 }
 
-func (n notifier) Push(ctx context.Context, notification common.Notification) error {
+func (n notifier) Push(ctx context.Context, notification event.Notification) error {
 	return n.pushFunc(ctx, notification)
 }
 
@@ -28,20 +28,20 @@ func NewNotifier(pushFunc Func) Notifier {
 
 // transport provides a shortcut for using a function as a Transport
 type transport struct {
-	key      common.TransportKey
+	key      event.TransportKey
 	pushFunc Func
 }
 
-func (t transport) Key() common.TransportKey {
+func (t transport) Key() event.TransportKey {
 	return t.key
 }
 
-func (t transport) Push(ctx context.Context, notification common.Notification) error {
+func (t transport) Push(ctx context.Context, notification event.Notification) error {
 	return t.pushFunc(ctx, notification)
 }
 
 // NewTransport creates a new Transport from a key and a push function
-func NewTransport(key common.TransportKey, pushFunc Func) Transport {
+func NewTransport(key event.TransportKey, pushFunc Func) Transport {
 	return &transport{
 		key:      key,
 		pushFunc: pushFunc,

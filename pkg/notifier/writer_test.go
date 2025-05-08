@@ -6,7 +6,6 @@ package notifier_test
 
 import (
 	"bytes"
-	"context"
 	"testing"
 
 	"github.com/seatgeek/mailroom/pkg/event"
@@ -22,7 +21,7 @@ func TestWriterNotifier_Push(t *testing.T) {
 	buffer := &bytes.Buffer{}
 	notifier := notifier.NewWriterNotifier("buffer", buffer)
 
-	err := notifier.Push(context.Background(), notification.NewBuilder(
+	err := notifier.Push(t.Context(), notification.NewBuilder(
 		event.Context{
 			ID:   "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
 			Type: "com.example.test",

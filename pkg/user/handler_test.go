@@ -6,14 +6,12 @@ package user
 
 import (
 	"bytes"
-	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
-	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -211,7 +209,7 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 				}
 			}`, writer.Body.String())
 
-		user, err := handler.userStore.Get(context.Background(), "rufus")
+		user, err := handler.userStore.Get(t.Context(), "rufus")
 		assert.NoError(t, err)
 
 		assert.False(t, user.Wants("com.gitlab.push", "slack"))
@@ -299,7 +297,7 @@ func TestPreferencesHandler_ListOptions(t *testing.T) {
 func createHandler(t *testing.T) *PreferencesHandler {
 	t.Helper()
 
-	srcGitlab := handler.NewMockHandler(t)
+	srcGitlab := event.NewMockParser(t)
 	srcGitlab.EXPECT().Key().Return("gitlab").Maybe()
 	srcGitlab.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
@@ -309,7 +307,7 @@ func createHandler(t *testing.T) *PreferencesHandler {
 		},
 	})
 
-	srcArgo := handler.NewMockHandler(t)
+	srcArgo := event.NewMockParser(t)
 	srcArgo.EXPECT().Key().Return("argo").Maybe()
 	srcArgo.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
@@ -319,12 +317,12 @@ func createHandler(t *testing.T) *PreferencesHandler {
 		},
 	})
 
-	handlers := []handler.Handler{
+	handlers := []event.Parser{
 		srcGitlab,
 		srcArgo,
 	}
 
-	transports := []common.TransportKey{
+	transports := []event.TransportKey{
 		"slack",
 		"email",
 	}
@@ -333,4 +331,54 @@ func createHandler(t *testing.T) *PreferencesHandler {
 	userStore := NewInMemoryStore(u)
 
 	return NewPreferencesHandler(userStore, handlers, transports)
+}
+
+func TestListOptions(t *testing.T) {
+	t.Parallel()
+
+	store := NewMockStore(t)
+	// Use mock Parser
+	parser1 := event.NewMockParser(t)
+	parser1.EXPECT().Key().Return("src1")
+	parser1.EXPECT().EventTypes().Return([]event.TypeDescriptor{{
+		Key:   "event1",
+		Title: "Event 1",
+	}})
+	parser2 := event.NewMockParser(t)
+	parser2.EXPECT().Key().Return("src2")
+	parser2.EXPECT().EventTypes().Return([]event.TypeDescriptor{{
+		Key:   "event2",
+		Title: "Event 2",
+	}})
+
+	transports := []event.TransportKey{"t1", "t2"}
+
+	// Update to use Parser
+	ph := NewPreferencesHandler(store, []event.Parser{parser1, parser2}, transports)
+	req := httptest.NewRequest("GET", "/configuration", nil)
+	w := httptest.NewRecorder()
+
+	ph.ListOptions(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{
+		"sources": [
+			{
+				"key": "src1",
+				"event_types": [
+					{"key": "event1", "title": "Event 1"}
+				]
+			},
+			{
+				"key": "src2",
+				"event_types": [
+					{"key": "event2", "title": "Event 2"}
+				]
+			}
+		],
+		"transports": [
+			{"key": "t1"},
+			{"key": "t2"}
+		]
+	}`, w.Body.String())
 }

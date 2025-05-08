@@ -9,7 +9,7 @@ import (
 	"context"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
 )
 
 // Permanent wraps the given err as a permanent error which should not be retried
@@ -18,7 +18,7 @@ func Permanent(err error) error {
 }
 
 // Func is a function that sends a notification
-type Func func(context.Context, common.Notification) error
+type Func func(context.Context, event.Notification) error
 
 // Notifier is an interface for sending notifications
 // Implementations of this interface may send them to a Transport, enqueue them for later,
@@ -28,7 +28,7 @@ type Func func(context.Context, common.Notification) error
 type Notifier interface {
 	// Push sends a notification, either immediately or enqueued for later delivery
 	// It SHOULD return an error wrapped by Permanent if we know that retries will never succeed
-	Push(context.Context, common.Notification) error
+	Push(context.Context, event.Notification) error
 }
 
 // Transport is any notifier with a distinct, named key.
@@ -37,5 +37,5 @@ type Notifier interface {
 type Transport interface {
 	Notifier
 	// Key returns a unique identifier for this transport, useful for routing purposes
-	Key() common.TransportKey
+	Key() event.TransportKey
 }

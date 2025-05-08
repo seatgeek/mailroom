@@ -11,9 +11,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notifier"
+	"github.com/seatgeek/mailroom/pkg/validation"
 	"github.com/slack-go/slack"
 )
 
@@ -21,13 +22,13 @@ var ID = identifier.NewNamespaceAndKind("slack.com", identifier.KindID)
 
 // Transport supports sending messages to Slack
 type Transport struct {
-	key    common.TransportKey
+	key    event.TransportKey
 	client *slack.Client
 }
 
 // RichNotification is an optional interface that can be implemented by any notification supporting Slack formatting
 type RichNotification interface {
-	common.Notification
+	event.Notification
 	// GetSlackOptions returns the slack.MsgOptions to be used when sending the notification
 	GetSlackOptions() []slack.MsgOption
 }
@@ -35,7 +36,7 @@ type RichNotification interface {
 // Push sends a notification to a Slack user
 // In addition to supporting common.Notification, it also supports RichNotification for more complex messages
 // that might include attachments, blocks, etc.
-func (s *Transport) Push(ctx context.Context, notification common.Notification) error {
+func (s *Transport) Push(ctx context.Context, notification event.Notification) error {
 	id, ok := notification.Recipient().Get(ID)
 	if !ok {
 		return notifier.Permanent(errors.New("recipient does not have a Slack ID"))
@@ -48,7 +49,7 @@ func (s *Transport) Push(ctx context.Context, notification common.Notification) 
 	return err
 }
 
-func (s *Transport) getMessageOptions(notification common.Notification) []slack.MsgOption {
+func (s *Transport) getMessageOptions(notification event.Notification) []slack.MsgOption {
 	var opts []slack.MsgOption
 
 	message := notification.Render(s.key)
@@ -63,7 +64,7 @@ func (s *Transport) getMessageOptions(notification common.Notification) []slack.
 	return opts
 }
 
-func (s *Transport) Key() common.TransportKey {
+func (s *Transport) Key() event.TransportKey {
 	return s.key
 }
 
@@ -78,13 +79,13 @@ func (s *Transport) Validate(ctx context.Context) error {
 }
 
 var (
-	_ notifier.Transport = &Transport{}
-	_ common.Validator   = &Transport{}
+	_ notifier.Transport   = &Transport{}
+	_ validation.Validator = &Transport{}
 )
 
 // NewTransport creates a new Slack Transport
 // It requires a TransportID, a Slack API token, and optionally some slack.Options
-func NewTransport(key common.TransportKey, token string, opts ...slack.Option) *Transport {
+func NewTransport(key event.TransportKey, token string, opts ...slack.Option) *Transport {
 	return &Transport{
 		key:    key,
 		client: slack.New(token, opts...),

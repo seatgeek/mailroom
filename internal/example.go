@@ -15,9 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lmittmann/tint"
 	"github.com/seatgeek/mailroom"
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
-	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
 	"github.com/seatgeek/mailroom/pkg/notifier"
@@ -32,33 +30,13 @@ type MessageSentEvent struct {
 
 var messageSentType = event.Type("com.example.message_sent")
 
-type ExampleHandler struct{}
+type ExampleParser struct{}
 
-var _ handler.Handler = &ExampleHandler{}
-
-func (h *ExampleHandler) Key() string {
+func (p *ExampleParser) Key() string {
 	return "example"
 }
 
-func (h *ExampleHandler) Process(req *http.Request) ([]common.Notification, error) {
-	payload := MessageSentEvent{}
-	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
-
-	return []common.Notification{
-		notification.NewBuilder(
-			event.Context{
-				ID:   event.ID(uuid.New().String()),
-				Type: "local.playground.message",
-			}).
-			WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
-			WithRecipientIdentifiers(identifier.New("email", payload.RecipientEmail)).
-			Build(),
-	}, nil
-}
-
-func (h *ExampleHandler) EventTypes() []event.TypeDescriptor {
+func (p *ExampleParser) EventTypes() []event.TypeDescriptor {
 	return []event.TypeDescriptor{
 		{
 			Key:         messageSentType,
@@ -68,8 +46,40 @@ func (h *ExampleHandler) EventTypes() []event.TypeDescriptor {
 	}
 }
 
+func (p *ExampleParser) Parse(req *http.Request) (*event.Event, error) {
+	payload := MessageSentEvent{}
+	if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
+		return nil, err
+	}
+
+	evt := &event.Event{
+		Context: event.Context{
+			ID:     event.ID(uuid.New().String()),
+			Source: event.MustSource("/example/parser"),
+			Type:   messageSentType,
+		},
+		Data: payload,
+	}
+	return evt, nil
+}
+
+type NotificationGenerator struct{}
+
+func (p *NotificationGenerator) Process(ctx context.Context, evt event.Event, notifications []event.Notification) ([]event.Notification, error) {
+	payload, ok := evt.Data.(MessageSentEvent)
+	if !ok {
+		return nil, fmt.Errorf("unexpected event data type for NotificationGenerator: %T", evt.Data)
+	}
+
+	newNotification := notification.NewBuilder(evt.Context).
+		WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
+		WithRecipientIdentifiers(identifier.New("email", payload.RecipientEmail)).
+		Build()
+
+	return append(notifications, newNotification), nil
+}
+
 // This is an example of how to configure and run mailroom.
-// Code should be un-commented as the features are implemented.
 func main() {
 	// Turn on pretty logging
 	slog.SetDefault(slog.New(
@@ -78,17 +88,23 @@ func main() {
 		}),
 	))
 
-	app := mailroom.New(
-		mailroom.WithHandlers(
-			&ExampleHandler{},
-			// handler.New[ArgoEventPayload](
-			//  "argocd",
-			//	argocd.NewPayloadParser(
-			//		argocd.WithEvents(argocd.AppSyncFailedEvent, argocd.AppSyncSucceededEvent),
-			//	),
-			//	argocd.NewNotificationGenerator(),
-			// ),
+	userStore := user.NewInMemoryStore(
+		user.New(
+			"codell",
+			user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
+			user.WithIdentifier(identifier.New("gitlab.com/id", "123")),
+			user.WithIdentifier(identifier.New("slack.com/id", "U4567")),
+			user.WithPreference("com.example.notification", "console", true),
 		),
+	)
+
+	app := mailroom.New(
+		mailroom.WithEventSource(&ExampleParser{}, &NotificationGenerator{}, user.NewIdentifierEnrichmentProcessor(userStore)),
+		// TODO: Add other EventSources and their specific processors, e.g.:
+		// argoParser := argo.NewParser(...)
+		// argoNotificationGenerator := argo.NewNotificationGeneratorProc(...)
+		// mailroom.WithEventSource(argoParser, argoNotificationGenerator),
+
 		mailroom.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),
 			// notifier.WithRetry(
@@ -105,17 +121,7 @@ func main() {
 			//	},
 			// ),
 		),
-		mailroom.WithUserStore(
-			user.NewInMemoryStore(
-				user.New(
-					"codell",
-					user.WithIdentifier(identifier.New("email", "codell@seatgeek.com")),
-					user.WithIdentifier(identifier.New("gitlab.com/id", "123")),
-					user.WithIdentifier(identifier.New("slack.com/id", "U4567")),
-					user.WithPreference("com.example.notification", "console", true),
-				),
-			),
-		),
+		mailroom.WithUserStore(userStore),
 	)
 
 	if err := app.Run(context.Background()); err != nil {

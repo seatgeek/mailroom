@@ -12,18 +12,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/seatgeek/mailroom/pkg/common"
-	"github.com/seatgeek/mailroom/pkg/handler"
+	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/notifier"
 	"github.com/seatgeek/mailroom/pkg/server"
 	"github.com/seatgeek/mailroom/pkg/user"
+	"github.com/seatgeek/mailroom/pkg/validation"
 )
 
 // Server is the heart of the mailroom application
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
 	listenAddr string
-	handlers   []handler.Handler
+	parsers    parsers
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
@@ -37,6 +37,7 @@ func New(opts ...Opt) *Server {
 	s := &Server{
 		listenAddr: "0.0.0.0:8000",
 		router:     mux.NewRouter(),
+		parsers:    make(parsers),
 	}
 
 	for _, opt := range opts {
@@ -55,10 +56,10 @@ func WithListenAddr(addr string) Opt {
 	}
 }
 
-// WithHandlers adds handler.Handler instances to the server
-func WithHandlers(handlers ...handler.Handler) Opt {
+// WithEventSource adds a Parser and its chain of processors
+func WithEventSource(parser event.Parser, processors ...event.Processor) Opt {
 	return func(s *Server) {
-		s.handlers = append(s.handlers, handlers...)
+		s.parsers[parser] = processors
 	}
 }
 
@@ -83,24 +84,32 @@ func WithRouter(router *mux.Router) Opt {
 	}
 }
 
-func (s *Server) validate(ctx context.Context) error {
-	for _, src := range s.handlers {
-		if v, ok := src.(common.Validator); ok {
+func (s *Server) validate(ctx context.Context) error { //nolint:revive // high cognitive complexity okay here
+	for parser, processors := range s.parsers {
+		if v, ok := parser.(validation.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("parser %s failed to validate: %w", src.Key(), err)
+				return fmt.Errorf("parser %s failed to validate: %w", parser.Key(), err)
+			}
+		}
+
+		for _, p := range processors {
+			if v, ok := p.(validation.Validator); ok {
+				if err := v.Validate(ctx); err != nil {
+					return fmt.Errorf("processor %T for parser %s failed to validate: %w", p, parser.Key(), err)
+				}
 			}
 		}
 	}
 
 	for _, t := range s.transports {
-		if v, ok := t.(common.Validator); ok {
+		if v, ok := t.(validation.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
 				return fmt.Errorf("transport %s failed to validate: %w", t.Key(), err)
 			}
 		}
 	}
 
-	if v, ok := s.userStore.(common.Validator); ok {
+	if v, ok := s.userStore.(validation.Validator); ok {
 		if err := v.Validate(ctx); err != nil {
 			return fmt.Errorf("user store failed to validate: %w", err)
 		}
@@ -127,15 +136,15 @@ func (s *Server) serveHttp(ctx context.Context) error {
 		_, _ = writer.Write([]byte("^_^\n"))
 	})
 
-	// Mount all handlers
-	for _, src := range s.handlers {
-		endpoint := "/event/" + src.Key()
-		slog.Debug("mounting handler", "endpoint", endpoint)
-		hsm.HandleFunc(endpoint, server.CreateEventHandler(src, s.notifier))
+	// Mount all parsers from parserConfigs
+	for parser, processors := range s.parsers {
+		endpoint := "/event/" + parser.Key()
+		slog.Debug("mounting parser", "endpoint", endpoint)
+		hsm.HandleFunc(endpoint, server.CreateEventProcessingHandler(parser, processors, s.notifier))
 	}
 
 	// Expose routes for managing user preferences
-	prefs := user.NewPreferencesHandler(s.userStore, s.handlers, transportKeys(s.transports))
+	prefs := user.NewPreferencesHandler(s.userStore, s.parsers.asSlice(), transportKeys(s.transports))
 	hsm.HandleFunc("/users/{key}/preferences", prefs.GetPreferences).Methods("GET")
 	hsm.HandleFunc("/users/{key}/preferences", prefs.UpdatePreferences).Methods("PUT")
 	hsm.HandleFunc("/configuration", prefs.ListOptions).Methods("GET")
@@ -174,10 +183,22 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	}
 }
 
-func transportKeys(transports []notifier.Transport) []common.TransportKey {
-	keys := make([]common.TransportKey, len(transports))
+func transportKeys(transports []notifier.Transport) []event.TransportKey {
+	keys := make([]event.TransportKey, len(transports))
 	for i, t := range transports {
 		keys[i] = t.Key()
 	}
 	return keys
+}
+
+type parsers map[event.Parser][]event.Processor
+
+func (p parsers) asSlice() []event.Parser {
+	ret := make([]event.Parser, 0, len(p))
+
+	for parser := range p {
+		ret = append(ret, parser)
+	}
+
+	return ret
 }

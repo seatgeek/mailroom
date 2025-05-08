@@ -1,12 +1,9 @@
 module github.com/seatgeek/mailroom
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.24.0
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.2
-	github.com/go-playground/webhooks/v6 v6.4.0
 	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.0.7
 	github.com/slack-go/slack v0.16.0
@@ -73,7 +70,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gogits/go-gogs-client v0.0.0-20200905025246-8bb8a50cb355 // indirect
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
@@ -26,7 +25,7 @@ import (
 func TestWithTimeout(t *testing.T) {
 	t.Parallel()
 
-	fakeNotification := common.NewMockNotification(t)
+	fakeNotification := event.NewMockNotification(t)
 
 	timeout := 30 * time.Second
 	expectedDeadline := time.Now().Add(timeout)
@@ -34,7 +33,7 @@ func TestWithTimeout(t *testing.T) {
 	transport := notifier.NewMockTransport(t)
 	transport.EXPECT().Key().Return("test")
 	transport.EXPECT().Push(mock.AnythingOfType("*context.timerCtx"), mock.Anything).Run(
-		func(ctx context.Context, notification common.Notification) {
+		func(ctx context.Context, notification event.Notification) {
 			deadline, ok := ctx.Deadline()
 			assert.True(t, ok, "Expected context to have a deadline")
 			assert.WithinDuration(t, expectedDeadline, deadline, time.Second, "Deadline should be within a second of expected")
@@ -45,7 +44,7 @@ func TestWithTimeout(t *testing.T) {
 
 	assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
-	_ = wrapped.Push(context.Background(), fakeNotification)
+	_ = wrapped.Push(t.Context(), fakeNotification)
 }
 
 func TestWithRetry(t *testing.T) {
@@ -122,7 +121,7 @@ func TestWithRetry(t *testing.T) {
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
-			err := wrapped.Push(context.Background(), fakeNotification)
+			err := wrapped.Push(t.Context(), fakeNotification)
 
 			assert.ErrorIs(t, err, tc.wantErr, "Error should match")
 		})
@@ -177,7 +176,7 @@ func TestWithLogging(t *testing.T) {
 
 			assert.Equal(t, transport.Key(), wrapped.Key(), "Key should be the same")
 
-			_ = wrapped.Push(context.Background(), notification)
+			_ = wrapped.Push(t.Context(), notification)
 
 			var logEntry struct {
 				Level   string            `json:"level"`

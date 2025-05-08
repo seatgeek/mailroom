@@ -12,7 +12,7 @@ Mailroom is a framework that simplifies the creation, routing, and delivery of u
 
 ![Flow diagram](./docs/flow.png)
 
-Mailroom is designed to be flexible and extensible, allowing you to easily add new handlers and transports as your needs grow and evolve. Simply write a function to transform incoming events into notifications, and Mailroom will take care of the rest, including:
+Mailroom is designed to be flexible and extensible, allowing you to easily add new event types and transports as your needs grow and evolve. Simply write code to transform incoming events into notifications, and Mailroom will take care of the rest, including:
 
 - Acting as the primary notification relay for incoming webhooks from external systems
 - Sending notifications to the appropriate users based on their preferences (e.g. PR reviews go to email, but build failures go to Slack)

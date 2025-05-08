@@ -7,7 +7,6 @@ package user
 import (
 	"testing"
 
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +51,7 @@ func TestUser_Wants(t *testing.T) {
 	tests := []struct {
 		name      string
 		event     event.Type
-		transport common.TransportKey
+		transport event.TransportKey
 		expected  bool
 	}{
 		{
