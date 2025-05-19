@@ -26,7 +26,9 @@ type wantSent struct {
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
-	unknownUser := identifier.NewSet()
+	unknownUser := identifier.NewSet(
+		identifier.New(identifier.GenericEmail, "somebody@example.com"),
+	)
 
 	knownUser := user.New(
 		"rufus",
@@ -78,10 +80,16 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			wantSent: []wantSent{},
 		},
 		{
-			name:         "unknown user",
+			name:         "unknown user gets message via all transports",
 			notification: notificationFor("com.example.one", unknownUser),
-			wantSent:     []wantSent{},
-			wantErrs:     []error{user.ErrUserNotFound, user.ErrUserNotFound},
+			transports: []notifier.Transport{
+				&fakeTransport{key: "email"},
+				&fakeTransport{key: "slack"},
+			},
+			wantSent: []wantSent{
+				{event: "com.example.one", transport: "email"},
+				{event: "com.example.one", transport: "slack"},
+			},
 		},
 		{
 			name:         "transport fails",
