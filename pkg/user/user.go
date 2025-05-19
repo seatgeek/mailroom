@@ -94,5 +94,9 @@ func WithPreferences(p Preferences) Option {
 
 // String returns a simple string representation of a User's identify (useful for logging)
 func (r *User) String() string {
+	if (r == nil) || (r.Identifiers == nil) {
+		return "<unknown>"
+	}
+
 	return r.Identifiers.String()
 }

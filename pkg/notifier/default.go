@@ -7,7 +7,6 @@ package notifier
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	"github.com/seatgeek/mailroom/pkg/common"
@@ -24,17 +23,16 @@ type DefaultNotifier struct {
 func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notification) error {
 	var errs []error
 
+	// The store may know of other identifiers for this user, so we merge those in
 	recipientUser, err := d.userStore.Find(ctx, notification.Recipient())
-	if err != nil {
+	if err == nil {
+		notification.Recipient().Merge(recipientUser.Identifiers)
+	} else {
 		slog.Debug("failed to find user", "id", notification.Context().ID, "user", notification.Recipient().String(), "error", err)
-		return fmt.Errorf("failed to find recipient user: %w", err)
 	}
 
-	// The store may know of other identifiers for this user, so we merge those in
-	notification.Recipient().Merge(recipientUser.Identifiers)
-
 	for _, transport := range d.transports {
-		if !recipientUser.Wants(notification.Context().Type, transport.Key()) {
+		if recipientUser != nil && !recipientUser.Wants(notification.Context().Type, transport.Key()) {
 			slog.Debug("user does not want this notification this way", "id", notification.Context().ID, "user", recipientUser.String(), "transport", transport.Key())
 			continue
 		}
