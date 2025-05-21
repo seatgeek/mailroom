@@ -9,7 +9,7 @@ MOCKERY_VERSION=v3.2.5
 # renovate: datasource=github-releases depName=palantir/go-license
 GO_LICENSE_VERSION=v1.41.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
-MARKDOWNLINT_VERSION=v0.44.0
+MARKDOWNLINT_VERSION=v0.45.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
 YAMLLINT_VERSION=0.34.0
 
