@@ -44,8 +44,12 @@ func TestUser_Wants(t *testing.T) {
 
 	user := New(
 		"rufus",
-		WithPreference("com.example.notification", "email", true),
-		WithPreference("com.example.notification", "slack", false),
+		WithPreferences(Preferences{
+			"com.example.notification": {
+				"email": true,
+				"slack": false,
+			},
+		}),
 	)
 
 	tests := []struct {
@@ -86,4 +90,16 @@ func TestUser_Wants(t *testing.T) {
 			assert.Equal(t, tt.expected, user.Wants(tt.event, tt.transport))
 		})
 	}
+}
+
+func TestUser_String(t *testing.T) {
+	t.Parallel()
+
+	user := New(
+		"rufus",
+		WithIdentifier(identifier.New("username", "rufus")),
+		WithIdentifier(identifier.New("email", "rufus@seatgeek.com")),
+	)
+
+	assert.Equal(t, "[email:rufus@seatgeek.com username:rufus]", user.String())
 }
