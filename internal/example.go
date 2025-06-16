@@ -32,10 +32,6 @@ var messageSentType = event.Type("com.example.message_sent")
 
 type ExampleParser struct{}
 
-func (p *ExampleParser) Key() string {
-	return "example"
-}
-
 func (p *ExampleParser) EventTypes() []event.TypeDescriptor {
 	return []event.TypeDescriptor{
 		{
@@ -99,11 +95,14 @@ func main() {
 	)
 
 	app := mailroom.New(
-		mailroom.WithEventSource(&ExampleParser{}, &NotificationGenerator{}, user.NewIdentifierEnrichmentProcessor(userStore)),
+		mailroom.WithParserAndGenerator("example", &ExampleParser{}, &NotificationGenerator{}),
+		mailroom.WithProcessors(
+			user.NewIdentifierEnrichmentProcessor(userStore),
+		),
 		// TODO: Add other EventSources and their specific processors, e.g.:
 		// argoParser := argo.NewParser(...)
 		// argoNotificationGenerator := argo.NewNotificationGeneratorProc(...)
-		// mailroom.WithEventSource(argoParser, argoNotificationGenerator),
+		// mailroom.WithParserAndGenerator("argocd", argoParser, argoNotificationGenerator),
 
 		mailroom.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),

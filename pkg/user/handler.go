@@ -5,10 +5,12 @@
 package user
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/event"
@@ -17,12 +19,12 @@ import (
 // PreferencesHandler exposes an HTTP API for managing user preferences
 type PreferencesHandler struct {
 	userStore  Store
-	parsers    []event.Parser
+	parsers    map[string]event.Parser
 	transports []event.TransportKey
 }
 
 // NewPreferencesHandler creates a new PreferencesHandler for managing user preferences
-func NewPreferencesHandler(userStore Store, parsers []event.Parser, transports []event.TransportKey) *PreferencesHandler {
+func NewPreferencesHandler(userStore Store, parsers map[string]event.Parser, transports []event.TransportKey) *PreferencesHandler {
 	return &PreferencesHandler{
 		userStore:  userStore,
 		parsers:    parsers,
@@ -127,13 +129,18 @@ type availableOptions struct {
 
 // ListOptions returns the available sources and transports for setting preferences
 func (ph *PreferencesHandler) ListOptions(writer http.ResponseWriter, _ *http.Request) {
-	sources := make([]source, len(ph.parsers))
-	for i, src := range ph.parsers {
-		sources[i] = source{
-			Key:        src.Key(),
+	sources := make([]source, 0, len(ph.parsers))
+	for key, src := range ph.parsers {
+		sources = append(sources, source{
+			Key:        key,
 			EventTypes: src.EventTypes(),
-		}
+		})
 	}
+
+	// Sort sources by key (asc)
+	slices.SortFunc(sources, func(a, b source) int {
+		return cmp.Compare(a.Key, b.Key)
+	})
 
 	transports := make([]transport, len(ph.transports))
 	for i, tp := range ph.transports {

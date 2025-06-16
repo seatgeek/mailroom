@@ -23,7 +23,8 @@ import (
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
 	listenAddr string
-	parsers    parsers
+	parsers    map[string]event.Parser
+	processors []event.Processor
 	notifier   notifier.Notifier
 	transports []notifier.Transport
 	userStore  user.Store
@@ -37,7 +38,7 @@ func New(opts ...Opt) *Server {
 	s := &Server{
 		listenAddr: "0.0.0.0:8000",
 		router:     mux.NewRouter(),
-		parsers:    make(parsers),
+		parsers:    make(map[string]event.Parser),
 	}
 
 	for _, opt := range opts {
@@ -56,10 +57,26 @@ func WithListenAddr(addr string) Opt {
 	}
 }
 
-// WithEventSource adds a Parser and its chain of processors
-func WithEventSource(parser event.Parser, processors ...event.Processor) Opt {
+// WithParser adds an event.Parser to the server with the given key.
+// The key is used as the API endpoint for the server.
+func WithParser(key string, parser event.Parser) Opt {
 	return func(s *Server) {
-		s.parsers[parser] = processors
+		s.parsers[key] = parser
+	}
+}
+
+// WithParserAndGenerator is a convenience function that adds an event.Parser and its corresponding processor (which generates notifications) in a single call.
+func WithParserAndGenerator(key string, parser event.Parser, generator event.Processor) Opt {
+	return func(s *Server) {
+		s.parsers[key] = parser
+		s.processors = append(s.processors, generator)
+	}
+}
+
+// WithProcessors adds event.Processor instances to the server in the order given.
+func WithProcessors(processors ...event.Processor) Opt {
+	return func(s *Server) {
+		s.processors = append(s.processors, processors...)
 	}
 }
 
@@ -85,18 +102,18 @@ func WithRouter(router *mux.Router) Opt {
 }
 
 func (s *Server) validate(ctx context.Context) error { //nolint:revive // high cognitive complexity okay here
-	for parser, processors := range s.parsers {
+	for key, parser := range s.parsers {
 		if v, ok := parser.(validation.Validator); ok {
 			if err := v.Validate(ctx); err != nil {
-				return fmt.Errorf("parser %s failed to validate: %w", parser.Key(), err)
+				return fmt.Errorf("parser %s (%T) failed to validate: %w", key, parser, err)
 			}
 		}
+	}
 
-		for _, p := range processors {
-			if v, ok := p.(validation.Validator); ok {
-				if err := v.Validate(ctx); err != nil {
-					return fmt.Errorf("processor %T for parser %s failed to validate: %w", p, parser.Key(), err)
-				}
+	for _, processor := range s.processors {
+		if v, ok := processor.(validation.Validator); ok {
+			if err := v.Validate(ctx); err != nil {
+				return fmt.Errorf("processor %T failed to validate: %w", processor, err)
 			}
 		}
 	}
@@ -136,15 +153,15 @@ func (s *Server) serveHttp(ctx context.Context) error {
 		_, _ = writer.Write([]byte("^_^\n"))
 	})
 
-	// Mount all parsers from parserConfigs
-	for parser, processors := range s.parsers {
-		endpoint := "/event/" + parser.Key()
+	// Mount all parsers
+	for key, parser := range s.parsers {
+		endpoint := "/event/" + key
 		slog.Debug("mounting parser", "endpoint", endpoint)
-		hsm.HandleFunc(endpoint, server.CreateEventProcessingHandler(parser, processors, s.notifier))
+		hsm.HandleFunc(endpoint, server.CreateEventProcessingHandler(key, parser, s.processors, s.notifier))
 	}
 
 	// Expose routes for managing user preferences
-	prefs := user.NewPreferencesHandler(s.userStore, s.parsers.asSlice(), transportKeys(s.transports))
+	prefs := user.NewPreferencesHandler(s.userStore, s.parsers, transportKeys(s.transports))
 	hsm.HandleFunc("/users/{key}/preferences", prefs.GetPreferences).Methods("GET")
 	hsm.HandleFunc("/users/{key}/preferences", prefs.UpdatePreferences).Methods("PUT")
 	hsm.HandleFunc("/configuration", prefs.ListOptions).Methods("GET")
@@ -189,16 +206,4 @@ func transportKeys(transports []notifier.Transport) []event.TransportKey {
 		keys[i] = t.Key()
 	}
 	return keys
-}
-
-type parsers map[event.Parser][]event.Processor
-
-func (p parsers) asSlice() []event.Parser {
-	ret := make([]event.Parser, 0, len(p))
-
-	for parser := range p {
-		ret = append(ret, parser)
-	}
-
-	return ret
 }

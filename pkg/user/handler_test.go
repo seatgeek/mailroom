@@ -263,22 +263,22 @@ func TestPreferencesHandler_ListOptions(t *testing.T) {
 	assert.JSONEq(t, `{
 		"sources": [
 			{
-				"key": "gitlab",
-				"event_types": [
-					{
-						"key": "com.gitlab.push",
-						"title": "Push",
-						"description": "Emitted when a user pushes code to a GitLab repository"
-					}
-				]
-			},
-			{
 				"key": "argo",
 				"event_types": [
 					{
 						"key": "com.argocd.sync-succeeded",
 						"title": "Sync Succeeded",
 						"description": "Emitted when an Argo CD sync operation completes successfully"
+					}
+				]
+			},
+			{
+				"key": "gitlab",
+				"event_types": [
+					{
+						"key": "com.gitlab.push",
+						"title": "Push",
+						"description": "Emitted when a user pushes code to a GitLab repository"
 					}
 				]
 			}
@@ -298,7 +298,6 @@ func createHandler(t *testing.T) *PreferencesHandler {
 	t.Helper()
 
 	srcGitlab := event.NewMockParser(t)
-	srcGitlab.EXPECT().Key().Return("gitlab").Maybe()
 	srcGitlab.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
 			Key:         "com.gitlab.push",
@@ -308,7 +307,6 @@ func createHandler(t *testing.T) *PreferencesHandler {
 	})
 
 	srcArgo := event.NewMockParser(t)
-	srcArgo.EXPECT().Key().Return("argo").Maybe()
 	srcArgo.EXPECT().EventTypes().Maybe().Return([]event.TypeDescriptor{
 		{
 			Key:         "com.argocd.sync-succeeded",
@@ -317,9 +315,9 @@ func createHandler(t *testing.T) *PreferencesHandler {
 		},
 	})
 
-	handlers := []event.Parser{
-		srcGitlab,
-		srcArgo,
+	parsers := map[string]event.Parser{
+		"gitlab": srcGitlab,
+		"argo":   srcArgo,
 	}
 
 	transports := []event.TransportKey{
@@ -330,7 +328,7 @@ func createHandler(t *testing.T) *PreferencesHandler {
 	u := New("rufus", WithPreference("com.gitlab.push", "slack", false))
 	userStore := NewInMemoryStore(u)
 
-	return NewPreferencesHandler(userStore, handlers, transports)
+	return NewPreferencesHandler(userStore, parsers, transports)
 }
 
 func TestListOptions(t *testing.T) {
@@ -339,22 +337,25 @@ func TestListOptions(t *testing.T) {
 	store := NewMockStore(t)
 	// Use mock Parser
 	parser1 := event.NewMockParser(t)
-	parser1.EXPECT().Key().Return("src1")
 	parser1.EXPECT().EventTypes().Return([]event.TypeDescriptor{{
 		Key:   "event1",
 		Title: "Event 1",
 	}})
 	parser2 := event.NewMockParser(t)
-	parser2.EXPECT().Key().Return("src2")
 	parser2.EXPECT().EventTypes().Return([]event.TypeDescriptor{{
 		Key:   "event2",
 		Title: "Event 2",
 	}})
 
+	parsers := map[string]event.Parser{
+		"src1": parser1,
+		"src2": parser2,
+	}
+
 	transports := []event.TransportKey{"t1", "t2"}
 
 	// Update to use Parser
-	ph := NewPreferencesHandler(store, []event.Parser{parser1, parser2}, transports)
+	ph := NewPreferencesHandler(store, parsers, transports)
 	req := httptest.NewRequest("GET", "/configuration", nil)
 	w := httptest.NewRecorder()
 

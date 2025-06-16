@@ -24,8 +24,6 @@ type Payload = any
 
 // Parser is anything capable of parsing an incoming HTTP request into a canonical Event object.
 type Parser interface {
-	// Key is both a unique identifier for the Parser, and the endpoint that it listens on
-	Key() string
 	// Parse handles incoming webhooks, verifying them and returning a parsed Event (or an error)
 	Parse(req *http.Request) (*Event, error)
 	// EventTypes returns descriptors for all EventTypes that the parser may produce

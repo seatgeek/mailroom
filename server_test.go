@@ -33,10 +33,11 @@ func TestServer_Options(t *testing.T) {
 	parser := event.NewMockParser(t)
 	processor := event.NewMockProcessor(t)
 
-	s := New(WithEventSource(parser, processor))
+	s := New(WithParser("foo", parser), WithProcessors(processor))
 
 	assert.NotNil(t, s)
-	assert.Equal(t, []event.Processor{processor}, s.parsers[parser])
+	assert.Equal(t, parser, s.parsers["foo"])
+	assert.Contains(t, s.processors, processor)
 }
 
 func TestRun(t *testing.T) {
@@ -60,7 +61,15 @@ func TestRun(t *testing.T) {
 			name: "returns error if a parser fails to validate",
 			opts: []Opt{
 				WithListenAddr(":0"),
-				WithEventSource(&parserThatFailsToValidate{err: errValidationFailed}),
+				WithParser("foo", &parserThatFailsToValidate{err: errValidationFailed}),
+			},
+			wantErr: errValidationFailed,
+		},
+		{
+			name: "returns error if a processors fails to validate",
+			opts: []Opt{
+				WithListenAddr(":0"),
+				WithProcessors(&processorThatFailsToValidate{err: errValidationFailed}),
 			},
 			wantErr: errValidationFailed,
 		},
@@ -131,6 +140,23 @@ func (s parserThatFailsToValidate) EventTypes() []event.TypeDescriptor {
 
 func (s parserThatFailsToValidate) Validate(_ context.Context) error {
 	return s.err
+}
+
+type processorThatFailsToValidate struct {
+	err error
+}
+
+var (
+	_ event.Processor      = processorThatFailsToValidate{}
+	_ validation.Validator = processorThatFailsToValidate{}
+)
+
+func (p processorThatFailsToValidate) Process(ctx context.Context, evt event.Event, notifications []event.Notification) ([]event.Notification, error) {
+	panic("not called in our tests")
+}
+
+func (p processorThatFailsToValidate) Validate(_ context.Context) error {
+	return p.err
 }
 
 type transportThatFailsToValidate struct {

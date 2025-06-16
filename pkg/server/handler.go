@@ -19,18 +19,18 @@ import (
 // CreateEventProcessingHandler returns a handlerFunc that can be used to handle incoming webhooks.
 // It choreographs the parsing of the incoming request, the generation of notifications, dispatching the notifications
 // to the notifier, and returning a success or error response to the client.
-func CreateEventProcessingHandler(parser event.Parser, processors []event.Processor, ntfr notifier.Notifier) http.HandlerFunc { //nolint:revive
+func CreateEventProcessingHandler(parserKey string, parser event.Parser, processors []event.Processor, ntfr notifier.Notifier) http.HandlerFunc { //nolint:revive
 	return func(writer http.ResponseWriter, request *http.Request) {
-		slog.Debug("handling incoming webhook", "parser", parser.Key(), "path", request.URL.Path)
+		slog.Debug("handling incoming webhook", "parser", parserKey, "path", request.URL.Path)
 
 		evt, err := parser.Parse(request)
 		if err != nil {
-			logAndSendErrorResponse(writer, parser.Key(), "failed to parse event", err)
+			logAndSendErrorResponse(writer, parserKey, "failed to parse event", err)
 			return
 		}
 
 		if evt == nil { // Event is ignorable
-			slog.Debug("ignoring uninteresting event", "parser", parser.Key())
+			slog.Debug("ignoring uninteresting event", "parser", parserKey)
 			http.Error(writer, "thanks but we're not interested in that event", 200)
 			return
 		}
@@ -39,32 +39,32 @@ func CreateEventProcessingHandler(parser event.Parser, processors []event.Proces
 
 		for _, processor := range processors {
 			processorType := reflect.TypeOf(processor).Name()
-			slog.Debug("executing processor", "parser", parser.Key(), "eventID", evt.ID, "processor", processorType)
+			slog.Debug("executing processor", "parser", parserKey, "eventID", evt.ID, "processor", processorType)
 			notifications, err = processor.Process(request.Context(), *evt, notifications)
 			if err != nil {
-				logAndSendErrorResponse(writer, parser.Key(), fmt.Sprintf("failed during processing (processor %s)", processorType), err)
+				logAndSendErrorResponse(writer, parserKey, fmt.Sprintf("failed during processing (processor %s)", processorType), err)
 				return
 			}
 		}
 
 		if len(notifications) == 0 {
-			slog.Debug("no notifications to send after processing", "parser", parser.Key(), "eventID", evt.ID)
+			slog.Debug("no notifications to send after processing", "parser", parserKey, "eventID", evt.ID)
 			http.Error(writer, "no notifications to send", 200)
 			return
 		}
 
-		slog.Debug("dispatching notifications", "eventID", evt.ID, "parser", parser.Key(), "notifications_count", len(notifications))
+		slog.Debug("dispatching notifications", "eventID", evt.ID, "parser", parserKey, "notifications_count", len(notifications))
 
 		errorCount := 0
 		for _, n := range notifications {
 			if err = ntfr.Push(request.Context(), n); err != nil {
 				errorCount++
-				slog.WarnContext(request.Context(), "failed to push notification", "eventID", evt.ID, "notification_recipient", n.Recipient().String(), "parser", parser.Key(), "error", err)
+				slog.WarnContext(request.Context(), "failed to push notification", "eventID", evt.ID, "notification_recipient", n.Recipient().String(), "parser", parserKey, "error", err)
 			}
 		}
 
 		if errorCount > 0 {
-			slog.WarnContext(request.Context(), "some notifications failed to send", "eventID", evt.ID, "parser", parser.Key(), "total_notifications", len(notifications), "failed_count", errorCount)
+			slog.WarnContext(request.Context(), "some notifications failed to send", "eventID", evt.ID, "parser", parserKey, "total_notifications", len(notifications), "failed_count", errorCount)
 		}
 
 		writer.WriteHeader(http.StatusAccepted)

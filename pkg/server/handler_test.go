@@ -84,7 +84,7 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := CreateEventProcessingHandler(tc.parser, tc.processors, tc.notifier)
+			handler := CreateEventProcessingHandler("some-parser", tc.parser, tc.processors, tc.notifier)
 
 			writer := httptest.NewRecorder()
 
@@ -99,7 +99,6 @@ func parserThatReturns(t *testing.T, evt *event.Event, err error) event.Parser {
 	t.Helper()
 
 	parser := event.NewMockParser(t)
-	parser.EXPECT().Key().Return("some-parser")
 	parser.EXPECT().Parse(mock.Anything).Return(evt, err)
 
 	return parser
