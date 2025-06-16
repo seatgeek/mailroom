@@ -79,7 +79,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 			wantSent: []wantSent{},
 		},
 		{
-			name:         "unknown user get message via all transports",
+			name:         "unknown user gets message via all transports",
 			notification: notificationFor("com.example.one", unknownUser),
 			transports: []notifier.Transport{
 				&fakeTransport{key: "email"},
