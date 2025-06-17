@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 )
 
 // ErrUserNotFound is returned when a user is not found in the Store.
@@ -35,7 +36,7 @@ type Store interface {
 	Find(ctx context.Context, possibleIdentifiers identifier.Set) (*User, error)
 
 	// SetPreferences replaces the preferences for a user by key
-	SetPreferences(ctx context.Context, key string, prefs Preferences) error
+	SetPreferences(ctx context.Context, key string, prefs preference.Map) error
 }
 
 // InMemoryStore is a simple in-memory implementation of the Store interface
@@ -108,7 +109,7 @@ func (s *InMemoryStore) Find(ctx context.Context, possibleIdentifiers identifier
 	return nil, ErrUserNotFound
 }
 
-func (s *InMemoryStore) SetPreferences(ctx context.Context, key string, prefs Preferences) error {
+func (s *InMemoryStore) SetPreferences(ctx context.Context, key string, prefs preference.Map) error {
 	u, err := s.Get(ctx, key)
 	if err != nil {
 		return err

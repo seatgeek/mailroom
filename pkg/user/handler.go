@@ -6,6 +6,7 @@ package user
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/event"
+	"github.com/seatgeek/mailroom/pkg/notification"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 )
 
 // PreferencesHandler exposes an HTTP API for managing user preferences
@@ -21,19 +24,21 @@ type PreferencesHandler struct {
 	userStore  Store
 	parsers    map[string]event.Parser
 	transports []event.TransportKey
+	defaults   preference.Preferences
 }
 
 // NewPreferencesHandler creates a new PreferencesHandler for managing user preferences
-func NewPreferencesHandler(userStore Store, parsers map[string]event.Parser, transports []event.TransportKey) *PreferencesHandler {
+func NewPreferencesHandler(userStore Store, parsers map[string]event.Parser, transports []event.TransportKey, defaults preference.Preferences) *PreferencesHandler {
 	return &PreferencesHandler{
 		userStore:  userStore,
 		parsers:    parsers,
 		transports: transports,
+		defaults:   defaults,
 	}
 }
 
 type preferencesBody struct {
-	Preferences Preferences `json:"preferences"`
+	Preferences preference.Map `json:"preferences"`
 }
 
 // GetPreferences returns the preferences for a given user
@@ -54,7 +59,7 @@ func (ph *PreferencesHandler) GetPreferences(writer http.ResponseWriter, request
 		return
 	}
 
-	hydratedUserPreferences := ph.buildCurrentUserPreferences(u.Preferences)
+	hydratedUserPreferences := ph.buildCurrentUserPreferences(request.Context(), preference.Chain{u.Preferences, ph.defaults})
 	resp := preferencesBody{Preferences: hydratedUserPreferences}
 
 	writeJson(writer, resp)
@@ -86,7 +91,7 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 	}
 
 	writeJson(writer, preferencesBody{
-		Preferences: ph.buildCurrentUserPreferences(req.Preferences),
+		Preferences: ph.buildCurrentUserPreferences(request.Context(), preference.Chain{req.Preferences, ph.defaults}),
 	})
 }
 
@@ -96,21 +101,40 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 // Only event types and transports that are currently active in the server will
 // be included in the preference map. User is opted in to any preference that is
 // not stored.
-func (ph *PreferencesHandler) buildCurrentUserPreferences(p Preferences) Preferences {
-	hydratedPreferences := make(Preferences)
+func (ph *PreferencesHandler) buildCurrentUserPreferences(ctx context.Context, p preference.Preferences) preference.Map {
+	hydratedPreferences := make(preference.Map)
 
 	for _, src := range ph.parsers {
 		for _, eventType := range src.EventTypes() {
+			n := fakeNotificationFor(eventType.Key)
 			for _, transportKey := range ph.transports {
 				if hydratedPreferences[eventType.Key] == nil {
 					hydratedPreferences[eventType.Key] = make(map[event.TransportKey]bool)
 				}
-				hydratedPreferences[eventType.Key][transportKey] = p.Wants(eventType.Key, transportKey)
+				if wants := p.Wants(ctx, n, transportKey); wants != nil {
+					hydratedPreferences[eventType.Key][transportKey] = *wants
+				} else {
+					// No preference or fallback was available, so show it as enabled by default.
+					hydratedPreferences[eventType.Key][transportKey] = true
+				}
 			}
 		}
 	}
 
 	return hydratedPreferences
+}
+
+// fakeNotificationFor creates a fake notification for the given event type.
+// This is needed because preferences are based on notifications and their context,
+// so we need to simulate such a notification to check preferences against it.
+// Most preferences are usually based on just the event type, and will usually return
+// nil to fall back to some default later in the chain - this is why we can get away
+// with using a fake notification here.
+//
+// But if you're reading this and thinking "this dirty hack doesn't work for my needs"
+// then please open an issue to explain your use case so we can improve this!
+func fakeNotificationFor(eventType event.Type) event.Notification {
+	return notification.NewBuilder(event.Context{Type: eventType}).Build()
 }
 
 type transport struct {

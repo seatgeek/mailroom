@@ -33,7 +33,7 @@ func TestIdentifierEnrichmentProcessor_Process(t *testing.T) {
 		{
 			name: "user found and identifiers merged",
 			notifications: []event.Notification{
-				notificationFor(identifier.NewSet(id1)),
+				notificationFor("some-event", identifier.NewSet(id1)),
 			},
 			mockStoreSetup: func(mockStore *user.MockStore) {
 				foundUser := user.New("test-user", user.WithIdentifier(id2), user.WithIdentifier(id3))
@@ -48,10 +48,10 @@ func TestIdentifierEnrichmentProcessor_Process(t *testing.T) {
 		{
 			name: "multiple notifications with mixed results",
 			notifications: []event.Notification{
-				notificationFor(identifier.NewSet(id1)),
-				notificationFor(nil),
-				notificationFor(identifier.NewSet(id2)),
-				notificationFor(identifier.NewSet(id3)),
+				notificationFor("some-event", identifier.NewSet(id1)),
+				notificationFor("some-event", nil),
+				notificationFor("some-event", identifier.NewSet(id2)),
+				notificationFor("some-event", identifier.NewSet(id3)),
 			},
 			mockStoreSetup: func(mockStore *user.MockStore) {
 				foundUser := user.New("test-user-1", user.WithIdentifier(identifier.New("new", "val1")))
@@ -72,7 +72,7 @@ func TestIdentifierEnrichmentProcessor_Process(t *testing.T) {
 		{
 			name: "recipient is nil",
 			notifications: []event.Notification{
-				notificationFor(nil),
+				notificationFor("some-event", nil),
 			},
 			expect: func(t *testing.T, result []event.Notification) {
 				t.Helper()
@@ -91,7 +91,7 @@ func TestIdentifierEnrichmentProcessor_Process(t *testing.T) {
 		{
 			name: "user not found",
 			notifications: []event.Notification{
-				notificationFor(identifier.NewSet(id1)),
+				notificationFor("some-event", identifier.NewSet(id1)),
 			},
 			mockStoreSetup: func(mockStore *user.MockStore) {
 				mockStore.On("Find", t.Context(), identifier.NewSet(id1)).Return(nil, user.ErrUserNotFound).Once()
@@ -105,7 +105,7 @@ func TestIdentifierEnrichmentProcessor_Process(t *testing.T) {
 		{
 			name: "error finding user",
 			notifications: []event.Notification{
-				notificationFor(identifier.NewSet(id1)),
+				notificationFor("some-event", identifier.NewSet(id1)),
 			},
 			mockStoreSetup: func(mockStore *user.MockStore) {
 				mockStore.On("Find", t.Context(), identifier.NewSet(id1)).Return(nil, errors.New("some db error")).Once()
@@ -147,26 +147,4 @@ func TestNewIdentifierEnrichmentProcessor_NilStore(t *testing.T) {
 	assert.PanicsWithValue(t, "user.Store cannot be nil for IdentifierEnrichmentProcessor", func() {
 		user.NewIdentifierEnrichmentProcessor(nil)
 	})
-}
-
-func notificationFor(id identifier.Set) event.Notification {
-	return &fakeNotification{
-		recipient: id,
-	}
-}
-
-type fakeNotification struct {
-	recipient identifier.Set
-}
-
-func (f *fakeNotification) Context() event.Context {
-	return event.Context{}
-}
-
-func (f *fakeNotification) Render(_ event.TransportKey) string {
-	return "some message"
-}
-
-func (f *fakeNotification) Recipient() identifier.Set {
-	return f.recipient
 }

@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"gorm.io/gorm"
 )
 
 // UserModel is the gorm model for a user
 type UserModel struct {
-	Key         string           `gorm:"primarykey"`
-	Preferences user.Preferences `gorm:"serializer:json"`
+	Key         string         `gorm:"primarykey"`
+	Preferences preference.Map `gorm:"serializer:json"`
 
 	// Identifiers is a map of all identifiers for the user
 	Identifiers map[identifier.NamespaceAndKind]string `gorm:"serializer:json"`
@@ -154,7 +155,7 @@ func (s *Store) GetByIdentifier(ctx context.Context, id identifier.Identifier) (
 }
 
 // SetPreferences implements user.Store.
-func (s *Store) SetPreferences(ctx context.Context, key string, prefs user.Preferences) error {
+func (s *Store) SetPreferences(ctx context.Context, key string, prefs preference.Map) error {
 	return s.db.WithContext(ctx).Model(&UserModel{}).Where("key = ?", key).Update("preferences", prefs).Error
 }
 
