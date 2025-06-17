@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"reflect"
 
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/notifier"
@@ -38,11 +37,9 @@ func CreateEventProcessingHandler(parserKey string, parser event.Parser, process
 		notifications := []event.Notification{}
 
 		for _, processor := range processors {
-			processorType := reflect.TypeOf(processor).Name()
-			slog.Debug("executing processor", "parser", parserKey, "eventID", evt.ID, "processor", processorType)
 			notifications, err = processor.Process(request.Context(), *evt, notifications)
 			if err != nil {
-				logAndSendErrorResponse(writer, parserKey, fmt.Sprintf("failed during processing (processor %s)", processorType), err)
+				logAndSendErrorResponse(writer, parserKey, fmt.Sprintf("failed during processing (processor %T)", processor), err)
 				return
 			}
 		}
