@@ -9,9 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
-	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/seatgeek/mailroom/pkg/notification"
 	"github.com/seatgeek/mailroom/pkg/notifier"
 	"github.com/stretchr/testify/assert"
@@ -21,37 +19,53 @@ import (
 func TestHandler(t *testing.T) {
 	t.Parallel()
 
-	someNotifications := []common.Notification{
-		notification.NewBuilder(event.Context{ID: "a1c11a53-c4be-488f-89b6-f83bf2d48dab", Type: "com.example.event"}).Build(),
+	someEvent := event.Event{
+		Context: event.Context{
+			ID:     "a1c11a53-c4be-488f-89b6-f83bf2d48dab",
+			Type:   "com.example.event",
+			Source: event.MustSource("example.com"),
+		},
+		Data: "some payload",
+	}
+	someNotifications := []event.Notification{
+		notification.NewBuilder(someEvent.Context).Build(),
 	}
 	someError := errors.New("some error")
 
 	tests := []struct {
 		name           string
-		handler        handler.Handler
+		parser         event.Parser
+		processors     []event.Processor
 		notifier       notifier.Notifier
 		wantStatusCode int
 	}{
 		{
 			name:           "happy path",
-			handler:        handlerThatReturns(t, someNotifications, nil),
+			parser:         parserThatReturns(t, &someEvent, nil),
+			processors:     []event.Processor{processorThatReturns(t, someNotifications, nil)},
 			notifier:       notifierThatReturns(t, nil),
 			wantStatusCode: 202,
 		},
 		{
+			name:           "uninterested event",
+			parser:         parserThatReturns(t, nil, nil),
+			wantStatusCode: 200,
+		},
+		{
 			name:           "no notifications generated",
-			handler:        handlerThatReturns(t, nil, nil),
+			parser:         parserThatReturns(t, &someEvent, nil),
+			processors:     []event.Processor{processorThatReturns(t, nil, nil)},
 			notifier:       notifierThatReturns(t, nil),
 			wantStatusCode: 200,
 		},
 		{
 			name:           "parse error",
-			handler:        handlerThatReturns(t, nil, someError),
+			parser:         parserThatReturns(t, nil, someError),
 			wantStatusCode: 500,
 		},
 		{
 			name: "parse error with custom HTTP status code",
-			handler: handlerThatReturns(t, nil, &Error{
+			parser: parserThatReturns(t, nil, &Error{
 				Code:   400,
 				Reason: someError,
 			}),
@@ -59,7 +73,8 @@ func TestHandler(t *testing.T) {
 		},
 		{
 			name:           "notifier error",
-			handler:        handlerThatReturns(t, someNotifications, nil),
+			parser:         parserThatReturns(t, &someEvent, nil),
+			processors:     []event.Processor{processorThatReturns(t, someNotifications, nil)},
 			notifier:       notifierThatReturns(t, someError),
 			wantStatusCode: 202,
 		},
@@ -69,10 +84,7 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := CreateEventHandler(
-				tc.handler,
-				tc.notifier,
-			)
+			handler := CreateEventProcessingHandler("some-parser", tc.parser, tc.processors, tc.notifier)
 
 			writer := httptest.NewRecorder()
 
@@ -83,14 +95,22 @@ func TestHandler(t *testing.T) {
 	}
 }
 
-func handlerThatReturns(t *testing.T, notifs []common.Notification, err error) handler.Handler {
+func parserThatReturns(t *testing.T, evt *event.Event, err error) event.Parser {
 	t.Helper()
 
-	src := handler.NewMockHandler(t)
-	src.EXPECT().Key().Return("some-handler")
-	src.EXPECT().Process(mock.Anything).Return(notifs, err)
+	parser := event.NewMockParser(t)
+	parser.EXPECT().Parse(mock.Anything).Return(evt, err)
 
-	return src
+	return parser
+}
+
+func processorThatReturns(t *testing.T, notifs []event.Notification, err error) event.Processor {
+	t.Helper()
+
+	processor := event.NewMockProcessor(t)
+	processor.EXPECT().Process(mock.Anything, mock.Anything, mock.Anything).Return(notifs, err)
+
+	return processor
 }
 
 func notifierThatReturns(t *testing.T, err error) notifier.Notifier {

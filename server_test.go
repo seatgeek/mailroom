@@ -11,11 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
-	"github.com/seatgeek/mailroom/pkg/handler"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/user"
+	"github.com/seatgeek/mailroom/pkg/validation"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,19 +27,17 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "0.0.0.0:8000", s.listenAddr)
 }
 
-func TestWithHandlers(t *testing.T) {
+func TestServer_Options(t *testing.T) {
 	t.Parallel()
 
-	src1 := handler.NewMockHandler(t)
-	src1.EXPECT().Key().Return("foo").Maybe()
-	src2 := handler.NewMockHandler(t)
-	src2.EXPECT().Key().Return("bar").Maybe()
+	parser := event.NewMockParser(t)
+	processor := event.NewMockProcessor(t)
 
-	s := New(WithHandlers(src1, src2))
+	s := New(WithParser("foo", parser), WithProcessors(processor))
 
 	assert.NotNil(t, s)
-	assert.Contains(t, s.handlers, src1)
-	assert.Contains(t, s.handlers, src2)
+	assert.Equal(t, parser, s.parsers["foo"])
+	assert.Contains(t, s.processors, processor)
 }
 
 func TestRun(t *testing.T) {
@@ -61,10 +58,18 @@ func TestRun(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "returns error if a handler fails to validate",
+			name: "returns error if a parser fails to validate",
 			opts: []Opt{
 				WithListenAddr(":0"),
-				WithHandlers(&handlerThatFailsToValidate{err: errValidationFailed}),
+				WithParser("foo", &parserThatFailsToValidate{err: errValidationFailed}),
+			},
+			wantErr: errValidationFailed,
+		},
+		{
+			name: "returns error if a processors fails to validate",
+			opts: []Opt{
+				WithListenAddr(":0"),
+				WithProcessors(&processorThatFailsToValidate{err: errValidationFailed}),
 			},
 			wantErr: errValidationFailed,
 		},
@@ -95,7 +100,7 @@ func TestRun(t *testing.T) {
 			t.Parallel()
 
 			s := New(tt.opts...)
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			go func() {
 				time.Sleep(500 * time.Millisecond)
 				cancel()
@@ -112,40 +117,57 @@ func TestRun(t *testing.T) {
 	}
 }
 
-type handlerThatFailsToValidate struct {
+type parserThatFailsToValidate struct {
 	err error
 }
 
 var (
-	_ handler.Handler  = handlerThatFailsToValidate{}
-	_ common.Validator = handlerThatFailsToValidate{}
+	_ event.Parser         = parserThatFailsToValidate{}
+	_ validation.Validator = parserThatFailsToValidate{}
 )
 
-func (s handlerThatFailsToValidate) Validate(_ context.Context) error {
+func (s parserThatFailsToValidate) Key() string {
+	return "test"
+}
+
+func (s parserThatFailsToValidate) Parse(req *http.Request) (*event.Event, error) {
+	panic("not called in our tests")
+}
+
+func (s parserThatFailsToValidate) EventTypes() []event.TypeDescriptor {
+	return nil
+}
+
+func (s parserThatFailsToValidate) Validate(_ context.Context) error {
 	return s.err
 }
 
-func (s handlerThatFailsToValidate) Key() string {
-	return "some-handler"
+type processorThatFailsToValidate struct {
+	err error
 }
 
-func (s handlerThatFailsToValidate) Process(_ *http.Request) ([]common.Notification, error) {
-	panic("not implemented")
+var (
+	_ event.Processor      = processorThatFailsToValidate{}
+	_ validation.Validator = processorThatFailsToValidate{}
+)
+
+func (p processorThatFailsToValidate) Process(ctx context.Context, evt event.Event, notifications []event.Notification) ([]event.Notification, error) {
+	panic("not called in our tests")
 }
 
-func (s handlerThatFailsToValidate) EventTypes() []event.TypeDescriptor {
-	panic("not implemented")
+func (p processorThatFailsToValidate) Validate(_ context.Context) error {
+	return p.err
 }
 
 type transportThatFailsToValidate struct {
 	err error
 }
 
-func (t transportThatFailsToValidate) Push(_ context.Context, _ common.Notification) error {
+func (t transportThatFailsToValidate) Push(_ context.Context, _ event.Notification) error {
 	panic("not called in our tests")
 }
 
-func (t transportThatFailsToValidate) Key() common.TransportKey {
+func (t transportThatFailsToValidate) Key() event.TransportKey {
 	return "test"
 }
 

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
@@ -20,14 +19,14 @@ import (
 
 type wantSent struct {
 	event     event.Type
-	transport common.TransportKey
+	transport event.TransportKey
 }
 
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
 	unknownUser := identifier.NewSet(
-		identifier.New(identifier.GenericEmail, "somebody@example.com"),
+		identifier.New(identifier.GenericUsername, "somebody"),
 	)
 
 	knownUser := user.New(
@@ -43,7 +42,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		notification common.Notification
+		notification event.Notification
 		transports   []notifier.Transport
 		wantSent     []wantSent
 		wantErrs     []error
@@ -108,7 +107,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 
 			notifier := notifier.New(store, tc.transports...)
 
-			errs := notifier.Push(context.Background(), tc.notification)
+			errs := notifier.Push(t.Context(), tc.notification)
 
 			if len(tc.wantErrs) == 0 {
 				assert.NoError(t, errs)
@@ -145,18 +144,18 @@ func assertSent(t *testing.T, want []wantSent, transports []notifier.Transport) 
 var errSomethingFailed = errors.New("some transport error occurred")
 
 type fakeTransport struct {
-	key     common.TransportKey
+	key     event.TransportKey
 	sent    []event.Type
 	returns error
 }
 
 var _ notifier.Transport = (*fakeTransport)(nil)
 
-func (f *fakeTransport) Key() common.TransportKey {
+func (f *fakeTransport) Key() event.TransportKey {
 	return f.key
 }
 
-func (f *fakeTransport) Push(_ context.Context, notification common.Notification) error {
+func (f *fakeTransport) Push(_ context.Context, notification event.Notification) error {
 	if f.returns != nil {
 		return f.returns
 	}
@@ -166,7 +165,7 @@ func (f *fakeTransport) Push(_ context.Context, notification common.Notification
 	return nil
 }
 
-func notificationFor(eventType event.Type, identifiers identifier.Set) common.Notification {
+func notificationFor(eventType event.Type, identifiers identifier.Set) event.Notification {
 	return notification.NewBuilder(
 		event.Context{
 			ID:   event.ID(eventType),

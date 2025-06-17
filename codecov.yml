@@ -1,0 +1,3 @@
+ignore:
+  - "internal/example.go"
+  - "**/mock_*.py"

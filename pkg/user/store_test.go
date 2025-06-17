@@ -5,7 +5,6 @@
 package user
 
 import (
-	"context"
 	"testing"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
@@ -15,7 +14,7 @@ import (
 func TestInMemoryStore_Get(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
@@ -74,7 +73,7 @@ func TestInMemoryStore_Get(t *testing.T) {
 func TestInMemoryStore_Find(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")
@@ -142,7 +141,7 @@ func TestInMemoryStore_Find(t *testing.T) {
 func TestInMemoryStore_Add(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id1 := identifier.New("email", "codell@seatgeek.com")
 	id2 := identifier.New("gitlab.com/email", "colin.odell@seatgeek.com")

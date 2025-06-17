@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
+	"github.com/seatgeek/mailroom/pkg/validation"
 )
 
 // WithTimeout decorates the given Transport with a timeout
@@ -26,7 +27,7 @@ type withTimeout struct {
 	timeout time.Duration
 }
 
-func (w *withTimeout) Push(ctx context.Context, notification common.Notification) error {
+func (w *withTimeout) Push(ctx context.Context, notification event.Notification) error {
 	ctx, cancel := context.WithTimeout(ctx, w.timeout)
 	defer cancel()
 
@@ -34,7 +35,7 @@ func (w *withTimeout) Push(ctx context.Context, notification common.Notification
 }
 
 func (w *withTimeout) Validate(ctx context.Context) error {
-	if v, ok := w.Transport.(common.Validator); ok {
+	if v, ok := w.Transport.(validation.Validator); ok {
 		return v.Validate(ctx)
 	}
 
@@ -61,7 +62,7 @@ type withRetry struct {
 	backoff  func() BackOff
 }
 
-func (w *withRetry) Push(ctx context.Context, notification common.Notification) error {
+func (w *withRetry) Push(ctx context.Context, notification event.Notification) error {
 	_, err := backoff.Retry(
 		ctx,
 		func() (bool, error) {
@@ -70,7 +71,7 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 		backoff.WithMaxTries(w.maxTries),
 		backoff.WithBackOff(w.backoff()),
 		backoff.WithNotify(func(err error, duration time.Duration) {
-			slog.Error("failed to push notification", "id", notification.Context().ID, "error", err, "next_retry", duration.String())
+			slog.ErrorContext(ctx, "failed to push notification", "id", notification.Context().ID, "error", err, "next_retry_in", duration.String())
 		}),
 	)
 
@@ -78,7 +79,7 @@ func (w *withRetry) Push(ctx context.Context, notification common.Notification) 
 }
 
 func (w *withRetry) Validate(ctx context.Context) error {
-	if v, ok := w.Transport.(common.Validator); ok {
+	if v, ok := w.Transport.(validation.Validator); ok {
 		return v.Validate(ctx)
 	}
 
@@ -100,7 +101,7 @@ type withLogging struct {
 	level  slog.Level
 }
 
-func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
+func (w *withLogging) Push(ctx context.Context, n event.Notification) error {
 	err := w.Transport.Push(ctx, n)
 	if err == nil {
 		w.logger.Log(ctx, w.level, "sent notification", "id", n.Context().ID, "type", n.Context().Type, "to", n.Recipient(), "message", n.Render("logger"))
@@ -110,7 +111,7 @@ func (w *withLogging) Push(ctx context.Context, n common.Notification) error {
 }
 
 func (w *withLogging) Validate(ctx context.Context) error {
-	if v, ok := w.Transport.(common.Validator); ok {
+	if v, ok := w.Transport.(validation.Validator); ok {
 		return v.Validate(ctx)
 	}
 

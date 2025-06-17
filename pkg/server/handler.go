@@ -10,51 +10,69 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 
-	"github.com/seatgeek/mailroom/pkg/handler"
+	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/notifier"
 )
 
-// CreateEventHandler returns a handlerFunc that can be used to handle incoming webhooks
+// CreateEventProcessingHandler returns a handlerFunc that can be used to handle incoming webhooks.
 // It choreographs the parsing of the incoming request, the generation of notifications, dispatching the notifications
 // to the notifier, and returning a success or error response to the client.
-func CreateEventHandler(s handler.Handler, n notifier.Notifier) http.HandlerFunc {
+func CreateEventProcessingHandler(parserKey string, parser event.Parser, processors []event.Processor, ntfr notifier.Notifier) http.HandlerFunc { //nolint:revive
 	return func(writer http.ResponseWriter, request *http.Request) {
-		slog.Debug("handling incoming webhook", "handler", s.Key(), "path", request.URL.Path)
+		slog.Debug("handling incoming webhook", "parser", parserKey, "path", request.URL.Path)
 
-		notifications, err := s.Process(request)
+		evt, err := parser.Parse(request)
 		if err != nil {
-			logAndSendErrorResponse(writer, s.Key(), "failed to generate notifications", err)
+			logAndSendErrorResponse(writer, parserKey, "failed to parse event", err)
 			return
 		}
 
-		if len(notifications) == 0 {
-			slog.Debug("no notifications to send", "handler", s.Key())
+		if evt == nil { // Event is ignorable
+			slog.Debug("ignoring uninteresting event", "parser", parserKey)
 			http.Error(writer, "thanks but we're not interested in that event", 200)
 			return
 		}
 
-		id := notifications[0].Context().ID
-		slog.Debug("dispatching notifications", "id", id, "handler", s.Key(), "notifications", len(notifications))
+		notifications := []event.Notification{}
+
+		for _, processor := range processors {
+			processorType := reflect.TypeOf(processor).Name()
+			slog.Debug("executing processor", "parser", parserKey, "eventID", evt.ID, "processor", processorType)
+			notifications, err = processor.Process(request.Context(), *evt, notifications)
+			if err != nil {
+				logAndSendErrorResponse(writer, parserKey, fmt.Sprintf("failed during processing (processor %s)", processorType), err)
+				return
+			}
+		}
+
+		if len(notifications) == 0 {
+			slog.Debug("no notifications to send after processing", "parser", parserKey, "eventID", evt.ID)
+			http.Error(writer, "no notifications to send", 200)
+			return
+		}
+
+		slog.Debug("dispatching notifications", "eventID", evt.ID, "parser", parserKey, "notifications_count", len(notifications))
 
 		errorCount := 0
-		for _, notification := range notifications {
-			err = n.Push(request.Context(), notification)
-			if err != nil {
-				// We assume that the notifier will log the error details, as it will have more context about what went wrong
+		for _, n := range notifications {
+			if err = ntfr.Push(request.Context(), n); err != nil {
 				errorCount++
+				slog.WarnContext(request.Context(), "failed to push notification", "eventID", evt.ID, "notification_recipient", n.Recipient().String(), "parser", parserKey, "error", err)
 			}
 		}
 
 		if errorCount > 0 {
-			slog.Warn("some notifications failed to send", "id", id, "handler", s.Key(), "sent", len(notifications)-errorCount, "failed", errorCount)
+			slog.WarnContext(request.Context(), "some notifications failed to send", "eventID", evt.ID, "parser", parserKey, "total_notifications", len(notifications), "failed_count", errorCount)
 		}
 
-		http.Error(writer, "notifications enqueued", http.StatusAccepted)
+		writer.WriteHeader(http.StatusAccepted)
+		_, _ = writer.Write([]byte("Notifications enqueued\n"))
 	}
 }
 
-func logAndSendErrorResponse(writer http.ResponseWriter, handlerKey string, errorPrefix string, err error) {
+func logAndSendErrorResponse(writer http.ResponseWriter, parserKey string, errorPrefix string, err error) {
 	statusCode := 500
 
 	var httpError *Error
@@ -64,9 +82,9 @@ func logAndSendErrorResponse(writer http.ResponseWriter, handlerKey string, erro
 	}
 
 	if statusCode < 500 {
-		slog.Warn(errorPrefix, "handler", handlerKey, "error", err)
+		slog.Warn(errorPrefix, "parser", parserKey, "error", err)
 	} else {
-		slog.Error(errorPrefix, "handler", handlerKey, "error", err)
+		slog.Error(errorPrefix, "parser", parserKey, "error", err)
 	}
 
 	http.Error(writer, fmt.Sprintf("%s: %v", errorPrefix, err), statusCode)

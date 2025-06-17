@@ -9,7 +9,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
 	notifier2 "github.com/seatgeek/mailroom/pkg/notifier"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,11 +19,11 @@ func TestNewNotifier(t *testing.T) {
 
 	someError := errors.New("some error")
 
-	notifier := notifier2.NewNotifier(func(ctx context.Context, notification common.Notification) error {
+	notifier := notifier2.NewNotifier(func(ctx context.Context, notification event.Notification) error {
 		return someError
 	})
 
-	err := notifier.Push(context.Background(), nil)
+	err := notifier.Push(t.Context(), nil)
 
 	assert.Same(t, someError, err)
 }
@@ -33,12 +33,12 @@ func TestNewTransport(t *testing.T) {
 
 	someError := errors.New("some error")
 
-	transport := notifier2.NewTransport("key", func(ctx context.Context, notification common.Notification) error {
+	transport := notifier2.NewTransport("key", func(ctx context.Context, notification event.Notification) error {
 		return someError
 	})
 
-	assert.Equal(t, common.TransportKey("key"), transport.Key())
+	assert.Equal(t, event.TransportKey("key"), transport.Key())
 
-	err := transport.Push(context.Background(), nil)
+	err := transport.Push(t.Context(), nil)
 	assert.Same(t, someError, err)
 }

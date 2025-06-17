@@ -6,17 +6,29 @@
 package event
 
 import (
+	"context"
+	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/seatgeek/mailroom/pkg/identifier"
 )
 
-// Event is some action that occurred in an external system that we may want to send notifications for
-type Event[T Payload] struct {
+// Event is some action that occurred in an external system that we may want to send a Notification for
+type Event struct {
 	Context
-	Data T
+	Data Payload
 }
 
 type Payload = any
+
+// Parser is anything capable of parsing an incoming HTTP request into a canonical Event object.
+type Parser interface {
+	// Parse handles incoming webhooks, verifying them and returning a parsed Event (or an error)
+	Parse(req *http.Request) (*Event, error)
+	// EventTypes returns descriptors for all EventTypes that the parser may produce
+	EventTypes() []TypeDescriptor
+}
 
 // Context contains the metadata for an event
 // The fields are based on the CloudEvent spec: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
@@ -119,4 +131,24 @@ type TypeDescriptor struct {
 	// So the title for "com.gitlab.merge_request.approved" could be "Merge Request Approved".
 	Title       string `json:"title"`
 	Description string `json:"description,omitempty"`
+}
+
+// Notification is a notification that should be sent
+type Notification interface {
+	// Context provides the metadata for the notification
+	Context() Context
+	// Recipient returns the intended recipient of the notification
+	Recipient() identifier.Set
+	// Render returns the message to be sent via the given transport
+	Render(TransportKey) string
+}
+
+// TransportKey is a type that identifies a specific type of transport for sending notifications
+type TransportKey string // eg. "slack"; "email"
+
+// Processor creates or modifies a list of notifications for a given event.
+type Processor interface {
+	// Process takes an event and a slice of notifications (from previous processors or an empty slice
+	// for the first processor) and returns a potentially modified slice of notifications.
+	Process(ctx context.Context, evt Event, notifications []Notification) ([]Notification, error)
 }

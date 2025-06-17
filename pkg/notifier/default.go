@@ -7,45 +7,58 @@ package notifier
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
-	"github.com/seatgeek/mailroom/pkg/common"
+	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/user"
 )
 
 // DefaultNotifier is the default implementation of the Notifier interface
-// It routes notifications to the appropriate transport based on the user's preferences
 type DefaultNotifier struct {
 	userStore  user.Store
 	transports []Transport
 }
 
-func (d *DefaultNotifier) Push(ctx context.Context, notification common.Notification) error {
-	var errs []error
+func (d *DefaultNotifier) Push(ctx context.Context, notification event.Notification) error {
+	results := make([]error, 0, len(d.transports))
 
-	// The store may know of other identifiers for this user, so we merge those in
-	recipientUser, err := d.userStore.Find(ctx, notification.Recipient())
-	if err == nil {
-		notification.Recipient().Merge(recipientUser.Identifiers)
-	} else {
-		slog.Debug("failed to find user", "id", notification.Context().ID, "user", notification.Recipient().String(), "error", err)
-	}
+	recipientUser := d.getRecipientUserForNotification(ctx, notification)
 
 	for _, transport := range d.transports {
+		// todo: should a processor handle this instead?
 		if recipientUser != nil && !recipientUser.Wants(notification.Context().Type, transport.Key()) {
-			slog.Debug("user does not want this notification this way", "id", notification.Context().ID, "user", recipientUser.String(), "transport", transport.Key())
+			slog.DebugContext(ctx, "user does not want this notification via this transport", "id", notification.Context().ID, "recipient", recipientUser.String(), "transport", transport.Key())
 			continue
 		}
 
-		slog.Info("pushing notification", "id", notification.Context().ID, "type", notification.Context().Type, "user", recipientUser.String(), "transport", transport.Key())
-		if err = transport.Push(ctx, notification); err != nil {
-			slog.Error("failed to push notification", "id", notification.Context().ID, "user", recipientUser, "transport", transport.Key(), "error", err)
-			errs = append(errs, err)
+		slog.InfoContext(ctx, "pushing notification to transport", "id", notification.Context().ID, "type", notification.Context().Type, "recipient", notification.Recipient().String(), "transport", transport.Key())
+		if err := transport.Push(ctx, notification); err != nil {
+			slog.ErrorContext(ctx, "failed to push notification via transport", "id", notification.Context().ID, "recipient", notification.Recipient().String(), "transport", transport.Key(), "error", err)
+			results = append(results, fmt.Errorf("transport %s failed for notification %s: %w", transport.Key(), notification.Context().ID, err))
+		} else {
+			results = append(results, nil)
 		}
 	}
 
-	if len(errs) > 0 {
-		return errors.Join(errs...)
+	if len(results) == 0 {
+		slog.WarnContext(ctx, "notification not sent to any transport", "id", notification.Context().ID, "recipient", notification.Recipient().String())
+	}
+
+	return errors.Join(results...)
+}
+
+func (d *DefaultNotifier) getRecipientUserForNotification(ctx context.Context, notification event.Notification) *user.User {
+	if d.userStore == nil {
+		return nil
+	}
+
+	usr, err := d.userStore.Find(ctx, notification.Recipient())
+	if err == nil {
+		return usr
+	}
+	if !errors.Is(err, user.ErrUserNotFound) {
+		slog.WarnContext(ctx, "failed to find user for preference lookup (will proceed without specific prefs)", "recipient", notification.Recipient().String(), "error", err)
 	}
 
 	return nil

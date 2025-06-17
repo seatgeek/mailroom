@@ -6,20 +6,19 @@
 package user
 
 import (
-	"github.com/seatgeek/mailroom/pkg/common"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 )
 
 // Preferences define which events a user wants to receive, and via which transports.
 // For example, a user may want to receive PR review request notifications via Slack but not email.
-type Preferences map[event.Type]map[common.TransportKey]bool
+type Preferences map[event.Type]map[event.TransportKey]bool
 
 // Wants returns true if the user wants to receive the given event via the given transport.
 // We assume that all preferences are opt-out by default; in other words, if a user has no preference
 // for a given event, we assume they DO want it. We only return false if they have explicitly
 // said they do not want it (and have false set in the map).
-func (p Preferences) Wants(event event.Type, transport common.TransportKey) bool {
+func (p Preferences) Wants(event event.Type, transport event.TransportKey) bool {
 	if _, exists := p[event]; !exists {
 		// No preference set for this event, so assume they want it.
 		return true
@@ -75,13 +74,13 @@ func WithIdentifiers(ids identifier.Set) Option {
 }
 
 // WithPreference adds a notification preference to a User
-func WithPreference(event event.Type, transport common.TransportKey, wants bool) Option {
+func WithPreference(evt event.Type, transport event.TransportKey, wants bool) Option {
 	return func(u *User) {
-		if u.Preferences[event] == nil {
-			u.Preferences[event] = make(map[common.TransportKey]bool)
+		if u.Preferences[evt] == nil {
+			u.Preferences[evt] = make(map[event.TransportKey]bool)
 		}
 
-		u.Preferences[event][transport] = wants
+		u.Preferences[evt][transport] = wants
 	}
 }
 
