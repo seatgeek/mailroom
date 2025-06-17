@@ -8,29 +8,8 @@ package user
 import (
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 )
-
-// Preferences define which events a user wants to receive, and via which transports.
-// For example, a user may want to receive PR review request notifications via Slack but not email.
-type Preferences map[event.Type]map[event.TransportKey]bool
-
-// Wants returns true if the user wants to receive the given event via the given transport.
-// We assume that all preferences are opt-out by default; in other words, if a user has no preference
-// for a given event, we assume they DO want it. We only return false if they have explicitly
-// said they do not want it (and have false set in the map).
-func (p Preferences) Wants(event event.Type, transport event.TransportKey) bool {
-	if _, exists := p[event]; !exists {
-		// No preference set for this event, so assume they want it.
-		return true
-	}
-
-	if want, exists := p[event][transport]; exists {
-		return want
-	}
-
-	// No preference set for this transport, so assume they want it.
-	return true
-}
 
 // User is somebody who may receive notifications and their preferences for receiving those.
 type User struct {
@@ -39,7 +18,7 @@ type User struct {
 	// Identifiers are unique attributes attached to a user that represent that user in the
 	// scope of external systems, e.g. a gitlab.com/id or a slack.com/id.
 	Identifiers identifier.Set
-	Preferences
+	Preferences preference.Map
 }
 
 // New creates a new User with the given options
@@ -47,7 +26,7 @@ func New(key string, options ...Option) *User {
 	u := &User{
 		Key:         key,
 		Identifiers: identifier.NewSet(),
-		Preferences: make(Preferences),
+		Preferences: make(preference.Map),
 	}
 
 	for _, opt := range options {
@@ -84,8 +63,8 @@ func WithPreference(evt event.Type, transport event.TransportKey, wants bool) Op
 	}
 }
 
-// WithPreferences sets all the Preferences for a User
-func WithPreferences(p Preferences) Option {
+// WithPreferences sets all the Provider for a User
+func WithPreferences(p preference.Map) Option {
 	return func(u *User) {
 		u.Preferences = p
 	}

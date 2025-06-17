@@ -13,6 +13,7 @@ import (
 
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"github.com/seatgeek/mailroom/pkg/validation"
 	"github.com/stretchr/testify/assert"
@@ -191,7 +192,7 @@ func (s userStoreThatFailsToValidate) Find(_ context.Context, _ identifier.Set) 
 	panic("not called in our tests")
 }
 
-func (s userStoreThatFailsToValidate) SetPreferences(_ context.Context, _ string, _ user.Preferences) error {
+func (s userStoreThatFailsToValidate) SetPreferences(_ context.Context, _ string, _ preference.Map) error {
 	panic("not called in our tests")
 }
 

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/seatgeek/mailroom/pkg/identifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"github.com/seatgeek/mailroom/pkg/user/postgres"
 	"github.com/stretchr/testify/assert"
@@ -295,7 +296,7 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Set preferences
-	expectedPreferences := user.Preferences{
+	expectedPreferences := preference.Map{
 		"com.example.notification": {
 			"email": true,
 			"slack": false,

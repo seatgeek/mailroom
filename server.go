@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/notifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/seatgeek/mailroom/pkg/server"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"github.com/seatgeek/mailroom/pkg/validation"
@@ -22,13 +23,14 @@ import (
 // Server is the heart of the mailroom application
 // It listens for incoming webhooks, parses them, generates notifications, and dispatches them to users.
 type Server struct {
-	listenAddr string
-	parsers    map[string]event.Parser
-	processors []event.Processor
-	notifier   notifier.Notifier
-	transports []notifier.Transport
-	userStore  user.Store
-	router     *mux.Router
+	listenAddr         string
+	parsers            map[string]event.Parser
+	processors         []event.Processor
+	notifier           notifier.Notifier
+	transports         []notifier.Transport
+	defaultPreferences preference.Provider
+	userStore          user.Store
+	router             *mux.Router
 }
 
 type Opt func(s *Server)
@@ -36,16 +38,20 @@ type Opt func(s *Server)
 // New returns a new server
 func New(opts ...Opt) *Server {
 	s := &Server{
-		listenAddr: "0.0.0.0:8000",
-		router:     mux.NewRouter(),
-		parsers:    make(map[string]event.Parser),
+		listenAddr:         "0.0.0.0:8000",
+		router:             mux.NewRouter(),
+		parsers:            make(map[string]event.Parser),
+		defaultPreferences: preference.Default(true),
 	}
 
 	for _, opt := range opts {
 		opt(s)
 	}
 
-	s.notifier = notifier.New(s.userStore, s.transports...)
+	s.notifier = notifier.New(s.transports, preference.Chain{
+		user.NewPreferenceProvider(s.userStore),
+		s.defaultPreferences,
+	})
 
 	return s
 }
@@ -94,6 +100,13 @@ func WithUserStore(us user.Store) Opt {
 	}
 }
 
+// WithDefaultPreferences sets the default preferences for the server
+func WithDefaultPreferences(prefs preference.Provider) Opt {
+	return func(s *Server) {
+		s.defaultPreferences = prefs
+	}
+}
+
 // WithRouter sets the mux.Router used for the server
 func WithRouter(router *mux.Router) Opt {
 	return func(s *Server) {
@@ -132,6 +145,12 @@ func (s *Server) validate(ctx context.Context) error { //nolint:revive // high c
 		}
 	}
 
+	if v, ok := s.defaultPreferences.(validation.Validator); ok {
+		if err := v.Validate(ctx); err != nil {
+			return fmt.Errorf("default preferences failed to validate: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -161,7 +180,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	}
 
 	// Expose routes for managing user preferences
-	prefs := user.NewPreferencesHandler(s.userStore, s.parsers, transportKeys(s.transports))
+	prefs := user.NewPreferencesHandler(s.userStore, s.parsers, transportKeys(s.transports), s.defaultPreferences)
 	hsm.HandleFunc("/users/{key}/preferences", prefs.GetPreferences).Methods("GET")
 	hsm.HandleFunc("/users/{key}/preferences", prefs.UpdatePreferences).Methods("PUT")
 	hsm.HandleFunc("/configuration", prefs.ListOptions).Methods("GET")

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/seatgeek/mailroom/pkg/event"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,13 +23,13 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 
 	testCases := []struct {
 		name              string
-		storedPreferences Preferences
-		expected          Preferences
+		storedPreferences preference.Map
+		expected          preference.Map
 	}{
 		{
 			"no stored preferences",
 			nil,
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": true,
@@ -41,7 +42,7 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 		},
 		{
 			"only subset of transports stored",
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 				},
@@ -49,7 +50,7 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 					"slack": false,
 				},
 			},
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": true,
@@ -62,13 +63,13 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 		},
 		{
 			"only subset of event types stored",
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": false,
 				},
 			},
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": false,
@@ -81,13 +82,13 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 		},
 		{
 			"unknown event type stored",
-			Preferences{
+			preference.Map{
 				"com.mongodb.scale": {
 					"slack": true,
 					"email": false,
 				},
 			},
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": true,
@@ -100,7 +101,7 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 		},
 		{
 			"unknown transport stored",
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack":         true,
 					"email":         false,
@@ -108,7 +109,7 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 					"telegraph":     true,
 				},
 			},
-			Preferences{
+			preference.Map{
 				"com.gitlab.push": {
 					"slack": true,
 					"email": false,
@@ -125,7 +126,7 @@ func TestPreferencesHandler_HydrateUserPreferences(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			hydrated := h.buildCurrentUserPreferences(tc.storedPreferences)
+			hydrated := h.buildCurrentUserPreferences(t.Context(), tc.storedPreferences)
 
 			assert.Equal(t, tc.expected, hydrated)
 		})
@@ -212,10 +213,17 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 		user, err := handler.userStore.Get(t.Context(), "rufus")
 		assert.NoError(t, err)
 
-		assert.False(t, user.Wants("com.gitlab.push", "slack"))
-		assert.False(t, user.Wants("com.gitlab.push", "email"))
-		assert.False(t, user.Wants("com.argocd.sync-succeeded", "slack"))
-		assert.True(t, user.Wants("com.argocd.sync-succeeded", "email"))
+		expectedMap := preference.Map{
+			"com.gitlab.push": {
+				"slack": false,
+				"email": false,
+			},
+			"com.argocd.sync-succeeded": {
+				"slack": false,
+				"email": true,
+			},
+		}
+		assert.Equal(t, expectedMap, user.Preferences)
 	})
 
 	t.Run("User doesn't exist", func(t *testing.T) {
@@ -328,7 +336,7 @@ func createHandler(t *testing.T) *PreferencesHandler {
 	u := New("rufus", WithPreference("com.gitlab.push", "slack", false))
 	userStore := NewInMemoryStore(u)
 
-	return NewPreferencesHandler(userStore, parsers, transports)
+	return NewPreferencesHandler(userStore, parsers, transports, preference.Default(true))
 }
 
 func TestListOptions(t *testing.T) {
@@ -355,7 +363,7 @@ func TestListOptions(t *testing.T) {
 	transports := []event.TransportKey{"t1", "t2"}
 
 	// Update to use Parser
-	ph := NewPreferencesHandler(store, parsers, transports)
+	ph := NewPreferencesHandler(store, parsers, transports, preference.Default(true))
 	req := httptest.NewRequest("GET", "/configuration", nil)
 	w := httptest.NewRecorder()
 

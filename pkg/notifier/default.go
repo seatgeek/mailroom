@@ -11,25 +11,26 @@ import (
 	"log/slog"
 
 	"github.com/seatgeek/mailroom/pkg/event"
-	"github.com/seatgeek/mailroom/pkg/user"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 )
 
 // DefaultNotifier is the default implementation of the Notifier interface
 type DefaultNotifier struct {
-	userStore  user.Store
-	transports []Transport
+	transports  []Transport
+	preferences preference.Provider
 }
 
 func (d *DefaultNotifier) Push(ctx context.Context, notification event.Notification) error {
 	results := make([]error, 0, len(d.transports))
 
-	recipientUser := d.getRecipientUserForNotification(ctx, notification)
-
 	for _, transport := range d.transports {
-		// todo: should a processor handle this instead?
-		if recipientUser != nil && !recipientUser.Wants(notification.Context().Type, transport.Key()) {
-			slog.DebugContext(ctx, "user does not want this notification via this transport", "id", notification.Context().ID, "recipient", recipientUser.String(), "transport", transport.Key())
-			continue
+		wants := d.preferences.Wants(ctx, notification, transport.Key())
+		if wants == nil {
+			slog.DebugContext(ctx, "no explicit preference for notification; sending anyway", "id", notification.Context().ID, "type", notification.Context().Type, "recipient", notification.Recipient().String(), "transport", transport.Key())
+			// No explicit preference, we assume the user wants it
+		} else if !*wants {
+			slog.DebugContext(ctx, "user does not want this notification via this transport", "id", notification.Context().ID, "type", notification.Context().Type, "recipient", notification.Recipient().String(), "transport", transport.Key())
+			continue // User does not want this transport
 		}
 
 		slog.InfoContext(ctx, "pushing notification to transport", "id", notification.Context().ID, "type", notification.Context().Type, "recipient", notification.Recipient().String(), "transport", transport.Key())
@@ -48,28 +49,12 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification event.Notificat
 	return errors.Join(results...)
 }
 
-func (d *DefaultNotifier) getRecipientUserForNotification(ctx context.Context, notification event.Notification) *user.User {
-	if d.userStore == nil {
-		return nil
-	}
-
-	usr, err := d.userStore.Find(ctx, notification.Recipient())
-	if err == nil {
-		return usr
-	}
-	if !errors.Is(err, user.ErrUserNotFound) {
-		slog.WarnContext(ctx, "failed to find user for preference lookup (will proceed without specific prefs)", "recipient", notification.Recipient().String(), "error", err)
-	}
-
-	return nil
-}
-
 var _ Notifier = &DefaultNotifier{}
 
 // New creates a new DefaultNotifier
-func New(userStore user.Store, transports ...Transport) *DefaultNotifier {
+func New(transports []Transport, preferences preference.Provider) *DefaultNotifier {
 	return &DefaultNotifier{
-		userStore:  userStore,
-		transports: transports,
+		transports:  transports,
+		preferences: preferences,
 	}
 }

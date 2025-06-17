@@ -13,9 +13,12 @@ import (
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
 	"github.com/seatgeek/mailroom/pkg/notifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/preference"
 	"github.com/seatgeek/mailroom/pkg/user"
 	"github.com/stretchr/testify/assert"
 )
+
+const someEventType = "com.example.one"
 
 type wantSent struct {
 	event     event.Type
@@ -25,20 +28,17 @@ type wantSent struct {
 func TestDefaultNotifier_Push(t *testing.T) {
 	t.Parallel()
 
-	unknownUser := identifier.NewSet(
-		identifier.New(identifier.GenericUsername, "somebody"),
-	)
-
-	knownUser := user.New(
+	someUser := user.New(
 		"rufus",
 		user.WithIdentifier(identifier.New(identifier.GenericUsername, "rufus")),
-		user.WithPreference("com.example.one", "email", true),
-		user.WithPreference("com.example.one", "slack", true),
-		user.WithPreference("com.example.two", "email", true),
-		user.WithPreference("com.example.two", "slack", false),
 	)
 
-	store := user.NewInMemoryStore(knownUser)
+	prefs := preference.Map{
+		someEventType: {
+			"email": true,
+			"slack": false,
+		},
+	}
 
 	tests := []struct {
 		name         string
@@ -48,51 +48,21 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		wantErrs     []error
 	}{
 		{
-			name:         "user wants all",
-			notification: notificationFor("com.example.one", knownUser.Identifiers),
+			name:         "delivers to all transports enabled by preferences",
+			notification: notificationFor(someEventType, someUser.Identifiers),
 			transports: []notifier.Transport{
 				&fakeTransport{key: "email"},
 				&fakeTransport{key: "slack"},
+				&fakeTransport{key: "sms"},
 			},
 			wantSent: []wantSent{
-				{event: "com.example.one", transport: "email"},
-				{event: "com.example.one", transport: "slack"},
-			},
-		},
-		{
-			name:         "user wants some",
-			notification: notificationFor("com.example.two", knownUser.Identifiers),
-			transports: []notifier.Transport{
-				&fakeTransport{key: "email"},
-				&fakeTransport{key: "slack"},
-			},
-			wantSent: []wantSent{
-				{event: "com.example.two", transport: "email"},
-			},
-		},
-		{
-			name:         "user wants none",
-			notification: notificationFor("com.example.three", knownUser.Identifiers),
-			transports: []notifier.Transport{
-				&fakeTransport{key: "slack"},
-			},
-			wantSent: []wantSent{},
-		},
-		{
-			name:         "unknown user gets message via all transports",
-			notification: notificationFor("com.example.one", unknownUser),
-			transports: []notifier.Transport{
-				&fakeTransport{key: "email"},
-				&fakeTransport{key: "slack"},
-			},
-			wantSent: []wantSent{
-				{event: "com.example.one", transport: "email"},
-				{event: "com.example.one", transport: "slack"},
+				{event: someEventType, transport: "email"}, // explicitly enabled
+				{event: someEventType, transport: "sms"},   // not explicitly disabled
 			},
 		},
 		{
 			name:         "transport fails",
-			notification: notificationFor("com.example.one", knownUser.Identifiers),
+			notification: notificationFor(someEventType, someUser.Identifiers),
 			transports: []notifier.Transport{
 				&fakeTransport{key: "email", returns: errSomethingFailed},
 			},
@@ -105,7 +75,7 @@ func TestDefaultNotifier_Push(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			notifier := notifier.New(store, tc.transports...)
+			notifier := notifier.New(tc.transports, prefs)
 
 			errs := notifier.Push(t.Context(), tc.notification)
 
