@@ -17,7 +17,7 @@ import (
 // DefaultNotifier is the default implementation of the Notifier interface
 type DefaultNotifier struct {
 	transports  []Transport
-	preferences preference.Preferences
+	preferences preference.Provider
 }
 
 func (d *DefaultNotifier) Push(ctx context.Context, notification event.Notification) error {
@@ -52,7 +52,7 @@ func (d *DefaultNotifier) Push(ctx context.Context, notification event.Notificat
 var _ Notifier = &DefaultNotifier{}
 
 // New creates a new DefaultNotifier
-func New(transports []Transport, preferences preference.Preferences) *DefaultNotifier {
+func New(transports []Transport, preferences preference.Provider) *DefaultNotifier {
 	return &DefaultNotifier{
 		transports:  transports,
 		preferences: preferences,

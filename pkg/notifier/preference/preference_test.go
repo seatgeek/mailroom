@@ -136,8 +136,8 @@ type preferenceThatValidates struct {
 }
 
 var (
-	_ preference.Preferences = preferenceThatValidates{}
-	_ validation.Validator   = preferenceThatValidates{}
+	_ preference.Provider  = preferenceThatValidates{}
+	_ validation.Validator = preferenceThatValidates{}
 )
 
 func (p preferenceThatValidates) Wants(_ context.Context, _ event.Notification, _ event.TransportKey) *bool {

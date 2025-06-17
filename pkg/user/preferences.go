@@ -17,7 +17,7 @@ type PreferenceProvider struct {
 	userStore Store
 }
 
-var _ preference.Preferences = (*PreferenceProvider)(nil)
+var _ preference.Provider = (*PreferenceProvider)(nil)
 
 func NewPreferenceProvider(userStore Store) *PreferenceProvider {
 	return &PreferenceProvider{

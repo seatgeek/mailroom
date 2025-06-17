@@ -24,11 +24,11 @@ type PreferencesHandler struct {
 	userStore  Store
 	parsers    map[string]event.Parser
 	transports []event.TransportKey
-	defaults   preference.Preferences
+	defaults   preference.Provider
 }
 
 // NewPreferencesHandler creates a new PreferencesHandler for managing user preferences
-func NewPreferencesHandler(userStore Store, parsers map[string]event.Parser, transports []event.TransportKey, defaults preference.Preferences) *PreferencesHandler {
+func NewPreferencesHandler(userStore Store, parsers map[string]event.Parser, transports []event.TransportKey, defaults preference.Provider) *PreferencesHandler {
 	return &PreferencesHandler{
 		userStore:  userStore,
 		parsers:    parsers,
@@ -101,7 +101,7 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 // Only event types and transports that are currently active in the server will
 // be included in the preference map. User is opted in to any preference that is
 // not stored.
-func (ph *PreferencesHandler) buildCurrentUserPreferences(ctx context.Context, p preference.Preferences) preference.Map {
+func (ph *PreferencesHandler) buildCurrentUserPreferences(ctx context.Context, p preference.Provider) preference.Map {
 	hydratedPreferences := make(preference.Map)
 
 	for _, src := range ph.parsers {

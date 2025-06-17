@@ -18,7 +18,7 @@ import (
 // we failed to locate a single known user in the store. Think of it like a 404 error.
 var ErrUserNotFound = errors.New("user not found")
 
-// Store is a database that stores user information, like Preferences and identifiers.
+// Store is a database that stores user information, like Provider and identifiers.
 // Implementations may be backed by a SQL database, an in-memory store, or something else.
 //
 // For all methods that search by identifier, the store MUST return the user that matches the identifier exactly.

@@ -63,7 +63,7 @@ func WithPreference(evt event.Type, transport event.TransportKey, wants bool) Op
 	}
 }
 
-// WithPreferences sets all the Preferences for a User
+// WithPreferences sets all the Provider for a User
 func WithPreferences(p preference.Map) Option {
 	return func(u *User) {
 		u.Preferences = p

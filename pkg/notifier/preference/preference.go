@@ -12,22 +12,22 @@ import (
 	"github.com/seatgeek/mailroom/pkg/validation"
 )
 
-// Preferences provides a mechanism for determining whether a user wants to receive some notification via some transport.
-type Preferences interface {
+// Provider provides a mechanism for determining whether a user wants to receive some notification via some transport.
+type Provider interface {
 	// Wants returns whether the user wants to receive the given event via the given transport.
 	// It returns nil if there is no explicit preference.
 	Wants(context.Context, event.Notification, event.TransportKey) *bool
 }
 
-// Func is a function type that implements the Preferences interface.
+// Func is a function type that implements the Provider interface.
 type Func func(context.Context, event.Notification, event.TransportKey) *bool
 
 func (f Func) Wants(ctx context.Context, notification event.Notification, transport event.TransportKey) *bool {
 	return f(ctx, notification, transport)
 }
 
-// Chain is a sequence of Preferences that will be checked in order until one returns a non-nil value.
-type Chain []Preferences
+// Chain is a sequence of Provider instances that will be checked in order until one returns a non-nil value.
+type Chain []Provider
 
 var _ validation.Validator = (*Chain)(nil)
 
@@ -76,7 +76,7 @@ func (p Map) Wants(_ context.Context, notification event.Notification, transport
 	return nil
 }
 
-// Default returns a Preferences implementation that always returns the given boolean value.
+// Default returns a Provider implementation that always returns the given boolean value.
 func Default(wants bool) Func {
 	return func(_ context.Context, _ event.Notification, _ event.TransportKey) *bool {
 		return &wants

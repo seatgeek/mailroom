@@ -28,7 +28,7 @@ type Server struct {
 	processors         []event.Processor
 	notifier           notifier.Notifier
 	transports         []notifier.Transport
-	defaultPreferences preference.Preferences
+	defaultPreferences preference.Provider
 	userStore          user.Store
 	router             *mux.Router
 }
@@ -101,7 +101,7 @@ func WithUserStore(us user.Store) Opt {
 }
 
 // WithDefaultPreferences sets the default preferences for the server
-func WithDefaultPreferences(prefs preference.Preferences) Opt {
+func WithDefaultPreferences(prefs preference.Provider) Opt {
 	return func(s *Server) {
 		s.defaultPreferences = prefs
 	}
