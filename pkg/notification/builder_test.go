@@ -31,7 +31,7 @@ func TestNewBuilder(t *testing.T) {
 	builderWithRecipient := builder.WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "codell"))
 
 	withRecipient := builderWithRecipient.Build()
-	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), empty.Context().ID)
+	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), withRecipient.Context().ID)
 	assert.Equal(t, event.Type("com.example.test"), withRecipient.Context().Type)
 	assert.Len(t, withRecipient.Recipient().ToList(), 1)
 	assert.Equal(t, "codell", withRecipient.Recipient().MustGet(identifier.GenericUsername))
@@ -40,22 +40,22 @@ func TestNewBuilder(t *testing.T) {
 	builderWithDefaultMessage := builder.WithDefaultMessage("Hello, world!")
 
 	withDefaultMessage := builderWithDefaultMessage.Build()
-	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), empty.Context().ID)
+	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), withDefaultMessage.Context().ID)
 	assert.Equal(t, event.Type("com.example.test"), withDefaultMessage.Context().Type)
-	assert.Len(t, withRecipient.Recipient().ToList(), 1)
+	assert.Empty(t, withDefaultMessage.Recipient().ToList()) // This should be empty since we didn't add recipient to this builder
 	assert.Equal(t, "Hello, world!", withDefaultMessage.Render("email"))
 	assert.Equal(t, "Hello, world!", withDefaultMessage.Render("slack"))
 
-	builderWithMessageForTransport := builder.WithMessageForTransport("email", "Hello, email!")
+	builderWithMessageForTransport := builderWithDefaultMessage.WithMessageForTransport("email", "Hello, email!")
 
 	withMessageForTransport := builderWithMessageForTransport.Build()
-	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), empty.Context().ID)
+	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), withMessageForTransport.Context().ID)
 	assert.Equal(t, event.Type("com.example.test"), withMessageForTransport.Context().Type)
-	assert.Len(t, withRecipient.Recipient().ToList(), 1)
+	assert.Empty(t, withMessageForTransport.Recipient().ToList()) // This should be empty since we didn't add recipient to this builder
 	assert.Equal(t, "Hello, email!", withMessageForTransport.Render("email"))
 	assert.Equal(t, "Hello, world!", withMessageForTransport.Render("slack"))
 
-	builderWithSlackOpts := builder.WithSlackOptions(
+	builderWithSlackOpts := builderWithMessageForTransport.WithSlackOptions(
 		slack.MsgOptionAttachments(
 			slack.Attachment{
 				Title: "Hello",
@@ -65,10 +65,53 @@ func TestNewBuilder(t *testing.T) {
 	)
 
 	withSlackOpts := builderWithSlackOpts.Build()
-	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), empty.Context().ID)
+	assert.Equal(t, event.ID("a1c11a53-c4be-488f-89b6-f83bf2d48dab"), withSlackOpts.Context().ID)
 	assert.Equal(t, event.Type("com.example.test"), withSlackOpts.Context().Type)
-	assert.Len(t, withRecipient.Recipient().ToList(), 1)
+	assert.Empty(t, withSlackOpts.Recipient().ToList()) // This should be empty since we didn't add recipient to this builder
 	assert.Equal(t, "Hello, email!", withSlackOpts.Render("email"))
 	assert.Equal(t, "Hello, world!", withSlackOpts.Render("slack"))
 	assert.Len(t, withSlackOpts.GetSlackOptions(), 1)
+}
+
+func TestBuilderImmutability(t *testing.T) {
+	t.Parallel()
+
+	originalBuilder := notification.NewBuilder(event.Context{
+		ID:   "test-id",
+		Type: "test-type",
+	})
+
+	// Test that WithRecipientIdentifiers creates a new builder instance
+	builderWithRecipient := originalBuilder.WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "user1"))
+
+	// Original builder should still be empty
+	originalNotification := originalBuilder.Build()
+	assert.Empty(t, originalNotification.Recipient().ToList())
+
+	// New builder should have the recipient
+	newNotification := builderWithRecipient.Build()
+	assert.Len(t, newNotification.Recipient().ToList(), 1)
+	assert.Equal(t, "user1", newNotification.Recipient().MustGet(identifier.GenericUsername))
+
+	// Test that WithDefaultMessage creates a new builder instance
+	builderWithMessage := originalBuilder.WithDefaultMessage("Hello")
+
+	// Original builder should still have empty message
+	originalNotification = originalBuilder.Build()
+	assert.Empty(t, originalNotification.Render("email"))
+
+	// New builder should have the message
+	newNotification = builderWithMessage.Build()
+	assert.Equal(t, "Hello", newNotification.Render("email"))
+
+	// Test that WithMessageForTransport creates a new builder instance
+	builderWithTransportMessage := originalBuilder.WithMessageForTransport("email", "Email message")
+
+	// Original builder should still have empty message
+	originalNotification = originalBuilder.Build()
+	assert.Empty(t, originalNotification.Render("email"))
+
+	// New builder should have the transport-specific message
+	newNotification = builderWithTransportMessage.Build()
+	assert.Equal(t, "Email message", newNotification.Render("email"))
 }

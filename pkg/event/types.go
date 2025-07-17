@@ -33,11 +33,12 @@ type Parser interface {
 // Context contains the metadata for an event
 // The fields are based on the CloudEvent spec: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
 type Context struct {
-	ID      ID        // required
-	Source  Source    // required
-	Type    Type      // required
-	Subject string    // optional
-	Time    time.Time // optional
+	ID      ID                // required
+	Source  Source            // required
+	Type    Type              // required
+	Subject string            // optional
+	Time    time.Time         // optional
+	Labels  map[string]string // optional
 }
 
 // WithID returns a copy of the Context with the ID field set to the provided value
