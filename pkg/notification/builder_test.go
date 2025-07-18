@@ -115,3 +115,38 @@ func TestBuilderImmutability(t *testing.T) {
 	newNotification = builderWithTransportMessage.Build()
 	assert.Equal(t, "Email message", newNotification.Render("email"))
 }
+
+func TestNotificationWithRecipient(t *testing.T) {
+	t.Parallel()
+
+	// Create an original notification
+	originalNotification := notification.NewBuilder(event.Context{
+		ID:   "test-id",
+		Type: "test-type",
+	}).
+		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "original-user")).
+		WithDefaultMessage("Hello message").
+		Build()
+
+	// Test the new WithRecipient method on the notification interface
+	newRecipient := identifier.NewSet(identifier.New(identifier.GenericUsername, "new-user"))
+	modifiedNotification := originalNotification.WithRecipient(newRecipient)
+
+	// Verify the original notification is unchanged
+	assert.Equal(t, "original-user", originalNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "Hello message", originalNotification.Render("email"))
+
+	// Verify the modified notification has the new recipient
+	assert.Equal(t, "new-user", modifiedNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "Hello message", modifiedNotification.Render("email"))
+	assert.Equal(t, originalNotification.Context().ID, modifiedNotification.Context().ID)
+	assert.Equal(t, originalNotification.Context().Type, modifiedNotification.Context().Type)
+
+	// Test that both notifications maintain their independence
+	anotherRecipient := identifier.NewSet(identifier.New(identifier.GenericUsername, "another-user"))
+	anotherNotification := modifiedNotification.WithRecipient(anotherRecipient)
+
+	assert.Equal(t, "original-user", originalNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "new-user", modifiedNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "another-user", anotherNotification.Recipient().MustGet(identifier.GenericUsername))
+}

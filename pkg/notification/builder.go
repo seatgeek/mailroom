@@ -46,40 +46,36 @@ func (b Builder) WithRecipient(identifiers identifier.Set) Builder {
 // WithRecipientIdentifiers sets the recipient of the notification
 // It's like WithRecipient but it accepts multiple identifiers as variadic arguments
 func (b Builder) WithRecipientIdentifiers(identifiers ...identifier.Identifier) Builder {
-	newBuilder := b
-	newBuilder.opts.recipients = identifier.NewSet(identifiers...)
-	return newBuilder
+	b.opts.recipients = identifier.NewSet(identifiers...)
+	return b
 }
 
 // WithDefaultMessage sets the default message to be used if no message is provided for a specific transport
 func (b Builder) WithDefaultMessage(message string) Builder {
-	newBuilder := b
-	newBuilder.opts.fallbackMessage = message
-	return newBuilder
+	b.opts.fallbackMessage = message
+	return b
 }
 
 // WithMessageForTransport sets a specific message to be used for a specific transport
 func (b Builder) WithMessageForTransport(transportKey event.TransportKey, message string) Builder {
-	newBuilder := b
 	// Copy the map to avoid shared references
 	newMap := make(map[event.TransportKey]string, len(b.opts.messagePerTransport)+1)
 	for k, v := range b.opts.messagePerTransport {
 		newMap[k] = v
 	}
 	newMap[transportKey] = message
-	newBuilder.opts.messagePerTransport = newMap
-	return newBuilder
+	b.opts.messagePerTransport = newMap
+	return b
 }
 
 // WithSlackOptions sets the Slack options (like attachments, blocks, etc.) to be used when sending the notification
 func (b Builder) WithSlackOptions(opts ...slack.MsgOption) Builder {
-	newBuilder := b
 	// Copy the slice to avoid shared references
 	newSlackOpts := make([]slack.MsgOption, len(b.opts.slackOpts), len(b.opts.slackOpts)+len(opts))
 	copy(newSlackOpts, b.opts.slackOpts)
 	newSlackOpts = append(newSlackOpts, opts...)
-	newBuilder.opts.slackOpts = newSlackOpts
-	return newBuilder
+	b.opts.slackOpts = newSlackOpts
+	return b
 }
 
 // Build constructs the rich notification object from the previously set options
@@ -124,4 +120,15 @@ func (b *builderOpts) Render(key event.TransportKey) string {
 
 func (b *builderOpts) GetSlackOptions() []slack.MsgOption {
 	return b.slackOpts
+}
+
+// WithRecipient returns a new notification with the specified recipient
+func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification {
+	return &builderOpts{
+		context:             b.context,
+		recipients:          recipient,
+		fallbackMessage:     b.fallbackMessage,
+		messagePerTransport: b.messagePerTransport,
+		slackOpts:           b.slackOpts,
+	}
 }

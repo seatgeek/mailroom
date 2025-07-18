@@ -142,6 +142,8 @@ type Notification interface {
 	Recipient() identifier.Set
 	// Render returns the message to be sent via the given transport
 	Render(TransportKey) string
+	// WithRecipient returns a new notification with the specified recipient
+	WithRecipient(identifier.Set) Notification
 }
 
 // TransportKey is a type that identifies a specific type of transport for sending notifications
