@@ -38,9 +38,8 @@ func NewBuilder(context event.Context) Builder {
 // WithRecipient sets the recipient of the notification
 // It's like WithRecipientIdentifiers, but it accepts a single identifier set
 func (b Builder) WithRecipient(identifiers identifier.Set) Builder {
-	newBuilder := b
-	newBuilder.opts.recipients = identifiers
-	return newBuilder
+	b.opts.recipients = identifiers
+	return b
 }
 
 // WithRecipientIdentifiers sets the recipient of the notification
