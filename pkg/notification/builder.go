@@ -5,6 +5,7 @@
 package notification
 
 import (
+	"github.com/brunoga/deep"
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	slack2 "github.com/seatgeek/mailroom/pkg/notifier/slack"
@@ -58,18 +59,14 @@ func (b Builder) WithDefaultMessage(message string) Builder {
 // WithMessageForTransport sets a specific message to be used for a specific transport
 func (b Builder) WithMessageForTransport(transportKey event.TransportKey, message string) Builder {
 	// Copy the map to avoid shared references
-	newMap := make(map[event.TransportKey]string, len(b.opts.messagePerTransport)+1)
-	for k, v := range b.opts.messagePerTransport {
-		newMap[k] = v
-	}
-	newMap[transportKey] = message
-	b.opts.messagePerTransport = newMap
+	b.opts.messagePerTransport = deep.MustCopy(b.opts.messagePerTransport)
+	b.opts.messagePerTransport[transportKey] = message
 	return b
 }
 
 // WithSlackOptions sets the Slack options (like attachments, blocks, etc.) to be used when sending the notification
 func (b Builder) WithSlackOptions(opts ...slack.MsgOption) Builder {
-	// Copy the slice to avoid shared references
+	// Copy the slice to avoid shared references - manual copy since slack.MsgOption is not supported by deep copy
 	newSlackOpts := make([]slack.MsgOption, len(b.opts.slackOpts), len(b.opts.slackOpts)+len(opts))
 	copy(newSlackOpts, b.opts.slackOpts)
 	newSlackOpts = append(newSlackOpts, opts...)
@@ -81,16 +78,10 @@ func (b Builder) WithSlackOptions(opts ...slack.MsgOption) Builder {
 func (b Builder) Build() slack2.RichNotification {
 	// Return a copy with mutable fields copied to maintain immutability
 	return &builderOpts{
-		context:         b.opts.context,
-		recipients:      b.opts.recipients,
-		fallbackMessage: b.opts.fallbackMessage,
-		messagePerTransport: func() map[event.TransportKey]string {
-			newMap := make(map[event.TransportKey]string, len(b.opts.messagePerTransport))
-			for k, v := range b.opts.messagePerTransport {
-				newMap[k] = v
-			}
-			return newMap
-		}(),
+		context:             b.opts.context,
+		recipients:          b.opts.recipients,
+		fallbackMessage:     b.opts.fallbackMessage,
+		messagePerTransport: deep.MustCopy(b.opts.messagePerTransport),
 		slackOpts: func() []slack.MsgOption {
 			newSlackOpts := make([]slack.MsgOption, len(b.opts.slackOpts))
 			copy(newSlackOpts, b.opts.slackOpts)
@@ -124,16 +115,10 @@ func (b *builderOpts) GetSlackOptions() []slack.MsgOption {
 // WithRecipient returns a new notification with the specified recipient
 func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification {
 	return &builderOpts{
-		context:         b.context,
-		recipients:      recipient,
-		fallbackMessage: b.fallbackMessage,
-		messagePerTransport: func() map[event.TransportKey]string {
-			newMap := make(map[event.TransportKey]string, len(b.messagePerTransport))
-			for k, v := range b.messagePerTransport {
-				newMap[k] = v
-			}
-			return newMap
-		}(),
+		context:             b.context,
+		recipients:          recipient,
+		fallbackMessage:     b.fallbackMessage,
+		messagePerTransport: deep.MustCopy(b.messagePerTransport),
 		slackOpts: func() []slack.MsgOption {
 			newSlackOpts := make([]slack.MsgOption, len(b.slackOpts))
 			copy(newSlackOpts, b.slackOpts)
