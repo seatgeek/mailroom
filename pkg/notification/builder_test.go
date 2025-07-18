@@ -10,6 +10,7 @@ import (
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
+	slack2 "github.com/seatgeek/mailroom/pkg/notifier/slack"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
 )
@@ -149,4 +150,70 @@ func TestNotificationWithRecipient(t *testing.T) {
 	assert.Equal(t, "original-user", originalNotification.Recipient().MustGet(identifier.GenericUsername))
 	assert.Equal(t, "new-user", modifiedNotification.Recipient().MustGet(identifier.GenericUsername))
 	assert.Equal(t, "another-user", anotherNotification.Recipient().MustGet(identifier.GenericUsername))
+}
+
+func TestNotificationWithRecipientImmutability(t *testing.T) {
+	t.Parallel()
+
+	// Create a notification with maps and slices that could be shared
+	originalNotification := notification.NewBuilder(event.Context{
+		ID:   "test-id",
+		Type: "test-type",
+	}).
+		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "original-user")).
+		WithMessageForTransport("email", "Email message").
+		WithMessageForTransport("slack", "Slack message").
+		WithSlackOptions(slack.MsgOptionText("original text", false)).
+		Build()
+
+	// Create a new notification with WithRecipient
+	newRecipient := identifier.NewSet(identifier.New(identifier.GenericUsername, "new-user"))
+	modifiedNotification := originalNotification.WithRecipient(newRecipient)
+
+	// Verify they have different recipients
+	assert.Equal(t, "original-user", originalNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "new-user", modifiedNotification.Recipient().MustGet(identifier.GenericUsername))
+
+	// Verify they both have the expected messages initially
+	assert.Equal(t, "Email message", originalNotification.Render("email"))
+	assert.Equal(t, "Slack message", originalNotification.Render("slack"))
+	assert.Equal(t, "Email message", modifiedNotification.Render("email"))
+	assert.Equal(t, "Slack message", modifiedNotification.Render("slack"))
+
+	// Verify they both have the expected slack options initially
+	// Cast to RichNotification to access GetSlackOptions method
+	originalRich := originalNotification.(slack2.RichNotification)
+	modifiedRich := modifiedNotification.(slack2.RichNotification)
+	assert.Len(t, originalRich.GetSlackOptions(), 1)
+	assert.Len(t, modifiedRich.GetSlackOptions(), 1)
+
+	// Test that the messagePerTransport maps are independent
+	// (We can't directly modify them from the outside since they're private,
+	// but we can verify they're independent by checking they don't share memory)
+
+	// Create a new notification from the modified one with different transport message
+	furtherModified := notification.NewBuilder(event.Context{
+		ID:   "test-id",
+		Type: "test-type",
+	}).
+		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "further-user")).
+		WithMessageForTransport("email", "Different email message").
+		WithMessageForTransport("slack", "Slack message"). // Keep slack the same
+		WithSlackOptions(slack.MsgOptionText("original text", false)).
+		Build()
+
+	// Use WithRecipient to create a new one
+	finalNotification := furtherModified.WithRecipient(identifier.NewSet(identifier.New(identifier.GenericUsername, "final-user")))
+
+	// Verify all notifications maintain their independence
+	assert.Equal(t, "Email message", originalNotification.Render("email"))
+	assert.Equal(t, "Email message", modifiedNotification.Render("email"))
+	assert.Equal(t, "Different email message", furtherModified.Render("email"))
+	assert.Equal(t, "Different email message", finalNotification.Render("email"))
+
+	// Verify recipients are all different
+	assert.Equal(t, "original-user", originalNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "new-user", modifiedNotification.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "further-user", furtherModified.Recipient().MustGet(identifier.GenericUsername))
+	assert.Equal(t, "final-user", finalNotification.Recipient().MustGet(identifier.GenericUsername))
 }

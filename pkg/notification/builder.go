@@ -125,10 +125,20 @@ func (b *builderOpts) GetSlackOptions() []slack.MsgOption {
 // WithRecipient returns a new notification with the specified recipient
 func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification {
 	return &builderOpts{
-		context:             b.context,
-		recipients:          recipient,
-		fallbackMessage:     b.fallbackMessage,
-		messagePerTransport: b.messagePerTransport,
-		slackOpts:           b.slackOpts,
+		context:         b.context,
+		recipients:      recipient,
+		fallbackMessage: b.fallbackMessage,
+		messagePerTransport: func() map[event.TransportKey]string {
+			newMap := make(map[event.TransportKey]string, len(b.messagePerTransport))
+			for k, v := range b.messagePerTransport {
+				newMap[k] = v
+			}
+			return newMap
+		}(),
+		slackOpts: func() []slack.MsgOption {
+			newSlackOpts := make([]slack.MsgOption, len(b.slackOpts))
+			copy(newSlackOpts, b.slackOpts)
+			return newSlackOpts
+		}(),
 	}
 }
