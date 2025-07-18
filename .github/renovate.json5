@@ -1,76 +1,85 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "mergeConfidence:all-badges",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'mergeConfidence:all-badges',
   ],
-
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 2,
-
-  "dependencyDashboard": true,
-  "osvVulnerabilityAlerts": true,
-  "dependencyDashboardOSVVulnerabilitySummary": "all",
-  "vulnerabilityAlerts": {
-    "labels": [
-      "security"
-    ]
-  },
-
-  "reviewers": ["team:developer-experience"],
-  "reviewersSampleSize": 1,
-
-  "gomod": {
-    "postUpdateOptions": [
-      "gomodUpdateImportPaths",
-      "gomodTidy",
+  prConcurrentLimit: 5,
+  prHourlyLimit: 2,
+  dependencyDashboard: true,
+  osvVulnerabilityAlerts: true,
+  dependencyDashboardOSVVulnerabilitySummary: 'all',
+  vulnerabilityAlerts: {
+    labels: [
+      'security',
     ],
   },
-  "customManagers": [
+  reviewers: [
+    'team:developer-experience',
+  ],
+  reviewersSampleSize: 1,
+  gomod: {
+    postUpdateOptions: [
+      'gomodUpdateImportPaths',
+      'gomodTidy',
+    ],
+  },
+  customManagers: [
     {
-      "customType": "regex",
-      "fileMatch": [
-        "^Makefile$",
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^Makefile$/',
       ],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\n[^\\s]+?_VERSION\\s*\\??=\\s*\"?(?<currentValue>.+?)\"?\\n",
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (lookupName|packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\n[^\\s]+?_VERSION\\s*\\??=\\s*"?(?<currentValue>.+?)"?\\n',
       ],
     },
   ],
-
-  "packageRules": [
+  packageRules: [
     {
-      "description": "Limit noisy updates to once per week",
-      "matchUpdateTypes": ["digest", "lockFileMaintenance"],
-      "extends": ["schedule:weekly"]
-    },
-    {
-      "description": "Group markdownlint-cli updates together",
-      "matchPackageNames": ["igorshubovych/markdownlint-cli", "ghcr.io/igorshubovych/markdownlint-cli"],
-      "groupName": "markdownlint-cli",
-    },
-    {
-      "description": "Auto-merge non-major test deps",
-      "matchPackageNames": [
-        "actions/checkout",
-        "actions/setup-go",
-        "github/super-linter",
-        "codecov/codecov-action",
-        "codecov/test-results-action",
-        "github.com/stretchr/testify",
-        "github.com/testcontainers/testcontainers-go",
-        "github.com/testcontainers/testcontainers-go/**",
-        "github.com/golangci/golangci-lint",
-        "gotest.tools/gotestsum",
-        "github.com/boumenot/gocover-cobertura",
-        "mockery/mockery",
-        "palantir/go-license",
-        "igorshubovych/markdownlint-cli",
-        "pipelinecomponents/yamllint",
+      description: 'Limit noisy updates to once per week',
+      matchUpdateTypes: [
+        'digest',
+        'lockFileMaintenance',
       ],
-      "matchUpdateTypes": ["minor", "patch", "digest"],
-      "automerge": true,
-      "minimumReleaseAge": "3 days",
+      extends: [
+        'schedule:weekly',
+      ],
+    },
+    {
+      description: 'Group markdownlint-cli updates together',
+      matchPackageNames: [
+        'igorshubovych/markdownlint-cli',
+        'ghcr.io/igorshubovych/markdownlint-cli',
+      ],
+      groupName: 'markdownlint-cli',
+    },
+    {
+      description: 'Auto-merge non-major test deps',
+      matchPackageNames: [
+        'actions/checkout',
+        'actions/setup-go',
+        'github/super-linter',
+        'codecov/codecov-action',
+        'codecov/test-results-action',
+        'github.com/stretchr/testify',
+        'github.com/testcontainers/testcontainers-go',
+        'github.com/testcontainers/testcontainers-go/**',
+        'github.com/golangci/golangci-lint',
+        'gotest.tools/gotestsum',
+        'github.com/boumenot/gocover-cobertura',
+        'mockery/mockery',
+        'palantir/go-license',
+        'igorshubovych/markdownlint-cli',
+        'pipelinecomponents/yamllint',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+        'digest',
+      ],
+      automerge: true,
+      minimumReleaseAge: '3 days',
     },
   ],
 }
