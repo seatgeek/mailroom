@@ -182,7 +182,7 @@ func TestNotificationWithRecipientImmutability(t *testing.T) {
 
 	// Verify they both have the expected slack options initially
 	// Cast to RichNotification to access GetSlackOptions method
-	originalRich := originalNotification.(slack2.RichNotification)
+	originalRich := originalNotification
 	modifiedRich := modifiedNotification.(slack2.RichNotification)
 	assert.Len(t, originalRich.GetSlackOptions(), 1)
 	assert.Len(t, modifiedRich.GetSlackOptions(), 1)
