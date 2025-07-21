@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/brunoga/deep"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 )
 
@@ -45,41 +44,36 @@ type Context struct {
 // WithID returns a copy of the Context with the ID field set to the provided value
 func (c Context) WithID(newID ID) Context {
 	c.ID = newID
-	c.Labels = deep.MustCopy(c.Labels)
 	return c
 }
 
 // WithSource returns a copy of the Context with the Source field set to the provided value
 func (c Context) WithSource(newSource Source) Context {
 	c.Source = newSource
-	c.Labels = deep.MustCopy(c.Labels)
 	return c
 }
 
 // WithType returns a copy of the Context with the Type field set to the provided value
 func (c Context) WithType(newType Type) Context {
 	c.Type = newType
-	c.Labels = deep.MustCopy(c.Labels)
 	return c
 }
 
 // WithSubject returns a copy of the Context with the Subject field set to the provided value
 func (c Context) WithSubject(newSubject string) Context {
 	c.Subject = newSubject
-	c.Labels = deep.MustCopy(c.Labels)
 	return c
 }
 
 // WithTime returns a copy of the Context with the Time field set to the provided value
 func (c Context) WithTime(newTime time.Time) Context {
 	c.Time = newTime
-	c.Labels = deep.MustCopy(c.Labels)
 	return c
 }
 
 // WithLabels returns a copy of the Context with the Labels field set to the provided value
 func (c Context) WithLabels(newLabels map[string]string) Context {
-	c.Labels = deep.MustCopy(newLabels)
+	c.Labels = newLabels
 	return c
 }
 
@@ -156,6 +150,8 @@ type Notification interface {
 	Render(TransportKey) string
 	// WithRecipient returns a new notification with the specified recipient
 	WithRecipient(identifier.Set) Notification
+	// Clone returns a deep copy of the notification
+	Clone() Notification
 }
 
 // TransportKey is a type that identifies a specific type of transport for sending notifications
