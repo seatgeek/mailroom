@@ -174,7 +174,7 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 
 	richClonedEmpty, ok := clonedEmpty.(slack2.RichNotification)
 	assert.True(t, ok, "cloned empty notification should implement RichNotification")
-	assert.Nil(t, richClonedEmpty.GetSlackOptions())
+	assert.Empty(t, richClonedEmpty.GetSlackOptions())
 
 	contextWithNilLabels := event.Context{
 		ID:     "nil-labels-test",

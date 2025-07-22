@@ -6,7 +6,6 @@ package notification
 
 import (
 	"maps"
-	"slices"
 
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
@@ -108,6 +107,12 @@ func (b *builderOpts) Clone() event.Notification {
 		recipients:          b.recipients.Copy(),
 		fallbackMessage:     b.fallbackMessage,
 		messagePerTransport: maps.Clone(b.messagePerTransport),
-		slackOpts:           slices.Clone(b.slackOpts),
+		slackOpts:           copySlackOpts(b.slackOpts),
 	}
+}
+
+func copySlackOpts(slackOpts []slack.MsgOption) []slack.MsgOption {
+	newOpts := make([]slack.MsgOption, len(slackOpts))
+	copy(newOpts, slackOpts)
+	return newOpts
 }
