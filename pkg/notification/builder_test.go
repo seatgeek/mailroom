@@ -181,4 +181,21 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 
 	assert.Nil(t, clonedNilLabels.Context().Labels)
 	assert.Equal(t, notificationWithNilLabels.Context().Labels, clonedNilLabels.Context().Labels)
+
+	// Test cloning with nil/empty messagePerTransport map
+	notificationWithoutMessages := notification.NewBuilder(event.Context{
+		ID:   "no-messages-test",
+		Type: "no-messages-type",
+	}).
+		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "test-user")).
+		Build()
+
+	clonedNoMessages := notificationWithoutMessages.Clone()
+
+	assert.NotSame(t, notificationWithoutMessages, clonedNoMessages)
+
+	assert.Empty(t, notificationWithoutMessages.Render("email"))
+	assert.Empty(t, notificationWithoutMessages.Render("slack"))
+	assert.Empty(t, clonedNoMessages.Render("email"))
+	assert.Empty(t, clonedNoMessages.Render("slack"))
 }

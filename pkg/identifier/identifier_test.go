@@ -473,3 +473,96 @@ func TestSet_String(t *testing.T) {
 		})
 	}
 }
+
+func TestSet_Copy(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		original Set
+		testFunc func(t *testing.T, original, copied Set)
+	}{
+		{
+			name: "copy creates independent set",
+			original: NewSet(
+				New("username", "rufus"),
+				New("email", "rufus@seatgeek.com"),
+				New("id", "123"),
+			),
+			testFunc: func(t *testing.T, original, copied Set) {
+				t.Helper()
+
+				assert.NotSame(t, original, copied)
+
+				assert.ElementsMatch(t, original.ToList(), copied.ToList())
+				assert.Equal(t, original.Len(), copied.Len())
+
+				original.Add(New("slack.com/id", "U123456"))
+
+				assert.Equal(t, 4, original.Len())
+				assert.Equal(t, "U123456", original.MustGet("slack.com/id"))
+
+				assert.Equal(t, 3, copied.Len())
+				_, ok := copied.Get("slack.com/id")
+				assert.False(t, ok)
+
+				copied.Add(New("github.com/id", "456"))
+
+				assert.Equal(t, 4, copied.Len())
+				assert.Equal(t, "456", copied.MustGet("github.com/id"))
+
+				assert.Equal(t, 4, original.Len())
+				_, ok = original.Get("github.com/id")
+				assert.False(t, ok)
+			},
+		},
+		{
+			name:     "copy empty set",
+			original: NewSet(),
+			testFunc: func(t *testing.T, original, copied Set) {
+				t.Helper()
+
+				assert.NotSame(t, original, copied)
+
+				assert.Equal(t, 0, original.Len())
+				assert.Equal(t, 0, copied.Len())
+				assert.Empty(t, original.ToList())
+				assert.Empty(t, copied.ToList())
+
+				original.Add(New("test", "value"))
+				assert.Equal(t, 1, original.Len())
+				assert.Equal(t, 0, copied.Len())
+			},
+		},
+		{
+			name: "copy preserves all identifier types",
+			original: NewSet(
+				New(GenericUsername, "user1"),
+				New(GenericEmail, "user1@example.com"),
+				New(GenericID, "123"),
+				New("slack.com/id", "U123456"),
+				New("github.com/username", "gituser"),
+			),
+			testFunc: func(t *testing.T, original, copied Set) {
+				t.Helper()
+
+				assert.Equal(t, "user1", copied.MustGet(GenericUsername))
+				assert.Equal(t, "user1@example.com", copied.MustGet(GenericEmail))
+				assert.Equal(t, "123", copied.MustGet(GenericID))
+				assert.Equal(t, "U123456", copied.MustGet("slack.com/id"))
+				assert.Equal(t, "gituser", copied.MustGet("github.com/username"))
+
+				assert.Equal(t, original.Len(), copied.Len())
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			copied := tc.original.Copy()
+			tc.testFunc(t, tc.original, copied)
+		})
+	}
+}
