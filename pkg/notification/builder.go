@@ -102,7 +102,7 @@ func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification
 	return b
 }
 
-func (b *builderOpts) Clone() event.Notification {
+func (b *builderOpts) Copy() event.Notification {
 	return &builderOpts{
 		context:             b.context.Copy(),
 		recipients:          b.recipients.Copy(),

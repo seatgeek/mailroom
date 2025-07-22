@@ -104,7 +104,7 @@ func TestNotificationWithRecipient(t *testing.T) {
 	assert.Len(t, originalNotification.GetSlackOptions(), 1)
 }
 
-func TestNotificationClone(t *testing.T) {
+func TestNotificationCopy(t *testing.T) {
 	t.Parallel()
 
 	originalNotification := notification.NewBuilder(event.Context{
@@ -125,7 +125,7 @@ func TestNotificationClone(t *testing.T) {
 		).
 		Build()
 
-	clonedNotification := originalNotification.Clone()
+	clonedNotification := originalNotification.Copy()
 
 	assert.NotSame(t, originalNotification, clonedNotification)
 
@@ -158,7 +158,7 @@ func TestNotificationClone(t *testing.T) {
 	assert.NotContains(t, clonedLabels, "new-key")
 }
 
-func TestNotificationCloneComplexScenarios(t *testing.T) {
+func TestNotificationCopyComplexScenarios(t *testing.T) {
 	t.Parallel()
 
 	// Test cloning with nil/empty values
@@ -167,7 +167,7 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 		Type: "empty-type",
 	}).Build()
 
-	clonedEmpty := emptyNotification.Clone()
+	clonedEmpty := emptyNotification.Copy()
 	assert.NotSame(t, emptyNotification, clonedEmpty)
 	assert.Empty(t, clonedEmpty.Recipient().ToList())
 	assert.Empty(t, clonedEmpty.Render("any-transport"))
@@ -183,7 +183,7 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 	}
 
 	notificationWithNilLabels := notification.NewBuilder(contextWithNilLabels).Build()
-	clonedNilLabels := notificationWithNilLabels.Clone()
+	clonedNilLabels := notificationWithNilLabels.Copy()
 
 	assert.Nil(t, clonedNilLabels.Context().Labels)
 	assert.Equal(t, notificationWithNilLabels.Context().Labels, clonedNilLabels.Context().Labels)

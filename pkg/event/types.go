@@ -163,8 +163,8 @@ type Notification interface {
 	Render(TransportKey) string
 	// WithRecipient returns a new notification with the specified recipient
 	WithRecipient(identifier.Set) Notification
-	// Clone returns a deep copy of the notification
-	Clone() Notification
+	// Copy returns a deep copy of the notification
+	Copy() Notification
 }
 
 // TransportKey is a type that identifies a specific type of transport for sending notifications
