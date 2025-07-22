@@ -99,6 +99,7 @@ type Set interface {
 	String() string
 	ToMap() map[NamespaceAndKind]string
 	Len() int
+	Copy() Set
 }
 
 type set struct {
@@ -194,6 +195,22 @@ func (c *set) MarshalJSON() ([]byte, error) {
 	defer c.mutex.RUnlock()
 
 	return json.Marshal(c.ids)
+}
+
+// Copy creates a deep copy of the Set.
+func (c *set) Copy() Set {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	res := &set{
+		ids: make(map[NamespaceAndKind]string, len(c.ids)),
+	}
+
+	for key, value := range c.ids {
+		res.ids[key] = value
+	}
+
+	return res
 }
 
 // NewSet creates a new Set from a slice of Identifier objects

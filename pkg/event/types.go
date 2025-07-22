@@ -7,6 +7,7 @@ package event
 
 import (
 	"context"
+	"maps"
 	"net/http"
 	"net/url"
 	"time"
@@ -33,11 +34,12 @@ type Parser interface {
 // Context contains the metadata for an event
 // The fields are based on the CloudEvent spec: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md
 type Context struct {
-	ID      ID        // required
-	Source  Source    // required
-	Type    Type      // required
-	Subject string    // optional
-	Time    time.Time // optional
+	ID      ID                // required
+	Source  Source            // required
+	Type    Type              // required
+	Subject string            // optional
+	Time    time.Time         // optional
+	Labels  map[string]string // optional
 }
 
 // WithID returns a copy of the Context with the ID field set to the provided value
@@ -68,6 +70,24 @@ func (c Context) WithSubject(newSubject string) Context {
 func (c Context) WithTime(newTime time.Time) Context {
 	c.Time = newTime
 	return c
+}
+
+// WithLabels returns a copy of the Context with the Labels field set to the provided value
+func (c Context) WithLabels(newLabels map[string]string) Context {
+	c.Labels = newLabels
+	return c
+}
+
+// Copy creates a deep copy of the Context
+func (c Context) Copy() Context {
+	return Context{
+		ID:      c.ID,
+		Source:  c.Source,
+		Type:    c.Type,
+		Subject: c.Subject,
+		Time:    c.Time,
+		Labels:  maps.Clone(c.Labels),
+	}
 }
 
 // ID is a unique identifier for an event occurrence
@@ -141,6 +161,10 @@ type Notification interface {
 	Recipient() identifier.Set
 	// Render returns the message to be sent via the given transport
 	Render(TransportKey) string
+	// WithRecipient returns a new notification with the specified recipient
+	WithRecipient(identifier.Set) Notification
+	// Clone returns a deep copy of the notification
+	Clone() Notification
 }
 
 // TransportKey is a type that identifies a specific type of transport for sending notifications

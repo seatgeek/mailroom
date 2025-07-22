@@ -141,6 +141,94 @@ func TestContext_WithTime(t *testing.T) {
 	assert.Equal(t, originalContext.Subject, newContext.Subject)
 }
 
+func TestContext_WithLabels(t *testing.T) {
+	t.Parallel()
+
+	originalLabels := map[string]string{
+		"environment": "test",
+		"version":     "1.0.0",
+	}
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.event",
+		Subject: "subject",
+		Time:    time.Now(),
+		Labels:  originalLabels,
+	}
+
+	newLabels := map[string]string{
+		"environment": "production",
+		"region":      "us-east-1",
+	}
+	newContext := originalContext.WithLabels(newLabels)
+
+	assert.NotSame(t, &originalContext, &newContext)
+	assert.NotEqual(t, originalContext, newContext)
+
+	assert.Equal(t, originalLabels, originalContext.Labels)
+	assert.Equal(t, newLabels, newContext.Labels)
+
+	// Modifying the original labels map does not affect the new context
+	originalLabels["new-key"] = "new-value"
+	assert.NotContains(t, newContext.Labels, "new-key")
+
+	// Modifying the newLabels map does affect the new context
+	newLabels["another-key"] = "another-value"
+	assert.Contains(t, newContext.Labels, "another-key")
+	assert.Equal(t, "another-value", newContext.Labels["another-key"])
+
+	assert.Equal(t, originalContext.ID, newContext.ID)
+	assert.Equal(t, originalContext.Source, newContext.Source)
+	assert.Equal(t, originalContext.Type, newContext.Type)
+	assert.Equal(t, originalContext.Subject, newContext.Subject)
+	assert.Equal(t, originalContext.Time, newContext.Time)
+
+	// Test with nil labels
+	contextWithNilLabels := event.Context{
+		ID:     "test-id",
+		Source: event.MustSource("https://example.com"),
+		Type:   "test.type",
+	}
+
+	newContextFromNil := contextWithNilLabels.WithLabels(map[string]string{"key": "value"})
+	assert.Nil(t, contextWithNilLabels.Labels)
+	assert.Equal(t, map[string]string{"key": "value"}, newContextFromNil.Labels)
+}
+
+func TestContext_Copy(t *testing.T) {
+	t.Parallel()
+
+	originalContext := event.Context{
+		ID:      "original-id",
+		Source:  event.MustSource("https://www.example.com/foo"),
+		Type:    "com.example.event",
+		Subject: "subject",
+		Time:    time.Now(),
+		Labels:  map[string]string{"key": "value"},
+	}
+
+	copiedContext := originalContext.Copy()
+
+	assert.NotSame(t, &originalContext, &copiedContext)
+	assert.Equal(t, originalContext, copiedContext)
+
+	assert.Equal(t, originalContext.ID, copiedContext.ID)
+	assert.Equal(t, originalContext.Source, copiedContext.Source)
+	assert.Equal(t, originalContext.Type, copiedContext.Type)
+	assert.Equal(t, originalContext.Subject, copiedContext.Subject)
+	assert.Equal(t, originalContext.Time, copiedContext.Time)
+	assert.Equal(t, originalContext.Labels, copiedContext.Labels)
+
+	originalContext.Labels["new-key"] = "new-value"
+	assert.NotContains(t, copiedContext.Labels, "new-key")
+	assert.Equal(t, "new-value", originalContext.Labels["new-key"])
+
+	copiedContext.Labels["another-key"] = "another-value"
+	assert.NotContains(t, originalContext.Labels, "another-key")
+	assert.Equal(t, "another-value", copiedContext.Labels["another-key"])
+}
+
 func TestSource(t *testing.T) {
 	t.Parallel()
 

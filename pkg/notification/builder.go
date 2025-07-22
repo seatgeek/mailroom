@@ -5,6 +5,8 @@
 package notification
 
 import (
+	"maps"
+
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	slack2 "github.com/seatgeek/mailroom/pkg/notifier/slack"
@@ -92,4 +94,25 @@ func (b *builderOpts) Render(key event.TransportKey) string {
 
 func (b *builderOpts) GetSlackOptions() []slack.MsgOption {
 	return b.slackOpts
+}
+
+func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification {
+	b.recipients = recipient
+	return b
+}
+
+func (b *builderOpts) Clone() event.Notification {
+	return &builderOpts{
+		context:             b.context.Copy(),
+		recipients:          b.recipients.Copy(),
+		fallbackMessage:     b.fallbackMessage,
+		messagePerTransport: maps.Clone(b.messagePerTransport),
+		slackOpts:           copySlackOpts(b.slackOpts),
+	}
+}
+
+func copySlackOpts(slackOpts []slack.MsgOption) []slack.MsgOption {
+	newOpts := make([]slack.MsgOption, len(slackOpts))
+	copy(newOpts, slackOpts)
+	return newOpts
 }
