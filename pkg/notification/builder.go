@@ -5,6 +5,9 @@
 package notification
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/seatgeek/mailroom/pkg/event"
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	slack2 "github.com/seatgeek/mailroom/pkg/notifier/slack"
@@ -101,44 +104,10 @@ func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification
 
 func (b *builderOpts) Clone() event.Notification {
 	return &builderOpts{
-		context:             copyContext(b.context),
+		context:             b.context.Copy(),
 		recipients:          b.recipients.Copy(),
 		fallbackMessage:     b.fallbackMessage,
-		messagePerTransport: copyMessagePerTransport(b.messagePerTransport),
-		slackOpts:           copySlackOpts(b.slackOpts),
+		messagePerTransport: maps.Clone(b.messagePerTransport),
+		slackOpts:           slices.Clone(b.slackOpts),
 	}
-}
-
-func copyContext(ctx event.Context) event.Context {
-	if ctx.Labels == nil {
-		return ctx
-	}
-
-	newLabels := make(map[string]string, len(ctx.Labels))
-	for k, v := range ctx.Labels {
-		newLabels[k] = v
-	}
-	return ctx.WithLabels(newLabels)
-}
-
-func copyMessagePerTransport(messagePerTransport map[event.TransportKey]string) map[event.TransportKey]string {
-	if messagePerTransport == nil {
-		return make(map[event.TransportKey]string)
-	}
-
-	newMap := make(map[event.TransportKey]string, len(messagePerTransport))
-	for k, v := range messagePerTransport {
-		newMap[k] = v
-	}
-	return newMap
-}
-
-func copySlackOpts(slackOpts []slack.MsgOption) []slack.MsgOption {
-	if slackOpts == nil {
-		return nil
-	}
-
-	newSlackOpts := make([]slack.MsgOption, len(slackOpts))
-	copy(newSlackOpts, slackOpts)
-	return newSlackOpts
 }

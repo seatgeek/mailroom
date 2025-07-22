@@ -7,6 +7,7 @@ package event
 
 import (
 	"context"
+	"maps"
 	"net/http"
 	"net/url"
 	"time"
@@ -75,6 +76,18 @@ func (c Context) WithTime(newTime time.Time) Context {
 func (c Context) WithLabels(newLabels map[string]string) Context {
 	c.Labels = newLabels
 	return c
+}
+
+// Copy creates a deep copy of the Context
+func (c Context) Copy() Context {
+	return Context{
+		ID:      c.ID,
+		Source:  c.Source,
+		Type:    c.Type,
+		Subject: c.Subject,
+		Time:    c.Time,
+		Labels:  maps.Clone(c.Labels),
+	}
 }
 
 // ID is a unique identifier for an event occurrence

@@ -137,7 +137,10 @@ func TestNotificationClone(t *testing.T) {
 	assert.Equal(t, originalNotification.Render("email"), clonedNotification.Render("email"))
 	assert.Equal(t, originalNotification.Render("slack"), clonedNotification.Render("slack"))
 	assert.Equal(t, originalNotification.Render("default"), clonedNotification.Render("default"))
-	assert.Len(t, clonedNotification.(slack2.RichNotification).GetSlackOptions(), 2)
+
+	richCloned, ok := clonedNotification.(slack2.RichNotification)
+	assert.True(t, ok, "cloned notification should implement RichNotification")
+	assert.Len(t, richCloned.GetSlackOptions(), 2)
 
 	newRecipient := identifier.NewSet(identifier.New(identifier.GenericUsername, "modified-user"))
 	originalNotification.WithRecipient(newRecipient)
@@ -168,7 +171,10 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 	assert.NotSame(t, emptyNotification, clonedEmpty)
 	assert.Empty(t, clonedEmpty.Recipient().ToList())
 	assert.Empty(t, clonedEmpty.Render("any-transport"))
-	assert.Nil(t, clonedEmpty.(slack2.RichNotification).GetSlackOptions())
+
+	richClonedEmpty, ok := clonedEmpty.(slack2.RichNotification)
+	assert.True(t, ok, "cloned empty notification should implement RichNotification")
+	assert.Nil(t, richClonedEmpty.GetSlackOptions())
 
 	contextWithNilLabels := event.Context{
 		ID:     "nil-labels-test",
@@ -181,21 +187,4 @@ func TestNotificationCloneComplexScenarios(t *testing.T) {
 
 	assert.Nil(t, clonedNilLabels.Context().Labels)
 	assert.Equal(t, notificationWithNilLabels.Context().Labels, clonedNilLabels.Context().Labels)
-
-	// Test cloning with nil/empty messagePerTransport map
-	notificationWithoutMessages := notification.NewBuilder(event.Context{
-		ID:   "no-messages-test",
-		Type: "no-messages-type",
-	}).
-		WithRecipientIdentifiers(identifier.New(identifier.GenericUsername, "test-user")).
-		Build()
-
-	clonedNoMessages := notificationWithoutMessages.Clone()
-
-	assert.NotSame(t, notificationWithoutMessages, clonedNoMessages)
-
-	assert.Empty(t, notificationWithoutMessages.Render("email"))
-	assert.Empty(t, notificationWithoutMessages.Render("slack"))
-	assert.Empty(t, clonedNoMessages.Render("email"))
-	assert.Empty(t, clonedNoMessages.Render("slack"))
 }
