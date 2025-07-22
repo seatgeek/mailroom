@@ -101,34 +101,44 @@ func (b *builderOpts) WithRecipient(recipient identifier.Set) event.Notification
 
 func (b *builderOpts) Clone() event.Notification {
 	return &builderOpts{
-		context:             b.context,
-		recipients:          b.recipients,
+		context:             copyContext(b.context),
+		recipients:          b.recipients.Copy(),
 		fallbackMessage:     b.fallbackMessage,
-		messagePerTransport: b.copyMessagePerTransport(),
-		slackOpts:           b.copySlackOpts(),
+		messagePerTransport: copyMessagePerTransport(b.messagePerTransport),
+		slackOpts:           copySlackOpts(b.slackOpts),
 	}
 }
 
-// copyMessagePerTransport creates a deep copy of the messagePerTransport map
-func (b *builderOpts) copyMessagePerTransport() map[event.TransportKey]string {
-	if b.messagePerTransport == nil {
+func copyContext(ctx event.Context) event.Context {
+	if ctx.Labels == nil {
+		return ctx
+	}
+
+	newLabels := make(map[string]string, len(ctx.Labels))
+	for k, v := range ctx.Labels {
+		newLabels[k] = v
+	}
+	return ctx.WithLabels(newLabels)
+}
+
+func copyMessagePerTransport(messagePerTransport map[event.TransportKey]string) map[event.TransportKey]string {
+	if messagePerTransport == nil {
 		return make(map[event.TransportKey]string)
 	}
 
-	newMap := make(map[event.TransportKey]string, len(b.messagePerTransport))
-	for k, v := range b.messagePerTransport {
+	newMap := make(map[event.TransportKey]string, len(messagePerTransport))
+	for k, v := range messagePerTransport {
 		newMap[k] = v
 	}
 	return newMap
 }
 
-// copySlackOpts creates a deep copy of the slackOpts slice
-func (b *builderOpts) copySlackOpts() []slack.MsgOption {
-	if b.slackOpts == nil {
+func copySlackOpts(slackOpts []slack.MsgOption) []slack.MsgOption {
+	if slackOpts == nil {
 		return nil
 	}
 
-	newSlackOpts := make([]slack.MsgOption, len(b.slackOpts))
-	copy(newSlackOpts, b.slackOpts)
+	newSlackOpts := make([]slack.MsgOption, len(slackOpts))
+	copy(newSlackOpts, slackOpts)
 	return newSlackOpts
 }
