@@ -319,7 +319,7 @@ func TestPostgresStore_SetPreferences(t *testing.T) {
 func createDatastore(t *testing.T) *postgres.Store {
 	t.Helper()
 
-	ctx := context.Background() //nolint:usetesting
+	ctx := context.Background()
 
 	container, err := pgtc.Run(ctx, "postgres:16.2",
 		pgtc.WithInitScripts("../../../test/initdb/init.sql"),
