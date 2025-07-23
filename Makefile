@@ -35,6 +35,7 @@ lint-go: .install-linter generate
 lint-fix: .install-linter .install-go-license
 	@golangci-lint run --fix --config $(CONFIG_DIR)/.golangci.yml ./...
 	@find . -type f -name '*.go' ! -name 'mock_*.go' | xargs go-license --config $(CONFIG_DIR)/.go-license.yaml
+	@docker run -it --rm -v `pwd`:/workdir:rw ghcr.io/igorshubovych/markdownlint-cli:$(MARKDOWNLINT_VERSION) --config $(CONFIG_DIR)/.markdownlint.yaml --fix .
 
 .PHONY: lint-license
 lint-license: .install-go-license

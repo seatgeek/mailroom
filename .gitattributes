@@ -3,6 +3,7 @@
 /.github              export-ignore
 /.gitignore           export-ignore
 /build                export-ignore
+/CLAUDE.md            export-ignore
 /codecov.yml          export-ignore
 /docs                 export-ignore
 /Makefile             export-ignore
