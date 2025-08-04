@@ -19,6 +19,7 @@ import (
 	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/seatgeek/mailroom/pkg/notification"
 	"github.com/seatgeek/mailroom/pkg/notifier"
+	"github.com/seatgeek/mailroom/pkg/notifier/blackhole"
 	"github.com/seatgeek/mailroom/pkg/user"
 )
 
@@ -67,12 +68,20 @@ func (p *NotificationGenerator) Process(ctx context.Context, evt event.Event, no
 		return nil, fmt.Errorf("unexpected event data type for NotificationGenerator: %T", evt.Data)
 	}
 
+	// Create a regular notification for known recipients
 	newNotification := notification.NewBuilder(evt.Context).
 		WithDefaultMessage(fmt.Sprintf("%s sent you a message: '%s'", payload.AuthorName, payload.Comment)).
 		WithRecipientIdentifiers(identifier.New("email", payload.RecipientEmail)).
 		Build()
 
-	return append(notifications, newNotification), nil
+	// Example: Create a black hole notification for cases where we don't know the recipient
+	// This could be useful for audit logs, metrics, or fallback notifications
+	blackHoleNotification := notification.NewBuilder(evt.Context).
+		WithDefaultMessage(fmt.Sprintf("Message logged: %s -> unknown recipient: '%s'", payload.AuthorName, payload.Comment)).
+		WithRecipientIdentifiers(identifier.New(identifier.BlackHoleDiscard, "audit-log")).
+		Build()
+
+	return append(notifications, newNotification, blackHoleNotification), nil
 }
 
 // This is an example of how to configure and run mailroom.
@@ -106,6 +115,7 @@ func main() {
 
 		mailroom.WithTransports(
 			notifier.NewWriterNotifier("console", os.Stderr),
+			blackhole.NewTransport("blackhole"), // Add the black hole transport
 			// notifier.WithRetry(
 			//	notifier.WithTimeout(
 			//		slack.NewTransport(

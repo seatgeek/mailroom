@@ -27,6 +27,11 @@ var (
 
 	// GenericID is any ID not associated with a specific namespace or system.
 	GenericID = NamespaceAndKind(KindID)
+
+	// BlackHoleDiscard is a special identifier that signals a notification should be discarded.
+	// Use this when you want to create a notification but don't have a specific recipient in mind,
+	// and want to ensure it gets safely "delivered" to nowhere instead of causing errors.
+	BlackHoleDiscard = NewNamespaceAndKind("blackhole", "discard")
 )
 
 // Split returns the namespace and kind parts of the NamespaceAndKind.
