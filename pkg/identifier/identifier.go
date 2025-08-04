@@ -27,6 +27,9 @@ var (
 
 	// GenericID is any ID not associated with a specific namespace or system.
 	GenericID = NamespaceAndKind(KindID)
+
+	// GenericBlackhole is a special identifier that signals the notification should be discarded.
+	GenericBlackhole = NamespaceAndKind(KindBlackhole)
 )
 
 // Split returns the namespace and kind parts of the NamespaceAndKind.
@@ -63,9 +66,10 @@ func NewNamespaceAndKind[T ~string](namespace string, kind T) NamespaceAndKind {
 type Kind string
 
 const (
-	KindEmail    Kind = "email"
-	KindUsername Kind = "username"
-	KindID       Kind = "id"
+	KindEmail     Kind = "email"
+	KindUsername  Kind = "username"
+	KindID        Kind = "id"
+	KindBlackhole Kind = "blackhole"
 )
 
 // An Identifier is a unique reference to some user or group.
