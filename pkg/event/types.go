@@ -176,3 +176,9 @@ type Processor interface {
 	// for the first processor) and returns a potentially modified slice of notifications.
 	Process(ctx context.Context, evt Event, notifications []Notification) ([]Notification, error)
 }
+
+type ProcessorFunc func(ctx context.Context, evt Event, notifications []Notification) ([]Notification, error)
+
+func (f ProcessorFunc) Process(ctx context.Context, evt Event, notifications []Notification) ([]Notification, error) {
+	return f(ctx, evt, notifications)
+}
