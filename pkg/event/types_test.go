@@ -5,10 +5,12 @@
 package event_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/seatgeek/mailroom/pkg/event"
+	"github.com/seatgeek/mailroom/pkg/identifier"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -291,4 +293,34 @@ func TestSource(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProcessorFunc(t *testing.T) {
+	t.Parallel()
+
+	// A simple processor that drops notifications without recipients
+	dropWithoutRecipients := func(ctx context.Context, evt event.Event, notifications []event.Notification) ([]event.Notification, error) {
+		ret := make([]event.Notification, 0, len(notifications))
+		for _, n := range notifications {
+			if n.Recipient().Len() > 0 {
+				ret = append(ret, n)
+			}
+		}
+
+		return ret, nil
+	}
+
+	notificationWithRecipient := event.NewMockNotification(t)
+	notificationWithRecipient.EXPECT().Recipient().Return(identifier.NewSet(identifier.New(identifier.GenericID, "123")))
+
+	notificationWithoutRecipient := event.NewMockNotification(t)
+	notificationWithoutRecipient.EXPECT().Recipient().Return(identifier.NewSet())
+
+	// Call the processor function
+	notifications, err := event.ProcessorFunc(dropWithoutRecipients).Process(t.Context(), event.Event{}, []event.Notification{notificationWithRecipient, notificationWithoutRecipient})
+
+	assert.NoError(t, err)
+	assert.Len(t, notifications, 1)
+	assert.Contains(t, notifications, notificationWithRecipient)
+	assert.NotContains(t, notifications, notificationWithoutRecipient)
 }
