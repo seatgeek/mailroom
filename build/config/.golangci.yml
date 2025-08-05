@@ -168,7 +168,7 @@ linters:
       enable-all-rules: false
       rules:
         - name: argument-limit
-          arguments: [4]
+          arguments: [5]
         - name: atomic
           disabled: false
         - name: blank-imports

@@ -6,6 +6,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -25,16 +26,16 @@ func CreateEventProcessingHandler(parserKey string, parser event.Parser, process
 			slog.String("path", request.URL.Path),
 		)
 
-		logger.Debug("handling incoming webhook")
+		logger.DebugContext(request.Context(), "handling incoming webhook")
 
 		evt, err := parser.Parse(request)
 		if err != nil {
-			logAndSendErrorResponse(logger, writer, "failed to parse event", err)
+			logAndSendErrorResponse(request.Context(), logger, writer, "failed to parse event", err)
 			return
 		}
 
 		if evt == nil { // Event is ignorable
-			logger.Debug("ignoring uninteresting event")
+			logger.DebugContext(request.Context(), "ignoring uninteresting event")
 			http.Error(writer, "thanks but we're not interested in that event", 200)
 			return
 		}
@@ -46,20 +47,20 @@ func CreateEventProcessingHandler(parserKey string, parser event.Parser, process
 		for _, processor := range processors {
 			notifications, err = processor.Process(request.Context(), *evt, notifications)
 			if err != nil {
-				logAndSendErrorResponse(logger, writer, fmt.Sprintf("failed during processing (processor %T)", processor), err)
+				logAndSendErrorResponse(request.Context(), logger, writer, fmt.Sprintf("failed during processing (processor %T)", processor), err)
 				return
 			}
 		}
 
 		if len(notifications) == 0 {
-			logger.Debug("no notifications to send after processing")
+			logger.DebugContext(request.Context(), "no notifications to send after processing")
 			http.Error(writer, "no notifications to send", 200)
 			return
 		}
 
 		logger = logger.With(slog.Int("total_notifications", len(notifications)))
 
-		logger.Debug("dispatching notifications")
+		logger.DebugContext(request.Context(), "dispatching notifications")
 
 		errorCount := 0
 		for _, n := range notifications {
@@ -78,7 +79,7 @@ func CreateEventProcessingHandler(parserKey string, parser event.Parser, process
 	}
 }
 
-func logAndSendErrorResponse(logger *slog.Logger, writer http.ResponseWriter, errorPrefix string, err error) {
+func logAndSendErrorResponse(ctx context.Context, logger *slog.Logger, writer http.ResponseWriter, errorPrefix string, err error) {
 	statusCode := 500
 
 	var httpError *Error
@@ -88,9 +89,9 @@ func logAndSendErrorResponse(logger *slog.Logger, writer http.ResponseWriter, er
 	}
 
 	if statusCode < 500 {
-		logger.Warn(errorPrefix, "error", err)
+		logger.WarnContext(ctx, errorPrefix, "error", err)
 	} else {
-		logger.Error(errorPrefix, "error", err)
+		logger.ErrorContext(ctx, errorPrefix, "error", err)
 	}
 
 	http.Error(writer, fmt.Sprintf("%s: %v", errorPrefix, err), statusCode)

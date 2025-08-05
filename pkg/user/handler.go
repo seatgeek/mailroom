@@ -49,12 +49,12 @@ func (ph *PreferencesHandler) GetPreferences(writer http.ResponseWriter, request
 	u, err := ph.userStore.Get(request.Context(), key)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			slog.Info("user not found", "key", key)
+			slog.InfoContext(request.Context(), "user not found", "key", key)
 			http.Error(writer, "user not found", http.StatusNotFound)
 			return
 		}
 
-		slog.Error("failed to get user", "key", key, "error", err)
+		slog.ErrorContext(request.Context(), "failed to get user", "key", key, "error", err)
 		http.Error(writer, "failed to get user", http.StatusInternalServerError)
 		return
 	}
@@ -62,7 +62,7 @@ func (ph *PreferencesHandler) GetPreferences(writer http.ResponseWriter, request
 	hydratedUserPreferences := ph.buildCurrentUserPreferences(request.Context(), preference.Chain{u.Preferences, ph.defaults})
 	resp := preferencesBody{Preferences: hydratedUserPreferences}
 
-	writeJson(writer, resp)
+	writeJson(request.Context(), writer, resp)
 }
 
 // UpdatePreferences updates the preferences for a given user
@@ -72,7 +72,7 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 
 	var req preferencesBody
 	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request", "error", err)
+		slog.ErrorContext(request.Context(), "failed to decode request", "error", err)
 		http.Error(writer, "failed to decode request", http.StatusBadRequest)
 		return
 	}
@@ -80,17 +80,17 @@ func (ph *PreferencesHandler) UpdatePreferences(writer http.ResponseWriter, requ
 	err := ph.userStore.SetPreferences(request.Context(), key, req.Preferences)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			slog.Info("user not found", "key", key)
+			slog.InfoContext(request.Context(), "user not found", "key", key)
 			http.Error(writer, "user not found", http.StatusNotFound)
 			return
 		}
 
-		slog.Error("failed to save preferences", "key", key, "error", err)
+		slog.ErrorContext(request.Context(), "failed to save preferences", "key", key, "error", err)
 		http.Error(writer, "failed to save preferences", http.StatusInternalServerError)
 		return
 	}
 
-	writeJson(writer, preferencesBody{
+	writeJson(request.Context(), writer, preferencesBody{
 		Preferences: ph.buildCurrentUserPreferences(request.Context(), preference.Chain{req.Preferences, ph.defaults}),
 	})
 }
@@ -152,7 +152,7 @@ type availableOptions struct {
 }
 
 // ListOptions returns the available sources and transports for setting preferences
-func (ph *PreferencesHandler) ListOptions(writer http.ResponseWriter, _ *http.Request) {
+func (ph *PreferencesHandler) ListOptions(writer http.ResponseWriter, request *http.Request) {
 	sources := make([]source, 0, len(ph.parsers))
 	for key, src := range ph.parsers {
 		sources = append(sources, source{
@@ -178,12 +178,12 @@ func (ph *PreferencesHandler) ListOptions(writer http.ResponseWriter, _ *http.Re
 		Transports: transports,
 	}
 
-	writeJson(writer, resp)
+	writeJson(request.Context(), writer, resp)
 }
 
-func writeJson(writer http.ResponseWriter, value any) {
+func writeJson(ctx context.Context, writer http.ResponseWriter, value any) {
 	if err := json.NewEncoder(writer).Encode(value); err != nil {
-		slog.Error("failed to encode response", "error", err)
+		slog.ErrorContext(ctx, "failed to encode response", "error", err)
 		writer.WriteHeader(500)
 	}
 }
