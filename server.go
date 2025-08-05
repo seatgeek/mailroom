@@ -175,7 +175,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	// Mount all parsers
 	for key, parser := range s.parsers {
 		endpoint := "/event/" + key
-		slog.Debug("mounting parser", "endpoint", endpoint)
+		slog.DebugContext(ctx, "mounting parser", "endpoint", endpoint)
 		hsm.HandleFunc(endpoint, server.CreateEventProcessingHandler(key, parser, s.processors, s.notifier))
 	}
 
@@ -196,7 +196,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	go (func() {
 		defer close(httpExited)
 
-		slog.Info("http server listening on " + s.listenAddr)
+		slog.InfoContext(ctx, "http server listening on "+s.listenAddr)
 
 		httpExited <- hs.ListenAndServe()
 	})()
@@ -204,7 +204,7 @@ func (s *Server) serveHttp(ctx context.Context) error {
 	select {
 	// Wait for the context to be canceled
 	case <-ctx.Done():
-		slog.Info("shutting down http server gracefully")
+		slog.InfoContext(ctx, "shutting down http server gracefully")
 		shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancelShutdown()
 

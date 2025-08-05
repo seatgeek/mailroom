@@ -74,7 +74,7 @@ func (s *Transport) Validate(ctx context.Context) error {
 		return notifier.Permanent(fmt.Errorf("authentication failed: %w", err))
 	}
 
-	slog.Info("Slack transport connected", "transport", s.key, "slack_team", resp.Team, "slack_user", resp.User)
+	slog.InfoContext(ctx, "Slack transport connected", "transport", s.key, "slack_team", resp.Team, "slack_user", resp.User)
 	return nil
 }
 
