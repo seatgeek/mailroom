@@ -3,7 +3,7 @@ GOLANGCI_LINT_VERSION=v2.3.1
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION=v1.12.3
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
-GOCOVER_COBERTURA_VERSION=v1.3.0
+GOCOVER_COBERTURA_VERSION=v1.4.0
 # renovate: datasource=go depName=github.com/vektra/mockery/v2
 MOCKERY_VERSION=v3.5.1
 # renovate: datasource=github-releases depName=palantir/go-license
