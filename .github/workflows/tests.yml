@@ -52,7 +52,7 @@ jobs:
 
       - run: make test-with-coverage
 
-      - uses: mikepenz/action-junit-report@v5
+      - uses: mikepenz/action-junit-report@v6
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/build/reports/unit-tests.xml'
