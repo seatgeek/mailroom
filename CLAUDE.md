@@ -10,7 +10,7 @@ Mailroom is a Go framework that simplifies the creation, routing, and delivery o
 
 ## Key Technologies
 
-- **Language:** Go 1.24
+- **Language:** Go 1.26
 - **Main Dependencies:** Gorilla Mux, Slack SDK, GORM with PostgreSQL
 
 ## Architecture
