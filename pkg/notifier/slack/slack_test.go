@@ -26,13 +26,13 @@ func TestNewTransport(t *testing.T) {
 		token string
 		opts  []slackgo.Option
 	}{
-		{
+		{ //nolint:gosec // fake test token
 			name:  "creates transport with key and token",
 			key:   "slack",
 			token: "xoxb-test-token",
 			opts:  nil,
 		},
-		{
+		{ //nolint:gosec // fake test token
 			name:  "creates transport with options",
 			key:   "custom-slack",
 			token: "xoxb-another-token",
@@ -296,10 +296,10 @@ func TestTransport_Validate(t *testing.T) {
 		token   string
 		wantErr bool
 	}{
-		{
+		{ //nolint:gosec // fake test token
 			name:    "validation with fake token returns error",
 			token:   "xoxb-fake-token",
-			wantErr: true, // Expect error with fake token
+			wantErr: true,
 		},
 		{
 			name:    "validation with empty token returns error",
