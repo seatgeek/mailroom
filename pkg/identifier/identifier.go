@@ -8,6 +8,7 @@ package identifier
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 	"sync"
 )
@@ -206,9 +207,7 @@ func (c *set) Copy() Set {
 		ids: make(map[NamespaceAndKind]string, len(c.ids)),
 	}
 
-	for key, value := range c.ids {
-		res.ids[key] = value
-	}
+	maps.Copy(res.ids, c.ids)
 
 	return res
 }
@@ -232,9 +231,7 @@ func NewSetFromMap(ids map[NamespaceAndKind]string) Set {
 		ids: make(map[NamespaceAndKind]string, len(ids)),
 	}
 
-	for key, value := range ids {
-		res.ids[key] = value
-	}
+	maps.Copy(res.ids, ids)
 
 	return res
 }
@@ -245,9 +242,7 @@ func (c *set) ToMap() map[NamespaceAndKind]string {
 	defer c.mutex.RUnlock()
 
 	res := make(map[NamespaceAndKind]string, len(c.ids))
-	for key, value := range c.ids {
-		res[key] = value
-	}
+	maps.Copy(res, c.ids)
 
 	return res
 }

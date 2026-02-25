@@ -35,7 +35,7 @@ func TestChain_Wants(t *testing.T) {
 				preference.Default(true),
 				preference.Default(false),
 			},
-			want: ptrTo(true),
+			want: new(true),
 		},
 		{
 			name: "return DoNotDeliver if first preference returns false",
@@ -43,7 +43,7 @@ func TestChain_Wants(t *testing.T) {
 				preference.Default(false),
 				preference.Default(true),
 			},
-			want: ptrTo(false),
+			want: new(false),
 		},
 		{
 			name: "fallback to next preference if first returns nil",
@@ -53,7 +53,7 @@ func TestChain_Wants(t *testing.T) {
 				}),
 				preference.Default(true),
 			},
-			want: ptrTo(true),
+			want: new(true),
 		},
 		{
 			name: "return nil if no preferences match",
@@ -167,7 +167,7 @@ func TestMap(t *testing.T) {
 			name:      "event type and transport are defined",
 			eventType: "some-event-type",
 			transport: "slack",
-			want:      ptrTo(true),
+			want:      new(true),
 		},
 		{
 			name:      "event type defined, transport not defined",
@@ -209,11 +209,11 @@ func TestDefault(t *testing.T) {
 	}{
 		{
 			value: true,
-			want:  ptrTo(true),
+			want:  new(true),
 		},
 		{
 			value: false,
-			want:  ptrTo(false),
+			want:  new(false),
 		},
 	}
 
@@ -226,8 +226,4 @@ func TestDefault(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
-}
-
-func ptrTo[T any](v T) *T {
-	return &v
 }

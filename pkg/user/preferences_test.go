@@ -38,14 +38,14 @@ func TestPreferenceProvider_Wants(t *testing.T) {
 			notification: notificationFor("com.example.one", someUser.Identifiers),
 			transport:    "slack",
 			userStore:    user.NewInMemoryStore(someUser),
-			wants:        ptrTo(true),
+			wants:        new(true),
 		},
 		{
 			name:         "known user; does not want",
 			notification: notificationFor("com.example.two", someUser.Identifiers),
 			transport:    "email",
 			userStore:    user.NewInMemoryStore(someUser),
-			wants:        ptrTo(false),
+			wants:        new(false),
 		},
 		{
 			name:         "known user; no preference",
@@ -98,10 +98,6 @@ func notificationFor(eventType event.Type, identifiers identifier.Set) event.Not
 		WithRecipient(identifiers).
 		WithDefaultMessage("hello world").
 		Build()
-}
-
-func ptrTo(b bool) *bool {
-	return &b
 }
 
 func userStoreThatErrors(t *testing.T, err error) user.Store {
