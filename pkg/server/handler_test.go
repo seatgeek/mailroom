@@ -88,7 +88,7 @@ func TestHandler(t *testing.T) {
 
 			writer := httptest.NewRecorder()
 
-			handler(writer, httptest.NewRequest("POST", "/some-handler", nil))
+			handler(writer, httptest.NewRequestWithContext(t.Context(), "POST", "/some-handler", nil))
 
 			assert.Equal(t, tc.wantStatusCode, writer.Code)
 		})
