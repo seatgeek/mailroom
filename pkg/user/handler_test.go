@@ -144,7 +144,7 @@ func TestPreferencesHandler_GetPreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("GET", "/users/rufus/preferences", nil))
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "GET", "/users/rufus/preferences", nil))
 
 		assert.Equal(t, 200, writer.Code)
 		assert.JSONEq(t, `{
@@ -165,7 +165,7 @@ func TestPreferencesHandler_GetPreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("GET", "/users/taylor/preferences", nil))
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "GET", "/users/taylor/preferences", nil))
 
 		assert.Equal(t, 404, writer.Code)
 	})
