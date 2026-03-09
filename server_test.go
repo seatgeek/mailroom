@@ -102,6 +102,7 @@ func TestRun(t *testing.T) {
 
 			s := New(tt.opts...)
 			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
 			go func() {
 				time.Sleep(500 * time.Millisecond)
 				cancel()

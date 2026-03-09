@@ -144,7 +144,7 @@ func TestPreferencesHandler_GetPreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("GET", "/users/rufus/preferences", nil))
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "GET", "/users/rufus/preferences", nil))
 
 		assert.Equal(t, 200, writer.Code)
 		assert.JSONEq(t, `{
@@ -165,7 +165,7 @@ func TestPreferencesHandler_GetPreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("GET", "/users/taylor/preferences", nil))
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "GET", "/users/taylor/preferences", nil))
 
 		assert.Equal(t, 404, writer.Code)
 	})
@@ -183,7 +183,7 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("PUT", "/users/rufus/preferences", bytes.NewBufferString(`{
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "PUT", "/users/rufus/preferences", bytes.NewBufferString(`{
 				"preferences": {
 					"com.gitlab.push": {
 						"slack": false,
@@ -230,7 +230,7 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("PUT", "/users/taylor/preferences", bytes.NewBufferString(`{
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "PUT", "/users/taylor/preferences", bytes.NewBufferString(`{
 				"preferences": {
 					"com.gitlab.push": {
 						"slack": false,
@@ -250,7 +250,7 @@ func TestPreferencesHandler_UpdatePreferences(t *testing.T) {
 		t.Parallel()
 
 		writer := httptest.NewRecorder()
-		router.ServeHTTP(writer, httptest.NewRequest("PUT", "/users/rufus/preferences", bytes.NewBufferString(`{{{{ lol this isn't json!`)))
+		router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "PUT", "/users/rufus/preferences", bytes.NewBufferString(`{{{{ lol this isn't json!`)))
 
 		assert.Equal(t, 400, writer.Code)
 	})
@@ -265,7 +265,7 @@ func TestPreferencesHandler_ListOptions(t *testing.T) {
 	router.HandleFunc("/configuration", handler.ListOptions).Methods("GET")
 
 	writer := httptest.NewRecorder()
-	router.ServeHTTP(writer, httptest.NewRequest("GET", "/configuration", nil))
+	router.ServeHTTP(writer, httptest.NewRequestWithContext(t.Context(), "GET", "/configuration", nil))
 
 	assert.Equal(t, 200, writer.Code)
 	assert.JSONEq(t, `{
@@ -364,7 +364,7 @@ func TestListOptions(t *testing.T) {
 
 	// Update to use Parser
 	ph := NewPreferencesHandler(store, parsers, transports, preference.Default(true))
-	req := httptest.NewRequest("GET", "/configuration", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/configuration", nil)
 	w := httptest.NewRecorder()
 
 	ph.ListOptions(w, req)
