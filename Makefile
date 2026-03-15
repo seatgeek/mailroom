@@ -7,7 +7,7 @@ GOCOVER_COBERTURA_VERSION=v1.4.0
 # renovate: datasource=go depName=github.com/vektra/mockery/v2
 MOCKERY_VERSION=v3.7.0
 # renovate: datasource=github-releases depName=palantir/go-license
-GO_LICENSE_VERSION=v1.41.0
+GO_LICENSE_VERSION=v1.42.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
 MARKDOWNLINT_VERSION=v0.48.0
 # renovate: datasource=docker depName=pipelinecomponents/yamllint
