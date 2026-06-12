@@ -5,7 +5,7 @@ GOTESTSUM_VERSION=v1.13.0
 # renovate: datasource=go depName=github.com/boumenot/gocover-cobertura
 GOCOVER_COBERTURA_VERSION=v1.5.0
 # renovate: datasource=go depName=github.com/vektra/mockery/v2
-MOCKERY_VERSION=v3.7.0
+MOCKERY_VERSION=v3.7.1
 # renovate: datasource=github-releases depName=palantir/go-license
 GO_LICENSE_VERSION=v1.44.0
 # renovate: datasource=github-tags depName=igorshubovych/markdownlint-cli
